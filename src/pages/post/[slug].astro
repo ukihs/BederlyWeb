@@ -1,0 +1,43 @@
+---
+import { wpQuery } from '../../lib/wp';
+
+export async function getStaticPaths() {
+  const data: any = await wpQuery(`
+    query { posts(first: 50) { nodes { slug } } }
+  `);
+  return data.posts.nodes.map((n: any) => ({ params: { slug: n.slug } }));
+}
+
+const { slug } = Astro.params;
+
+const data: any = await wpQuery(`
+  query ($slug: ID!) {
+    post(id: $slug, idType: SLUG) {
+      title
+      content
+      date
+    }
+  }
+`, { slug });
+
+const post = data.post;
+---
+
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <title>{post?.title ?? 'โพสต์ไม่พบ'}</title>
+  </head>
+  <body>
+    <a href="/">← กลับหน้าแรก</a>
+    {post ? (
+      <article>
+        <h1 set:html={post.title} />
+        <div set:html={post.content} />
+      </article>
+    ) : (
+      <p>ไม่พบโพสต์นี้</p>
+    )}
+  </body>
+</html>

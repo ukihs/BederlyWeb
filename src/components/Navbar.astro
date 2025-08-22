@@ -1,0 +1,59 @@
+---
+const links = [
+  { label: "สินค้า", href: "/products" }, // ไปหน้าสินค้า (ยังไม่ต้องสร้างหน้า)
+  { label: "เกี่ยวกับเรา", href: "#about" }, // เลื่อนลงในหน้า
+  { label: "ติดต่อเรา", href: "#contact" }, // เลื่อนลงในหน้า
+];
+const { showLinks = true } = Astro.props as { showLinks?: boolean };
+---
+
+<header class="sticky top-0 z-50 bg-sky-500/90 backdrop-blur text-white">
+  <nav class="sticky top-0 z-50 w-full bg-sky-500/95 text-white backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <!-- Brand -->
+      <a href="/" class="text-xl font-semibold">AstroWP</a>
+
+      <!-- Links -->
+      {
+        showLinks && (
+          <div class="flex items-center gap-6 text-sm">
+            <a href="/articles" class="hover:opacity-90">
+              บทความ
+            </a>
+            <a href="/#about" class="hover:opacity-90">
+              เกี่ยวกับเรา
+            </a>
+            <a href="/#contact" class="hover:opacity-90">
+              ติดต่อเรา
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </nav>
+
+  <div id="menu" class="md:hidden hidden border-t border-white/20">
+    <ul class="mx-auto max-w-6xl px-6 py-3 space-y-2">
+      {
+        links.map((l) => (
+          <li>
+            <a href={l.href} class="block py-2">
+              {l.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById("menuBtn");
+  const menu = document.getElementById("menu");
+  btn?.addEventListener("click", () => menu?.classList.toggle("hidden"));
+  menu
+    ?.querySelectorAll("a")
+    ?.forEach((a) =>
+      a.addEventListener("click", () => menu.classList.add("hidden")),
+    );
+</script>

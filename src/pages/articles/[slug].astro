@@ -1,0 +1,56 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { wpQuery } from "../../lib/wp";
+import ARTICLES_QUERY from "../../queries/articles";
+import ARTICLE_BY_SLUG from "../../queries/articleBySlug";
+
+// สร้าง path ทั้งหมดจากรายการโพสต์ เพื่อให้ Astro prerender
+export async function getStaticPaths() {
+  const data = await wpQuery<{ posts: { nodes: any[] } }>(ARTICLES_QUERY, {});
+  const nodes = data?.posts?.nodes ?? [];
+  return nodes
+    .filter((p) => p?.slug)
+    .map((p) => ({ params: { slug: p.slug } }));
+}
+
+// รับ slug จากพาธ
+const { slug } = Astro.params;
+
+// ดึงบทความตาม slug
+const res = await wpQuery<{ post: any }>(ARTICLE_BY_SLUG, { slug });
+const post = res?.post;
+
+function pickImageUrl(node?: any): string | undefined {
+  if (!node) return undefined;
+  const medium = node?.mediaDetails?.sizes?.find?.((s: any) => s?.name === "medium");
+  return medium?.sourceUrl || node?.sourceUrl;
+}
+const hero = pickImageUrl(post?.featuredImage?.node);
+---
+
+<Layout showNavLinks={false}>
+  {post ? (
+    <article class="mx-auto max-w-3xl px-6 py-10 sm:py-14">
+      <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-3xl font-bold leading-tight">{post.title}</h1>
+        <a href="/articles" class="text-sky-600 hover:underline">กลับหน้าบทความ</a>
+      </div>
+
+      {hero && (
+        <img
+          src={hero}
+          alt={post.title}
+          class="mb-6 w-full rounded-xl border object-cover"
+          loading="lazy"
+        />
+      )}
+
+      <div class="prose max-w-none" set:html={post.content ?? post.excerpt} />
+    </article>
+  ) : (
+    <section class="mx-auto max-w-3xl px-6 py-16">
+      <p class="text-slate-600">ไม่พบบทความ</p>
+      <a href="/articles" class="text-sky-600 hover:underline">กลับหน้าบทความ</a>
+    </section>
+  )}
+</Layout>
