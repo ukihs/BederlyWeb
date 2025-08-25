@@ -11,4 +11,5 @@
 - Yoast SEO v25.7
 
 
-- ไฟล์ฐานข้อมูลและไฟล์ env : https://drive.google.com/file/d/1PpeUTq2SrTy4Wix5UicNUFFxo3l5Fub8/view?usp=sharing
+- ไฟล์ฐานข้อมูล : https://drive.google.com/file/d/1PpeUTq2SrTy4Wix5UicNUFFxo3l5Fub8/view?usp=sharing
+- ไฟล์ env : https://drive.google.com/file/d/1y2RWnzRxaNpeKA1kUu01yxFZCO4JOIHg/view?usp=sharing
