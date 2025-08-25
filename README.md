@@ -11,4 +11,4 @@
 - Yoast SEO v25.7
 
 
-- ไฟล์ฐานข้อมูล: ดูลิงก์ Google Drive ที่นี่: https://drive.google.com/file/d/1PpeUTq2SrTy4Wix5UicNUFFxo3l5Fub8/view?usp=sharing
+- ไฟล์ฐานข้อมูลและไฟล์ env : https://drive.google.com/file/d/1PpeUTq2SrTy4Wix5UicNUFFxo3l5Fub8/view?usp=sharing
