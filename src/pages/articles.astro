@@ -1,4 +1,5 @@
 ---
+import { rewriteWpUrl } from "../lib/wpUrl";
 import Layout from "../layouts/Layout.astro";
 import { wpQuery } from "../lib/wp";
 import ARTICLES_QUERY from "../queries/articles";
@@ -17,13 +18,12 @@ function pickImageUrl(node?: any): string | undefined {
   <section class="mx-auto max-w-6xl px-6 py-10 sm:py-14">
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-3xl font-bold">บทความ</h1>
-      <!-- ปุ่มกลับหน้าแรก -->
       <a href="/" class="text-sky-600 hover:underline">กลับหน้าแรก</a>
     </div>
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {posts.map((post) => {
-        const img = pickImageUrl(post?.featuredImage?.node);
+        const img = rewriteWpUrl(pickImageUrl(post?.featuredImage?.node));
         const href = `/articles/${post.slug}`;
         return (
           <article class="overflow-hidden rounded-xl border bg-white shadow-sm">

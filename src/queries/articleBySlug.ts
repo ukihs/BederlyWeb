@@ -1,23 +1,21 @@
 // src/queries/articleBySlug.ts
-const ARTICLE_BY_SLUG = /* GraphQL */ `
-  query ArticleBySlug($slug: ID!) {
+export default /* GraphQL */ `
+  query PostBySlug($slug: ID!) {
     post(id: $slug, idType: SLUG) {
       id
-      databaseId
+      slug
       title
+      date
       content
       excerpt
-      slug
-      date
       featuredImage {
         node {
+          altText
           sourceUrl
           mediaDetails {
             sizes {
               name
               sourceUrl
-              width
-              height
             }
           }
         }
@@ -25,4 +23,3 @@ const ARTICLE_BY_SLUG = /* GraphQL */ `
     }
   }
 `;
-export default ARTICLE_BY_SLUG;
