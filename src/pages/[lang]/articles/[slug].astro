@@ -1,0 +1,125 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { wpQuery } from "../../../lib/wp";
+import { rewriteWpUrl } from "../../../lib/wpUrl";
+import ARTICLE_BY_SLUG from "../../../queries/articleBySlug";
+import POST_SLUGS from "../../../queries/postSlugs";
+
+// สร้างเพจแบบ SSG ให้ครบทุกภาษา/slug
+export async function getStaticPaths() {
+  const langs = ["th", "en"] as const;
+  const paths: Array<{ params: { lang: "th" | "en"; slug: string } }> = [];
+
+  for (const l of langs) {
+    const res = await wpQuery<{ posts: { nodes: { slug: string }[] } }>(
+      POST_SLUGS,
+      { lang: l.toUpperCase(), first: 100 }
+    );
+    for (const n of res?.posts?.nodes ?? []) {
+      if (n?.slug) paths.push({ params: { lang: l, slug: n.slug } });
+    }
+  }
+  return paths;
+}
+
+// ====== รับพารามิเตอร์ ======
+const { lang: langParam, slug: slugParam } = Astro.params;
+const lang = (langParam ?? "th") as "th" | "en";
+const slug = decodeURIComponent(slugParam ?? "");
+const LANG_ENUM = lang.toUpperCase();
+
+// ดึงโพสต์ตาม slug + ภาษา
+const res = await wpQuery<{ posts: { nodes: any[] } }>(ARTICLE_BY_SLUG, {
+  slug,
+  lang: LANG_ENUM,
+});
+const post = res?.posts?.nodes?.[0];
+if (!post) throw new Error("Post not found");
+
+
+
+// ====== helpers ======
+function pickImageUrl(n?: any): string | undefined {
+  if (!n) return undefined;
+  const sizes: Array<any> = n?.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "medium", "1536x1536", "2048x2048"];
+  for (const name of prefer) {
+    const s = sizes.find((x: any) => x?.name === name);
+    if (s?.sourceUrl) return s.sourceUrl;
+  }
+  return n?.sourceUrl;
+}
+
+// รีไรท์ src / data-src / srcset ภาพภายใน content ให้ชี้ไปยังโดเมน GraphQL endpoint
+function rewriteHtmlImgSrc(html?: string | null) {
+  if (!html) return html ?? "";
+  const base = new URL(import.meta.env.PUBLIC_WP_GRAPHQL!).origin;
+
+  let out = html.replace(
+    /(src=)(["'])(https?:\/\/[^\/"']+)([^"']*)(\2)/gi,
+    (_m, p1, q, _h, rest, q2) => `${p1}${q}${base}${rest}${q2}`
+  );
+
+  out = out.replace(
+    /(data-src=)(["'])(https?:\/\/[^\/"']+)([^"']*)(\2)/gi,
+    (_m, p1, q, _h, rest, q2) => `${p1}${q}${base}${rest}${q2}`
+  );
+
+  out = out.replace(
+    /(srcset=)(["'])([^"']+)(\2)/gi,
+    (_m, p1, q, val, q2) =>
+      `${p1}${q}${val.replace(/https?:\/\/[^,\s"]+/gi, (u) =>
+        u.replace(/^https?:\/\/[^/]+/i, base)
+      )}${q2}`
+  );
+
+  return out;
+}
+
+function stripHtml(input?: string) {
+  if (!input) return "";
+  return input.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+// ====== end helpers ======
+
+// รูป feature + เนื้อหา (รีไรท์ URL)
+const featureRaw = pickImageUrl(post?.featuredImage?.node);
+const featureImg = featureRaw ? rewriteWpUrl(featureRaw) : undefined;
+const cleanExcerpt = stripHtml(post?.excerpt);
+const contentHtml = rewriteHtmlImgSrc(post?.content);
+
+// ลิงก์สลับภาษา
+const translations = post?.translations ?? [];
+const alternates = [
+  { lang, url: `/${lang}/articles/${post.slug}` },
+  ...translations.map((tr:any)=>({
+    lang: tr.language.code.toLowerCase(),
+    url: `/${tr.language.code.toLowerCase()}/articles/${tr.slug}`,
+  })),
+];
+
+---
+
+<Layout lang={lang} alternates={alternates} showNavLinks={false}>
+  <section class="mx-auto max-w-5xl px-4 py-10">
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-3xl font-bold">{post.title}</h1>
+      <a href={`/${lang}/articles`} class="text-sm hover:underline">
+        {lang === "en" ? "Back to articles" : "กลับหน้าบทความ"}
+      </a>
+    </div>
+
+    {featureImg && (
+      <img
+        src={featureImg}
+        alt={post.title}
+        class="w-full rounded-2xl border object-cover"
+        loading="lazy"
+      />
+    )}
+
+    {cleanExcerpt && <p class="mt-6 text-lg text-slate-700">{cleanExcerpt}</p>}
+
+    <div class="prose mt-6 max-w-none" set:html={contentHtml} />
+  </section>
+</Layout>

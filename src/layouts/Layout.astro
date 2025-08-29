@@ -2,18 +2,37 @@
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
 
-const { showNavLinks = true } = Astro.props as { showNavLinks?: boolean };
+interface Alt {
+  lang: string;
+  url: string;
+}
+
+const {
+  lang = "th",
+  alternates = [] as Alt[],
+  showNavLinks = true,
+  showNav = true,
+} = Astro.props as {
+  lang?: "th" | "en";
+  alternates?: Alt[];
+  showNavLinks?: boolean;
+  showNav?: boolean;
+};
 ---
 
 <!DOCTYPE html>
-<html lang="th">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AstroWP</title>
+
+    {alternates.map((alt) => (
+      <link rel="alternate" hrefLang={alt.lang} href={alt.url} />
+    ))}
   </head>
   <body class="bg-slate-50 text-slate-900">
-    <Navbar showLinks={showNavLinks} />
+    {showNav && <Navbar lang={lang} showLinks={showNavLinks} alternates={alternates} />}
     <main>
       <slot />
     </main>

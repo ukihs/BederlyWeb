@@ -1,48 +1,70 @@
 // src/queries/home.ts
-const HOME_QUERY = /* GraphQL */ `
-  query HomePage {
-    page(id: "/", idType: URI) {
-      title
+import { gql } from "graphql-request";
 
-      hero {
-        heroTitle
-        heroSubtitle
-        heroImage {
-          node {
-            altText
-            sourceUrl
-            mediaDetails {
-              sizes { name sourceUrl width height }
+const HOME_QUERY = gql`
+  query HomeByUri($uri: String!) {
+    nodeByUri(uri: $uri) {
+      ... on Page {
+        id
+        title
+
+        # === HERO ===
+        hero {
+          heroTitle
+          heroSubtitle
+          heroImage {
+            node {
+              altText
+              sourceUrl
+              mediaDetails {
+                sizes {
+                  name
+                  sourceUrl
+                  width
+                  height
+                }
+              }
             }
           }
         }
-      }
 
-      process {
-        product1Name
-        product1Desc
-        product1Img {
-          node {
-            altText
-            sourceUrl
-            mediaDetails { sizes { name sourceUrl width height } }
+        # === PROCESS / PRODUCT SAMPLE ===
+        process {
+          product1Name
+          product1Desc
+          product1Img {
+            node {
+              altText
+              sourceUrl
+              mediaDetails {
+                sizes {
+                  name
+                  sourceUrl
+                  width
+                  height
+                }
+              }
+            }
           }
         }
-      }
 
-      about {
-        aboutTitle
-        aboutBody
-        aboutYoutubeUrl
-      }
+        # === ABOUT ===
+        about {
+          aboutTitle
+          aboutBody
+          aboutYoutubeUrl
+        }
 
-      contact {
+        # === CONTACT ===
+        contact {
           contactTitle
           contactIntro
           contactEmail
           contactPhone
+        }
       }
     }
   }
 `;
+
 export default HOME_QUERY;

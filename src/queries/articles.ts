@@ -1,25 +1,21 @@
 // src/queries/articles.ts
-const ARTICLES_QUERY = /* GraphQL */ `
-  query Articles {
-    posts(first: 20) {
+import { gql } from "graphql-request";
+
+const ARTICLES_QUERY = gql`
+  query Articles($lang: LanguageCodeFilterEnum!, $first: Int!) {
+    posts(
+      first: $first
+      where: { language: $lang, status: PUBLISH, orderby: { field: DATE, order: DESC } }
+    ) {
       nodes {
         id
-        databaseId
+        slug
         title
         excerpt
-        content
-        slug
         featuredImage {
           node {
             sourceUrl
-            mediaDetails {
-              sizes {
-                name
-                sourceUrl
-                width
-                height
-              }
-            }
+            mediaDetails { sizes { name sourceUrl } }
           }
         }
       }

@@ -1,0 +1,254 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { wpQuery } from "../../lib/wp";
+import HOME_QUERY from "../../queries/home";
+import { rewriteWpUrl } from "../../lib/wpUrl";
+
+export async function getStaticPaths() {
+  return [{ params: { lang: "th" } }, { params: { lang: "en" } }];
+}
+
+const { lang } = Astro.params;
+
+// โฮมของแต่ละภาษา (ปรับให้ตรงกับโครง URL ของ WP ถ้าจำเป็น)
+const uri = lang === "en" ? "/en/welcome/" : "/";
+
+// ดึงข้อมูลโฮมตามภาษา
+const data = await wpQuery<{ nodeByUri: any }>(HOME_QUERY, { uri });
+const page = data?.nodeByUri ?? {};
+const hero = page?.hero ?? {};
+const process = page?.process ?? {};
+const about = page?.about ?? {};
+const contact = page?.contact ?? {};
+
+// hreflang alternates
+const alternates = [
+  { lang: "th", url: "/th" },
+  { lang: "en", url: "/en" },
+];
+
+// helper เลือกรูป
+function pickBestImageUrl(node?: any): string | undefined {
+  if (!node) return undefined;
+  const sizes: Array<any> = node?.mediaDetails?.sizes ?? [];
+  const want = ["2048x2048", "1536x1536", "large", "medium_large", "medium"];
+  for (const key of want) {
+    const s = sizes.find((x: any) => x?.name === key);
+    if (s?.sourceUrl) return s.sourceUrl;
+  }
+  return node?.sourceUrl;
+}
+
+// HERO
+const heroImg = rewriteWpUrl(pickBestImageUrl(hero?.heroImage?.node));
+const heroAlt = hero?.heroImage?.node?.altText || "hero";
+
+// PRODUCT / ตัวอย่างบทความ/สินค้า
+const productImgUrl = rewriteWpUrl(pickBestImageUrl(process?.product1Img?.node));
+const product =
+  process?.product1Name || process?.product1Desc || productImgUrl
+    ? {
+        name: process?.product1Name,
+        desc: process?.product1Desc,
+        img: productImgUrl as string | undefined,
+        price: process?.product1Price,
+        link: process?.product1Link,
+        alt:
+          process?.product1Img?.node?.altText ||
+          process?.product1Name ||
+          "product",
+      }
+    : null;
+
+// ABOUT (YouTube embed)
+function toYouTubeEmbed(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "");
+    let id: string | null = null;
+
+    if (host.includes("youtube.com")) {
+      if (u.pathname === "/watch") {
+        id = u.searchParams.get("v");
+      } else if (u.pathname.startsWith("/embed/")) {
+        id = u.pathname.split("/embed/")[1];
+      } else if (u.pathname.startsWith("/shorts/")) {
+        id = u.pathname.split("/shorts/")[1];
+      }
+    } else if (host === "youtu.be") {
+      id = u.pathname.slice(1);
+    }
+
+    if (!id) return undefined;
+    // **อย่าพิมพ์เลขไทย** -> ต้องเป็น ?rel=0
+    return `https://www.youtube.com/embed/${id}?rel=0`;
+  } catch {
+    return undefined;
+  }
+}
+
+const aboutEmbed = toYouTubeEmbed(about?.aboutYoutubeUrl);
+
+// CONTACT
+const contactTitle =
+  contact?.contactTitle || (lang === "en" ? "Contact us" : "ติดต่อเรา");
+const contactIntro = contact?.contactIntro || "";
+const contactPhone = contact?.contactPhone || "";
+const contactEmail = contact?.contactEmail || "";
+
+// helper ใส่ prefix ภาษาให้ลิงก์ภายใน
+const withLang = (p?: string) => (p?.startsWith("/") ? `/${lang}${p}` : p);
+---
+
+<Layout lang={lang} showNavLinks={true}>
+  <!-- HERO -->
+  <section class="relative mx-auto max-w-6xl px-6 py-16 sm:py-20">
+    {heroImg && (
+      <div class="relative w-full overflow-hidden rounded-xl shadow-lg">
+        <img
+          src={heroImg}
+          alt={heroAlt}
+          class="w-full h-[400px] sm:h-[500px] object-cover"
+          loading="lazy"
+        />
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+          <h1 class="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg">
+            {hero?.heroTitle ||
+              (lang === "en" ? "Add title from WP" : "ใส่หัวข้อจาก WP")}
+          </h1>
+          <p class="mt-3 text-lg text-white drop-shadow-md">
+            {hero?.heroSubtitle ||
+              (lang === "en" ? "Add subtitle from WP" : "ใส่คำบรรยายจาก WP")}
+          </p>
+          {hero?.heroPrimaryUrl && hero?.heroPrimaryText && (
+            <a
+              href={withLang(hero.heroPrimaryUrl)}
+              class="mt-6 inline-block rounded-md bg-sky-500 px-6 py-3 text-white text-lg font-medium hover:bg-sky-600 transition"
+            >
+              {hero.heroPrimaryText}
+            </a>
+          )}
+        </div>
+      </div>
+    )}
+  </section>
+
+  <!-- PRODUCT / บทความ -->
+  <section id="products" class="mx-auto max-w-6xl px-6 py-16 sm:py-24 border-t">
+    <h2 class="mb-6 text-2xl font-semibold">
+      {lang === "en" ? "Articles" : "บทความ"}
+    </h2>
+    {product ? (
+      <article class="grid gap-6 md:grid-cols-2 items-start border rounded-xl p-5 bg-white shadow">
+        {product.img && (
+          <img
+            src={product.img}
+            alt={product.alt}
+            class="rounded-md w-full object-cover"
+            loading="lazy"
+          />
+        )}
+        <div>
+          <h3 class="text-xl font-semibold">
+            {product.name ?? (lang === "en" ? "Product name" : "ชื่อสินค้า")}
+          </h3>
+          {product.price && (
+            <div class="text-sky-600 font-medium mt-1">{product.price}</div>
+          )}
+          <p class="text-slate-600 mt-2">
+            {product.desc ??
+              (lang === "en" ? "Product description" : "คำอธิบายสินค้า")}
+          </p>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <a
+              href={`/${lang}/articles`}
+              class="inline-block rounded-md border border-sky-600 px-4 py-2 text-sky-700 hover:bg-sky-50"
+            >
+              {lang === "en" ? "Go to articles →" : "ไปหน้าบทความ →"}
+            </a>
+            {product.link && (
+              <a
+                href={product.link}
+                target="_blank"
+                rel="noopener"
+                class="inline-block rounded-md bg-sky-600 px-4 py-2 text-white hover:bg-sky-700"
+              >
+                {lang === "en" ? "View more →" : "ดูสินค้าเพิ่มเติม →"}
+              </a>
+            )}
+          </div>
+        </div>
+      </article>
+    ) : (
+      <p class="text-slate-500">
+        {lang === "en" ? "No articles yet" : "ยังไม่มีข้อมูลบทความ"}
+      </p>
+    )}
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="mx-auto max-w-6xl px-6 py-16 sm:py-24 border-t">
+    <div class="grid gap-8 md:grid-cols-2 md:items-start">
+      <div>
+        <h2 class="text-2xl font-semibold">
+          {about?.aboutTitle || (lang === "en" ? "About us" : "เกี่ยวกับเรา")}
+        </h2>
+        {about?.aboutBody ? (
+          <div class="prose max-w-none mt-3" set:html={about.aboutBody} />
+        ) : (
+          <p class="mt-3 text-slate-600">
+            {lang === "en"
+              ? "Add about text in WP (field aboutBody)"
+              : "เพิ่มคำอธิบายใน WordPress ได้ที่ฟิลด์ aboutBody"}
+          </p>
+        )}
+      </div>
+
+      <div class="w-full">
+        {aboutEmbed ? (
+          <div class="relative w-full pt-[56.25%] overflow-hidden rounded-xl shadow">
+            <iframe
+              src={aboutEmbed}
+              title="About video"
+              class="absolute left-0 top-0 h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div class="rounded-xl border p-6 text-slate-500">
+            {lang === "en"
+              ? "No YouTube link in WP yet"
+              : "ยังไม่ได้ใส่ลิงก์ YouTube ใน WP"}
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="mx-auto max-w-6xl px-6 py-16 sm:py-24 border-t">
+    <h2 class="text-2xl font-semibold mb-4">{contactTitle}</h2>
+    {contactIntro && <p class="mb-4 text-slate-600">{contactIntro}</p>}
+    <ul class="space-y-3">
+      {contactPhone && (
+        <li>
+          <strong>📞 {lang === "en" ? "Phone:" : "โทรศัพท์:"}</strong>{" "}
+          <a href={`tel:${contactPhone}`} class="text-sky-600 hover:underline">
+            {contactPhone}
+          </a>
+        </li>
+      )}
+      {contactEmail && (
+        <li>
+          <strong>✉️ Email:</strong>{" "}
+          <a href={`mailto:${contactEmail}`} class="text-sky-600 hover:underline">
+            {contactEmail}
+          </a>
+        </li>
+      )}
+    </ul>
+  </section>
+</Layout>
