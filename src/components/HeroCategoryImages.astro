@@ -1,33 +1,58 @@
 ---
-import { wpQuery } from "../lib/wp";        // relative path
-import { rewriteWpUrl } from "../lib/wpUrl"; // ✅ ใช้รีไรท์ URL รูป
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
-  categorySlug?: string;    // default: "hero"
-  limit?: number;           // จำนวนรูป
+  categorySlug?: string;
+  limit?: number;
   class?: string;
 }
 
 const { lang = "th", categorySlug = "hero", limit = 6, class: klass = "" } = Astro.props;
 
-/** --------- ดึงโพสต์ตามหมวด (ไม่พึ่ง language filter) --------- */
+// ลองหลายชื่อ category เผื่อใน WordPress เป็นตัวใหญ่หรือแตกต่าง
+const categoryNames = [categorySlug, categorySlug.toLowerCase(), categorySlug.toUpperCase(), "Hero", "hero", "bed", "products"];
+
+/** Query โพสต์ตามหมวดและภาษา */
 const POSTS_BY_CATEGORY = /* GraphQL */ `
-  query PostsByCategory($first: Int!, $category: String!) {
+  query PostsByCategory($first: Int!, $category: String!, $language: LanguageCodeFilterEnum) {
     posts(
       first: $first
-      where: { categoryName: $category, orderby: { field: DATE, order: DESC } }
+      where: { 
+        categoryName: $category, 
+        orderby: { field: DATE, order: ASC },
+        status: PUBLISH,
+        language: $language
+      }
     ) {
       nodes {
         id
         title
         uri
+        slug
+        excerpt
+        language {
+          code
+          name
+        }
+        categories {
+          nodes { name slug }
+        }
         featuredImage {
           node {
+            id
             sourceUrl
             altText
             mediaDetails {
-              sizes { name width sourceUrl }
+              width
+              height
+              sizes { 
+                name 
+                width 
+                height
+                sourceUrl 
+              }
             }
           }
         }
@@ -37,85 +62,384 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
 `;
 
 let posts: any[] = [];
-try {
-  const res = await wpQuery<any>(POSTS_BY_CATEGORY, {
-    first: limit,
-    category: categorySlug,
-  });
-  posts = (res?.posts?.nodes ?? []).filter((p: any) => p?.featuredImage?.node?.sourceUrl);
-} catch (err) {
-  console.error("HeroCategoryImages > query failed:", err);
-  posts = [];
+let foundCategory = "";
+
+// แปลง lang เป็น GraphQL enum
+const languageFilter = lang.toUpperCase() as "TH" | "EN";
+
+// ลอง query แต่ละชื่อ category
+for (const catName of categoryNames) {
+  try {
+    console.log(`Trying category: ${catName} for language: ${languageFilter}`);
+    const res = await wpQuery<any>(POSTS_BY_CATEGORY, {
+      first: limit,
+      category: catName,
+      language: languageFilter,
+    });
+    
+    const foundPosts = (res?.posts?.nodes ?? []).filter((p: any) => {
+      return p?.featuredImage?.node?.sourceUrl;
+    });
+    
+    if (foundPosts.length > 0) {
+      posts = foundPosts;
+      foundCategory = catName;
+      console.log(`Found ${foundPosts.length} posts in category: ${catName} (${languageFilter})`);
+      break;
+    }
+  } catch (err) {
+    console.warn(`Category ${catName} failed:`, err);
+    continue;
+  }
+}
+
+// ถ้าไม่เจอเลย ลองเอาโพสต์ทั้งหมดที่มีรูป (ตามภาษา)
+if (posts.length === 0) {
+  try {
+    console.log(`Fallback: Getting all posts with featured images (${languageFilter})`);
+    const FALLBACK_QUERY = /* GraphQL */ `
+      query FallbackPosts($first: Int!, $language: LanguageCodeFilterEnum) {
+        posts(
+          first: $first
+          where: { 
+            orderby: { field: DATE, order: ASC },
+            status: PUBLISH,
+            hasPassword: false,
+            language: $language
+          }
+        ) {
+          nodes {
+            id
+            title
+            uri
+            slug
+            excerpt
+            language {
+              code
+              name
+            }
+            categories {
+              nodes { name slug }
+            }
+            featuredImage {
+              node {
+                id
+                sourceUrl
+                altText
+                mediaDetails {
+                  width
+                  height
+                  sizes { 
+                    name 
+                    width 
+                    height
+                    sourceUrl 
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+    
+    const fallbackRes = await wpQuery<any>(FALLBACK_QUERY, { 
+      first: limit, 
+      language: languageFilter 
+    });
+    posts = (fallbackRes?.posts?.nodes ?? []).filter((p: any) => {
+      return p?.featuredImage?.node?.sourceUrl;
+    });
+    foundCategory = "fallback";
+    console.log(`Fallback found ${posts.length} posts with images (${languageFilter})`);
+  } catch (err) {
+    console.error("Fallback query also failed:", err);
+    posts = [];
+  }
 }
 
 function fix(src?: string) {
   return src ? rewriteWpUrl(src) : src;
 }
+
 function toSrcSet(sizes?: Array<{ sourceUrl: string; width: number }>) {
   if (!sizes?.length) return undefined;
   return sizes
     .filter((s) => s?.sourceUrl && s?.width)
-    .sort((a, b) => (Number(a.width) || 0) - (Number(b.width) || 0))
+    .sort((a, b) => (Number(b.width) || 0) - (Number(a.width) || 0)) // เรียงจากใหญ่ไปเล็ก
     .map((s) => `${fix(s.sourceUrl)} ${s.width}w`)
     .join(", ");
 }
+
+// ฟังก์ชันเลือกรูปขนาดที่เหมาะสมสำหรับความชัด
+function getBestImageUrl(imageNode?: any): string | undefined {
+  if (!imageNode?.mediaDetails?.sizes) {
+    return fix(imageNode?.sourceUrl);
+  }
+  
+  const sizes = imageNode.mediaDetails.sizes;
+  // เลือกขนาดที่ใหญ่กว่า 800px เพื่อความชัด
+  const preferredSizes = ["2048x2048", "1536x1536", "large", "medium_large"];
+  
+  for (const sizeName of preferredSizes) {
+    const size = sizes.find((s: any) => s?.name === sizeName);
+    if (size?.sourceUrl && size?.width >= 800) {
+      return fix(size.sourceUrl);
+    }
+  }
+  
+  // ถ้าไม่เจอ ใช้รูปที่ใหญ่ที่สุด
+  const largest = sizes
+    .filter((s: any) => s?.sourceUrl && s?.width)
+    .sort((a: any, b: any) => (b.width || 0) - (a.width || 0))[0];
+    
+  return fix(largest?.sourceUrl || imageNode?.sourceUrl);
+}
+
+// Debug info
+console.log(`HeroCategoryImages: Found ${posts.length} posts from category "${foundCategory}"`);
+posts.forEach((p, i) => {
+  console.log(`${i+1}. ${p.title} - ${p.featuredImage?.node?.sourceUrl ? "✅" : "❌"} image`);
+});
 ---
 
-<section data-hero-cat class={`relative ${klass}`}>
-  <div class="relative">
-    <!-- แถวภาพแบบ scroll-snap -->
-    <div class="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
-         style="scrollbar-width: none;"
-         aria-label="Hero category images">
-      {posts.map((p) => {
-        const img = p.featuredImage.node;
-        const src = fix(img.sourceUrl);        // ✅ ใช้ URL ที่รีไรท์แล้ว
-        const srcset = toSrcSet(img.mediaDetails?.sizes);
-        return (
-          <figure class="snap-center shrink-0 rounded-2xl overflow-hidden bg-slate-100
-                         min-w-[320px] md:min-w-[460px] lg:min-w-[520px]">
-            <img
-              src={src}
-              alt={img.altText || p.title}
-              loading="lazy"
-              decoding="async"
-              class="w-full h-full object-cover aspect-[4/3]"
-              srcset={srcset}
-              sizes="(min-width:1280px) 33vw, (min-width:768px) 45vw, 90vw"
-            />
-          </figure>
-        );
-      })}
-    </div>
-
-    <!-- ปุ่มเลื่อน -->
-    <button type="button"
-      class="absolute -left-4 top-1/2 -translate-y-1/2 grid place-items-center
-             h-12 w-12 rounded-full bg-white/80 shadow hover:bg-white"
-      aria-label="Previous">←</button>
-    <button type="button"
-      class="absolute -right-4 top-1/2 -translate-y-1/2 grid place-items-center
-             h-12 w-12 rounded-full bg-white/80 shadow hover:bg-white"
-      aria-label="Next">→</button>
+{/* Debug panel - แสดงเฉพาะใน dev mode */}
+{import.meta.env.DEV && (
+  <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-4 text-sm">
+    <strong>Debug:</strong> Found {posts.length} posts from category "{foundCategory || categorySlug}" (Lang: {languageFilter})
+    {posts.length > 0 && (
+      <ul class="mt-2 space-y-1">
+        {posts.slice(0, 3).map((p) => (
+          <li>• {p.title} {p.featuredImage?.node?.sourceUrl ? "✅" : "❌"} Lang: {p.language?.code || "?"}</li>
+        ))}
+        {posts.length > 3 && <li>... และอีก {posts.length - 3} รายการ</li>}
+      </ul>
+    )}
   </div>
-</section>
+)}
+
+{posts.length > 0 ? (
+  <section data-hero-cat class={`relative ${klass}`}>
+    <div class="relative">
+      <!-- Header ถ้าต้องการ -->
+      <div class="text-center mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">
+          {lang === "en" ? "Our Smart Bed Solutions" : "โซลูชันเตียงอัจฉริยะของเรา"}
+        </h2>
+        <p class="text-white/90 text-lg">
+          {lang === "en" 
+            ? "Innovative care for the ones you love" 
+            : "นวัตกรรมการดูแลสำหรับคนที่คุณรัก"
+          }
+        </p>
+      </div>
+
+      <!-- แถวภาพแบบ scroll-snap -->
+      <div 
+        class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-6"
+        style="scrollbar-width: none; -webkit-scrollbar: { display: none; }"
+        aria-label="Smart bed product gallery"
+        id="hero-slider"
+      >
+        {posts.map((p, index) => {
+          const img = p.featuredImage.node;
+          const src = getBestImageUrl(img); // ใช้ฟังก์ชันใหม่เพื่อความชัด
+          const srcset = toSrcSet(img.mediaDetails?.sizes);
+          
+          return (
+            <figure class="snap-center shrink-0 rounded-3xl overflow-hidden relative group
+                           min-w-[320px] sm:min-w-[380px] md:min-w-[440px] lg:min-w-[480px] xl:min-w-[520px]
+                           shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+              <div class="aspect-[4/3] overflow-hidden relative">
+                <img
+                  src={src}
+                  alt={img.altText || p.title}
+                  loading={index < 3 ? "eager" : "lazy"}
+                  decoding="async"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: contrast(1.05) saturate(1.08) brightness(1.02);"
+                  srcset={srcset}
+                  sizes="(min-width:1280px) 520px, (min-width:1024px) 480px, (min-width:768px) 440px, (min-width:640px) 380px, 320px"
+                />
+                
+                {/* Dark gradient overlay */}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80"></div>
+                
+                {/* Text overlay - สีฟ้าและกลมเหมือนในรูป */}
+                <div class="absolute bottom-4 left-4 right-4">
+                  <div class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-4 rounded-full shadow-lg backdrop-blur-sm">
+                    <h3 class="font-bold text-lg text-center leading-tight" set:html={p.title} />
+                  </div>
+                </div>
+              </div>
+            </figure>
+          );
+        })}
+      </div>
+
+      <!-- ปุ่มเลื่อน - สีขาวใกล้รูป -->
+      <button type="button"
+        class="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center
+               h-14 w-14 rounded-full bg-white hover:bg-gray-50 shadow-xl
+               text-gray-700 hover:text-gray-900 transition-all duration-200
+               hover:scale-110 z-20 border border-gray-100"
+        aria-label="Previous images"
+        id="prev-btn">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+      </button>
+      
+      <button type="button"
+        class="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center
+               h-14 w-14 rounded-full bg-white hover:bg-gray-50 shadow-xl
+               text-gray-700 hover:text-gray-900 transition-all duration-200
+               hover:scale-110 z-20 border border-gray-100"
+        aria-label="Next images"
+        id="next-btn">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+        </svg>
+      </button>
+      
+      <!-- Dots indicator - ปรับให้สอดคล้องกับการเลื่อนทีละ 3 รูป -->
+      <div class="flex justify-center gap-2 mt-8">
+        {Array.from({ length: Math.ceil(posts.length / 3) }, (_, i) => (
+          <button 
+            class="w-3 h-3 rounded-full bg-white/50 hover:bg-white/80 transition-all dot-indicator"
+            data-index={i * 3}
+            aria-label={`Go to slide ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+) : (
+  <!-- Fallback: แสดงข้อความถ้าไม่มีรูป -->
+  <section class={`text-center py-12 ${klass}`}>
+    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
+      <p class="text-white/90 mb-4">
+        {lang === "en" 
+          ? "Gallery images will appear here once uploaded to WordPress" 
+          : "รูปภาพแกลเลอรี่จะแสดงที่นี่เมื่ออัปโหลดใน WordPress"
+        }
+      </p>
+      <p class="text-white/70 text-sm">
+        Category: "{categorySlug}" • Found: {posts.length} posts • Lang: {languageFilter}
+      </p>
+    </div>
+  </section>
+)}
 
 <script is:inline>
-  (function () {
-    const root = document.querySelector('[data-hero-cat]');
-    if (!root) return;
-    const scroller = root.querySelector('[aria-label="Hero category images"]');
-    const [prevBtn, nextBtn] = root.querySelectorAll('button');
+(function () {
+  const root = document.querySelector('[data-hero-cat]');
+  if (!root) return;
+  
+  const scroller = root.querySelector('#hero-slider');
+  const prevBtn = root.querySelector('#prev-btn');
+  const nextBtn = root.querySelector('#next-btn');
+  const dots = root.querySelectorAll('.dot-indicator');
+  
+  if (!scroller || !prevBtn || !nextBtn) return;
 
-    function scrollByStep(dir) {
-      const step = scroller.clientWidth * 0.9;
-      scroller.scrollBy({ left: dir * step, behavior: 'smooth' });
+  let currentIndex = 0;
+  const totalItems = scroller.children.length;
+  const itemsToScroll = 3; // เลื่อนทีละ 3 รูป
+  
+  function updateDots() {
+    dots.forEach((dot, i) => {
+      const isActive = Math.floor(i / itemsToScroll) === Math.floor(currentIndex / itemsToScroll);
+      dot.classList.toggle('bg-white', isActive);
+      dot.classList.toggle('bg-white/50', !isActive);
+    });
+  }
+  
+  function scrollToIndex(index) {
+    // คำนวณขนาดของแต่ละ item รวม gap
+    const firstItem = scroller.children[0];
+    if (!firstItem) return;
+    
+    const itemWidth = firstItem.offsetWidth;
+    const gap = 16; // gap-4 = 1rem = 16px
+    const scrollDistance = index * (itemWidth + gap);
+    
+    scroller.scrollTo({ left: scrollDistance, behavior: 'smooth' });
+    currentIndex = index;
+    updateDots();
+  }
+  
+  function scrollByStep(direction) {
+    let newIndex;
+    
+    if (direction > 0) {
+      // เลื่อนไปข้างหน้า
+      newIndex = currentIndex + itemsToScroll;
+      if (newIndex >= totalItems) {
+        newIndex = 0; // วนกลับไปรูปแรก
+      }
+    } else {
+      // เลื่อนไปข้างหลัง  
+      newIndex = currentIndex - itemsToScroll;
+      if (newIndex < 0) {
+        // ไปรูปสุดท้าย
+        const lastSetIndex = Math.floor((totalItems - 1) / itemsToScroll) * itemsToScroll;
+        newIndex = lastSetIndex;
+      }
     }
-    prevBtn?.addEventListener('click', () => scrollByStep(-1));
-    nextBtn?.addEventListener('click', () => scrollByStep(1));
-  })();
+    
+    scrollToIndex(newIndex);
+  }
+  
+  // Event listeners
+  prevBtn.addEventListener('click', () => scrollByStep(-1));
+  nextBtn.addEventListener('click', () => scrollByStep(1));
+  
+  // Dots navigation (ถ้ามี)
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      const targetIndex = i * itemsToScroll;
+      scrollToIndex(Math.min(targetIndex, totalItems - itemsToScroll));
+    });
+  });
+  
+  // Auto-scroll detection
+  let scrollTimer;
+  scroller.addEventListener('scroll', () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      const scrollLeft = scroller.scrollLeft;
+      const itemWidth = scroller.children[0]?.offsetWidth || 300;
+      const gap = 16;
+      const newIndex = Math.round(scrollLeft / (itemWidth + gap));
+      if (newIndex !== currentIndex) {
+        currentIndex = Math.max(0, Math.min(newIndex, totalItems - 1));
+        updateDots();
+      }
+    }, 150);
+  });
+  
+  // Initialize
+  updateDots();
+  
+  // Auto-play (เลื่อนทีละ 3 รูป ทุก 6 วินาที)
+  if (totalItems > itemsToScroll) {
+    setInterval(() => {
+      scrollByStep(1);
+    }, 6000); // เพิ่มเวลาเป็น 6 วินาทีเพราะเลื่อนทีละ 3 รูป
+  }
+})();
 </script>
 
 <style is:global>
-  [data-hero-cat] [aria-label="Hero category images"]::-webkit-scrollbar { display: none; }
+  [data-hero-cat] #hero-slider::-webkit-scrollbar { 
+    display: none; 
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 </style>

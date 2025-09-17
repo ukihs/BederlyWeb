@@ -39,7 +39,7 @@ function pickImageUrl(imageNode?: any): string | undefined {
 heroTitle = lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ";
 heroSubtitle =
   lang === "en"
-    ? "Innovative Care for the Ones you loved ones"
+    ? "Innovative Care for the Ones You loved ones"
     : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก";
 
 // พยายามดึงรูปพื้นหลังจาก WP (หน้า Home ของแต่ละภาษา)
@@ -68,7 +68,7 @@ const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
 
 <Layout lang={lang} showNavLinks={true} alternates={alternates}>
   <!-- ============== Hero Section ============== -->
-  <section class="relative overflow-hidden">
+  <section class="relative overflow-hidden min-h-screen">
     <!-- พื้นหลัง -->
     {heroImageUrl ? (
       <div class="absolute inset-0 z-0">
@@ -76,32 +76,36 @@ const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
           src={heroImageUrl}
           alt="Hero Background"
           class="w-full h-full object-cover"
-          style="object-position:center; image-rendering: crisp-edges; filter: contrast(1.05) saturate(1.06);"
+          style="object-position:center; image-rendering: crisp-edges;"
           loading="eager"
         />
       </div>
     ) : (
-      <div class="absolute inset-0 z-0 bg-[radial-gradient(80%_80%_at_0%_0%,#42c3ff_0%,#2bb3f3_45%,#22a7e6_100%)]"></div>
+      <div class="absolute inset-0 z-0">
+        <!-- Gradient background with pattern -->
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-700"></div>
+        <div class="absolute inset-0 opacity-10" 
+             style="background-image: url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=0 0 60 60 xmlns=http://www.w3.org/2000/svg%3E%3Cg fill=none fill-rule=evenodd%3E%3Cg fill=%23ffffff fill-opacity=0.1%3E%3Ccircle cx=7 cy=7 r=5/%3E%3Ccircle cx=53 cy=7 r=5/%3E%3Ccircle cx=30 cy=30 r=5/%3E%3Ccircle cx=53 cy=53 r=5/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+      </div>
     )}
 
-    <!-- คอนเทนต์ -->
-    <div class="relative z-10 mx-auto max-w-[1440px] px-6 pt-20 pb-10 lg:pt-28">
-      <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[720px]">
+    <div class="relative z-10 mx-auto max-w-[1440px] px-6 pt-16 pb-20">
+      <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[600px] mb-16">
         <!-- ซ้าย: ข้อความ -->
         <div class="text-white lg:pr-8">
-          <h1 class="font-extrabold leading-[1.05] mb-6 text-[clamp(36px,6.2vw,80px)]"
-              style="text-shadow: 2px 2px 8px rgba(0,0,0,.7);">
+          <h1 class="font-extrabold leading-[1.05] mb-6 text-[clamp(40px,6.2vw,84px)]"
+              style="text-shadow: 2px 2px 12px rgba(0,0,0,.8);">
             {heroTitle}
           </h1>
-          <p class="font-light opacity-95 whitespace-pre-line mb-10 text-[clamp(16px,2vw,28px)]"
-             style="text-shadow: 1px 1px 6px rgba(0,0,0,.65);">
+          <p class="font-light opacity-95 whitespace-pre-line mb-10 text-[clamp(18px,2vw,28px)] leading-relaxed"
+             style="text-shadow: 1px 1px 8px rgba(0,0,0,.7);">
             {heroSubtitle}
           </p>
 
           <a href={lang === "en" ? "/en/contact" : "/th/contact"}
-             class="inline-flex items-center gap-3 rounded-full bg-white text-sky-600 font-semibold shadow-lg hover:shadow-xl h-[56px] px-7 text-[18px] hover:opacity-95 transition">
+             class="inline-flex items-center gap-3 rounded-full bg-white text-cyan-600 font-semibold shadow-xl hover:shadow-2xl h-[60px] px-8 text-[18px] hover:bg-gray-50 transition-all duration-300 hover:scale-105 hover:-translate-y-1">
             {ctaText}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 12H19M19 12L12 5M19 12L12 19"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -112,69 +116,103 @@ const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
         <div class="hidden lg:block"></div>
       </div>
 
-      <!-- แถวภาพจากหมวด hero -->
+      <!-- ============== Hero Gallery Slider ============== -->
       <HeroCategoryImages
         lang={lang}
         categorySlug="hero"
-        limit={6}
-        class="mx-auto max-w-[1440px] px-0 mt-6 lg:mt-10"
+        limit={8}
+        class="mx-auto max-w-none"
       />
     </div>
   </section>
 
-  <!-- ============== Smart Bed's Features (ตัวอย่างส่วนถัดไป) ============== -->
-  <section class="py-20 bg-white">
+  <!-- ============== Smart Bed Features Section ============== -->
+  <section class="py-20 lg:py-32 bg-gradient-to-b from-white to-gray-50">
     <div class="mx-auto max-w-[1440px] px-6">
       <div class="text-center mb-16">
-        <h2 class="text-4xl lg:text-5xl font-bold text-gray-800 mb-8">
-          {lang === "en" ? "Smart Bed's Features" : "คุณสมบัติของเตียงอัจฉริยะ"}
+        <h2 class="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">
+          {lang === "en" ? "Smart Bed Features" : "คุณสมบัติเตียงอัจฉริยะ"}
         </h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          {lang === "en" 
+            ? "Advanced technology meets exceptional patient care with our innovative hospital bed solutions."
+            : "เทคโนโลยีขั้นสูงผสานกับการดูแลผู้ป่วยที่โดดเด่นด้วยโซลูชันเตียงโรงพยาบาลอันล้ำสมัย"
+          }
+        </p>
       </div>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
         {[
           {
+            icon: "🔄",
             title: lang === "en" ? "Left-right side tilt adjustment" : "ปรับเอียงซ้าย-ขวา",
             desc:
               lang === "en"
                 ? "Advanced lateral positioning system for optimal patient comfort and medical procedures."
                 : "ระบบปรับตำแหน่งด้านข้างขั้นสูงเพื่อความสบายและการรักษาที่เหมาะสม",
+            color: "from-blue-500 to-cyan-500"
           },
           {
-            title: lang === "en" ? "Height adjustment" : "ปรับระดับความสูง",
+            icon: "📐",
+            title: lang === "en" ? "Height adjustment" : "ปรับระดับความสูง", 
             desc:
               lang === "en"
                 ? "Smooth height adjustment mechanism for easy patient transfer and caregiver access."
                 : "กลไกปรับความสูงที่ลื่นไหลสำหรับการย้ายผู้ป่วยและการเข้าถึงของผู้ดูแล",
+            color: "from-green-500 to-teal-500"
           },
           {
+            icon: "🦵",
             title: lang === "en" ? "Leg section up-down adjustment" : "ปรับส่วนขา ขึ้น-ลง",
             desc:
               lang === "en"
                 ? "Ergonomic leg positioning for improved circulation and patient comfort."
                 : "การปรับตำแหน่งขาตามหลักสรีรศาสตร์เพื่อการไหลเวียนและความสบายที่ดีขึ้น",
+            color: "from-purple-500 to-pink-500"
           },
         ].map((feature, index) => (
-          <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                {index === 0 && <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>}
-                {index === 1 && <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>}
-                {index === 2 && <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>}
-              </svg>
+          <div class={`bg-gradient-to-br ${feature.color} p-1 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 group`}>
+            <div class="bg-white rounded-3xl p-8 h-full">
+              <div class="text-5xl mb-6 text-center transform group-hover:scale-110 transition-transform duration-300">
+                {feature.icon}
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 text-center mb-4 leading-tight">
+                {feature.title}
+              </h3>
+              <p class="text-gray-600 text-center leading-relaxed">
+                {feature.desc}
+              </p>
             </div>
-            <h3 class="text-xl font-semibold text-gray-800 text-center mb-4">
-              {feature.title}
-            </h3>
-            <p class="text-gray-600 text-center leading-relaxed">{feature.desc}</p>
           </div>
         ))}
+      </div>
+
+      <!-- Call-to-Action -->
+      <div class="text-center mt-16">
+        <a href={`/${lang}/contact`} 
+           class="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 text-lg">
+          {lang === "en" ? "Learn More About Our Solutions" : "เรียนรู้เพิ่มเติมเกี่ยวกับโซลูชันของเรา"}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12H19M19 12L12 5M19 12L12 19"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
       </div>
     </div>
   </section>
 </Layout>
 
 <style>
-  button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-  button:hover { transform: translateY(-2px); }
+  /* Smooth animations */
+  * {
+    transition-property: transform, box-shadow, background-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Glass effect for buttons */
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 </style>
