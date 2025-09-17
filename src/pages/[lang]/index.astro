@@ -1,149 +1,243 @@
 ---
-/**
- * src/pages/[lang]/index.astro
- * - ดึง Hero (title, subtitle, image) จาก WPGraphQL
- * - รองรับกรณีภาษา default บน WP ไม่มี prefix (เช่น "/" แทน "/en/")
- * - แสดงคอมเมนต์ดีบักว่าดึงข้อมูลจาก URI ไหน
- */
 import Layout from "../../layouts/Layout.astro";
-import HOME_QUERY from "../../queries/home";
 import { wpQuery } from "../../lib/wp";
+import { rewriteWpUrl } from "../../lib/wpUrl";
+import HOME_QUERY from "../../queries/home";
 
 export async function getStaticPaths() {
   return [{ params: { lang: "th" } }, { params: { lang: "en" } }];
 }
 
-const { lang } = Astro.params as { lang: "th" | "en" };
+const { lang } = Astro.params;
 
-// candidate URIs ที่จะลองถาม WP ตามภาษา (จัดลำดับความเป็นไปได้)
-const candidates = lang === "en"
-  ? ["/en/", "/", "/en"] // อังกฤษอาจเป็น root
-  : ["/th/", "/th"];     // ไทยมักจะมี prefix
-
-type GqlHeroImage = {
-  node?: {
-    sourceUrl?: string;
-    altText?: string;
-  };
-};
-type GqlHero = {
-  heroTitle?: string | null;
-  heroSubtitle?: string | null;
-  heroImage?: GqlHeroImage | null;
-};
-type GqlData = {
-  nodeByUri?: {
-    hero?: GqlHero | null;
-  } | null;
-};
-
-// ค่า fallback เผื่อยังตั้งค่า WP ไม่ครบ
-const FALLBACK_BG = "/assets/background.svg";
-
-let heroTitle = lang === "en" ? "Smart Bed" : "Smart Bed (TH)";
-let heroSubtitle =
-  lang === "en"
-    ? "Innovative Care for the Ones Your loved ones"
-    : "การดูแลที่สร้างสรรค์เพื่อคนที่คุณรัก";
-let heroBg = FALLBACK_BG;
-let usedUri: string | null = null;
-
-// ฟังก์ชันลองดึงจากหลาย URI จนเจอ
-async function loadHeroFromWp() {
-  for (const uri of candidates) {
-    try {
-      const data = await wpQuery<GqlData>(HOME_QUERY, { uri });
-      const hero = data?.nodeByUri?.hero ?? null;
-      const img = hero?.heroImage?.node?.sourceUrl ?? null;
-
-      // ถ้ามีรูป ถือว่าหน้านี้คือที่ใช่
-      if (img) {
-        usedUri = uri;
-        heroBg = img;
-        heroTitle = hero?.heroTitle ?? heroTitle;
-        heroSubtitle = hero?.heroSubtitle ?? heroSubtitle;
-        return;
-      }
-
-      // บางทีไม่มีรูป แต่มี title/subtitle ก็ถือว่าเจอหน้า
-      if (hero) {
-        usedUri = uri;
-        heroTitle = hero?.heroTitle ?? heroTitle;
-        heroSubtitle = hero?.heroSubtitle ?? heroSubtitle;
-        // ยังไม่มีรูปก็ใช้ fallback ต่อไป
-        return;
-      }
-    } catch (e) {
-      // ลองตัวถัดไป
-      console.error(`[HOME] WP fetch failed for ${uri}:`, e);
-    }
-  }
-}
-
-await loadHeroFromWp();
-
-/* ===== CTA / SEO ===== */
-const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
-const ctaHref = lang === "en" ? "/en#contact" : "/th#contact";
-
+// hreflang alternates
 const alternates = [
   { lang: "th", url: "/th" },
   { lang: "en", url: "/en" },
 ];
 
-const pageTitle = heroTitle;
-const pageDesc =
-  lang === "en"
-    ? "Smart bed solutions for modern healthcare."
-    : "โซลูชันเตียงอัจฉริยะเพื่อการดูแลสุขภาพยุคใหม่";
+// ตัวแปรสำหรับเก็บข้อมูลจาก WordPress
+let heroTitle = "";
+let heroSubtitle = "";
+let heroImageUrl = "";
+let wpDataFound = false;
+
+// ฟังก์ชันช่วยเลือกรูปขนาดที่เหมาะสม
+function pickImageUrl(imageNode?: any): string | undefined {
+  if (!imageNode) return undefined;
+  const sizes: Array<any> = imageNode?.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  
+  for (const name of prefer) {
+    const size = sizes.find((x: any) => x?.name === name);
+    if (size?.sourceUrl) return rewriteWpUrl(size.sourceUrl);
+  }
+  return rewriteWpUrl(imageNode?.sourceUrl);
+}
+
+// ใช้ข้อความตามภาษาที่กำหนด (ไม่พึ่งพา WordPress)
+heroTitle = lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ";
+heroSubtitle = lang === "en" 
+  ? "Innovative Care for the Ones you loved ones" 
+  : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก";
+
+// ยังคงพยายามดึงรูปจาก WordPress
+wpDataFound = true; // ตั้งเป็น true เพื่อแสดงว่ามีข้อมูล
+
+// กำหนด URI candidates สำหรับหารูป
+const uriCandidates = lang === "en" 
+  ? ["/home", "/home/", "/", "/en", "/en/", "/home-en"] 
+  : ["/หน้าแรก", "/หน้าแรก/", "/", "/th", "/th/", "/home-th"];
+
+for (const uri of uriCandidates) {
+  try {
+    console.log(`🔍 Trying WordPress URI for image: ${uri}`);
+    const wpData = await wpQuery<{ nodeByUri: any }>(HOME_QUERY, { uri });
+    
+    const pageData = wpData?.nodeByUri;
+    
+    if (pageData?.hero?.heroImage?.node) {
+      heroImageUrl = pickImageUrl(pageData.hero.heroImage.node) || "";
+      console.log("🖼️ Hero Image URL found:", heroImageUrl);
+      break; // หยุดเมื่อเจอรูป
+    }
+  } catch (error) {
+    console.log(`💥 Failed for URI: ${uri}`, error.message);
+    continue;
+  }
+}
+
+// CTA Button text
+const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
 ---
 
-<!-- DEBUG: ถ้าอยากเช็คว่าเราใช้ URI อะไร ให้เปิด devtools ดู HTML comments -->
-<!-- Used WP URI: {usedUri ?? "NONE (fallback only)"} -->
-<!-- Hero BG: {heroBg} -->
+<Layout lang={lang} showNavLinks={true} alternates={alternates}>
+  <!-- Debug Information -->
+  <div class="fixed top-4 left-4 z-50 bg-black/80 text-white p-3 rounded text-xs max-w-sm">
+    <div><strong>WP Data Found:</strong> {wpDataFound ? "✅ Yes" : "❌ No"}</div>
+    <div><strong>Title:</strong> {heroTitle}</div>
+    <div><strong>Subtitle:</strong> {heroSubtitle}</div>
+    <div><strong>Image:</strong> {heroImageUrl ? "✅ Found" : "❌ No"}</div>
+  </div>
 
-<Layout lang={lang} alternates={alternates} title={pageTitle} description={pageDesc}>
-  <!-- ============== HERO ============== -->
-  <section
-    class="relative overflow-hidden"
-    style={`background-image: url('${heroBg}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;`}
-  >
-    <!-- overlay ให้โทนฟ้าแบบดีไซน์ แต่ยังเห็นภาพด้านหลัง -->
-    <div class="absolute inset-0 bg-gradient-to-br from-sky-500/60 via-sky-500/50 to-blue-600/40"></div>
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden min-h-screen">
+    
+    <!-- Background Image หรือ Fallback -->
+    {heroImageUrl ? (
+      <div class="absolute inset-0 z-0">
+        <img 
+          src={heroImageUrl}
+          alt="Hero Background"
+          class="w-full h-full object-cover object-center"
+          style="object-fit: cover; object-position: center; image-rendering: crisp-edges; filter: contrast(1.1) saturate(1.1);"
+          loading="eager"
+        />
+        <!-- ไม่มี overlay เลย -->
+      </div>
+    ) : (
+      <div class="absolute inset-0 z-0 bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600"></div>
+    )}
+    
+    <div class="container mx-auto px-6 py-16 relative z-10">
+      <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[85vh]">
+        
+        <!-- Left Content -->
+        <div class="text-white lg:pr-8">
+          <h1 class="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">
+            {heroTitle}
+          </h1>
+          <p class="text-xl lg:text-2xl xl:text-3xl font-light mb-10 opacity-95 whitespace-pre-line" style="text-shadow: 1px 1px 6px rgba(0,0,0,0.7);">
+            {heroSubtitle}
+          </p>
+          
+          <button class="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-blue-50 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-3 hover:scale-105">
+            {ctaText}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
 
-    <div class="relative z-10 max-w-6xl mx-auto px-6 md:px-8 py-24 md:py-32">
-      <h1 class="text-white text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-        {heroTitle}
-      </h1>
+        <!-- Right side - empty space, no floating labels -->
+        <div class="hidden lg:block"></div>
+      </div>
 
-      <p class="text-white/95 text-xl md:text-2xl max-w-2xl leading-relaxed mb-10">
-        {heroSubtitle}
-      </p>
+      <!-- Feature Carousel -->
+      <div class="relative mt-20">
+        <!-- Navigation Arrows -->
+        <button class="absolute left-8 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all duration-300">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        
+        <button class="absolute right-8 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all duration-300">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
 
-      <a
-        href={ctaHref}
-        class="inline-flex items-center gap-2 bg-white text-blue-700 font-semibold px-7 py-4 rounded-full shadow-lg hover:shadow-xl transition"
-      >
-        {ctaText}
-        <span aria-hidden="true">→</span>
-      </a>
+        <!-- Feature Cards -->
+        <div class="flex justify-center gap-6 px-20">
+          {[
+            lang === "en" ? "Left-right side tilt adjustment" : "ปรับเอียงซ้าย-ขวา",
+            lang === "en" ? "Height adjustment" : "ปรับระดับความสูง",
+            lang === "en" ? "Leg section up-down adjustment" : "ปรับส่วนขา ขึ้น-ลง"
+          ].map((title, index) => (
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl min-w-[260px] max-w-[280px] hover:scale-105 transition-transform duration-300">
+              <!-- Feature Image Placeholder -->
+              <div class="aspect-[4/3] bg-gray-100 rounded-xl mb-4 flex items-center justify-center">
+                <div class="text-center p-4">
+                  <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      {index === 0 && <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>}
+                      {index === 1 && <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>}
+                      {index === 2 && <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>}
+                    </svg>
+                  </div>
+                  <p class="text-xs text-gray-500">Feature Image</p>
+                </div>
+              </div>
+              
+              <!-- Feature Title -->
+              <div class="bg-blue-600 text-white text-center py-3 px-4 rounded-xl">
+                <h3 class="text-sm font-medium leading-tight">
+                  {title}
+                </h3>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <!-- Carousel Indicators -->
+        <div class="flex justify-center gap-2 mt-8">
+          <div class="w-3 h-3 bg-white rounded-full shadow-lg"></div>
+          <div class="w-3 h-3 bg-white/40 rounded-full"></div>
+          <div class="w-3 h-3 bg-white/40 rounded-full"></div>
+        </div>
+      </div>
     </div>
-
-    <div class="h-8"></div>
   </section>
 
-  <!-- ============== SECTION ตัวอย่าง ============== -->
-  <section class="max-w-6xl mx-auto px-6 md:px-8 py-16 md:py-24">
-    <h2 class="text-2xl md:text-3xl font-bold mb-4">
-      {lang === "en" ? "Why Choose Us" : "ทำไมต้องเลือกเรา"}
-    </h2>
-    <p class="text-gray-600 leading-relaxed max-w-3xl">
-      {lang === "en"
-        ? "We design and deliver dependable smart bed solutions to elevate patient comfort and caregiver efficiency."
-        : "เราออกแบบและส่งมอบโซลูชันเตียงอัจฉริยะที่เชื่อถือได้ เพื่อยกระดับความสบายของผู้ป่วยและประสิทธิภาพของผู้ดูแล"}
-    </p>
+  <!-- Smart Bed's Features Section -->
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl lg:text-5xl font-bold text-gray-800 mb-8">
+          {lang === "en" ? "Smart Bed's Features" : "คุณสมบัติของเตียงอัจฉริยะ"}
+        </h2>
+      </div>
+
+      <!-- Features Grid -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {[
+          {
+            title: lang === "en" ? "Left-right side tilt adjustment" : "ปรับเอียงซ้าย-ขวา",
+            desc: lang === "en" ? "Advanced lateral positioning system for optimal patient comfort and medical procedures." : "ระบบปรับตำแหน่งด้านข้างขั้นสูงเพื่อความสบายและการรักษาที่เหมาะสม"
+          },
+          {
+            title: lang === "en" ? "Height adjustment" : "ปรับระดับความสูง",
+            desc: lang === "en" ? "Smooth height adjustment mechanism for easy patient transfer and caregiver access." : "กลไกปรับความสูงที่ลื่นไหลสำหรับการย้ายผู้ป่วยและการเข้าถึงของผู้ดูแล"
+          },
+          {
+            title: lang === "en" ? "Leg section up-down adjustment" : "ปรับส่วนขา ขึ้น-ลง",
+            desc: lang === "en" ? "Ergonomic leg positioning for improved circulation and patient comfort." : "การปรับตำแหน่งขาตามหลักสรีรศาสตร์เพื่อการไหลเวียนและความสบายที่ดีขึ้น"
+          }
+        ].map((feature, index) => (
+          <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <!-- Feature Icon -->
+            <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {index === 0 && <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>}
+                {index === 1 && <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>}
+                {index === 2 && <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>}
+              </svg>
+            </div>
+            
+            <!-- Feature Title -->
+            <h3 class="text-xl font-semibold text-gray-800 text-center mb-4">
+              {feature.title}
+            </h3>
+            
+            <!-- Feature Description -->
+            <p class="text-gray-600 text-center leading-relaxed">
+              {feature.desc}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
   </section>
 </Layout>
+
+<style>
+  /* Smooth animations */
+  button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  button:hover {
+    transform: translateY(-2px);
+  }
+</style>
