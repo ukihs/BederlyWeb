@@ -8,59 +8,21 @@ const HOME_QUERY = gql`
         id
         title
 
-        # === HERO ===
+        # === ACF Hero ===
         hero {
           heroTitle
           heroSubtitle
           heroImage {
             node {
+              id
               altText
               sourceUrl
               mediaDetails {
-                sizes {
-                  name
-                  sourceUrl
-                  width
-                  height
-                }
+                width
+                height
               }
             }
           }
-        }
-
-        # === PROCESS / PRODUCT SAMPLE ===
-        process {
-          product1Name
-          product1Desc
-          product1Img {
-            node {
-              altText
-              sourceUrl
-              mediaDetails {
-                sizes {
-                  name
-                  sourceUrl
-                  width
-                  height
-                }
-              }
-            }
-          }
-        }
-
-        # === ABOUT ===
-        about {
-          aboutTitle
-          aboutBody
-          aboutYoutubeUrl
-        }
-
-        # === CONTACT ===
-        contact {
-          contactTitle
-          contactIntro
-          contactEmail
-          contactPhone
         }
       }
     }

@@ -20,19 +20,18 @@ function altUrl(target: "th" | "en") {
 }
 ---
 
-<nav class="absolute top-0 left-0 right-0 z-50 bg-transparent">
+<nav class="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
   <div class="container mx-auto px-6 py-4">
     <div class="flex items-center justify-between">
       
       <!-- Logo -->
-      <a href={`/${lang}`} class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 22V12H15V22" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <a href={`/${lang}`} class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center shadow-md">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z" fill="white"/>
           </svg>
         </div>
-        <span class="text-white font-bold text-xl">Smart Bed</span>
+        <span class="text-cyan-400 font-bold text-2xl">Bearly</span>
       </a>
 
       <!-- Desktop Navigation -->
@@ -40,22 +39,22 @@ function altUrl(target: "th" | "en") {
         {showLinks && (
           <ul class="flex items-center gap-8">
             <li>
-              <a href="#features" class="text-white/90 hover:text-white transition-colors font-medium">
-                {lang === "en" ? "Features" : "ฟีเจอร์"}
+              <a href={`/${lang}`} class="text-gray-700 hover:text-cyan-500 transition-colors font-medium">
+                {lang === "en" ? "Home" : "หน้าหลัก"}
               </a>
             </li>
             <li>
-              <a href="#specifications" class="text-white/90 hover:text-white transition-colors font-medium">
-                {lang === "en" ? "Specifications" : "รายละเอียด"}
+              <a href="#products" class="text-gray-700 hover:text-cyan-500 transition-colors font-medium">
+                {lang === "en" ? "Products" : "ผลิตภัณฑ์"}
               </a>
             </li>
             <li>
-              <a href="#about" class="text-white/90 hover:text-white transition-colors font-medium">
-                {lang === "en" ? "About" : "เกี่ยวกับเรา"}
+              <a href="#about" class="text-gray-700 hover:text-cyan-500 transition-colors font-medium">
+                {lang === "en" ? "About Us" : "เกี่ยวกับเรา"}
               </a>
             </li>
             <li>
-              <a href="#contact" class="text-white/90 hover:text-white transition-colors font-medium">
+              <a href="#contact" class="text-gray-700 hover:text-cyan-500 transition-colors font-medium">
                 {lang === "en" ? "Contact" : "ติดต่อ"}
               </a>
             </li>
@@ -63,20 +62,20 @@ function altUrl(target: "th" | "en") {
         )}
 
         <!-- Language Switcher -->
-        <div class="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full p-1">
+        <div class="flex items-center gap-1 bg-gray-100 rounded-full p-1">
           <a href={altUrl("th")}
              class={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                lang === "th" 
-                 ? "bg-white text-blue-600 shadow-sm" 
-                 : "text-white/80 hover:text-white hover:bg-white/10"
+                 ? "bg-white text-gray-800 shadow-sm" 
+                 : "text-gray-600 hover:text-gray-800"
              }`}>
             TH
           </a>
           <a href={altUrl("en")}
              class={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                lang === "en" 
-                 ? "bg-white text-blue-600 shadow-sm" 
-                 : "text-white/80 hover:text-white hover:bg-white/10"
+                 ? "bg-white text-gray-800 shadow-sm" 
+                 : "text-gray-600 hover:text-gray-800"
              }`}>
             EN
           </a>
@@ -85,10 +84,10 @@ function altUrl(target: "th" | "en") {
 
       <!-- Mobile menu button -->
       <button 
-        class="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm"
+        class="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
         id="mobile-menu-button"
       >
-        <svg width="24" height="24" fill="none" stroke="white" stroke-width="2">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
           <path d="M3 12h18M3 6h18M3 18h18"/>
         </svg>
       </button>
@@ -96,26 +95,26 @@ function altUrl(target: "th" | "en") {
 
     <!-- Mobile Navigation Menu -->
     <div class="lg:hidden hidden" id="mobile-menu">
-      <div class="mt-4 p-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl">
+      <div class="mt-4 p-4 bg-white rounded-xl shadow-lg border border-gray-100">
         {showLinks && (
           <ul class="space-y-3 mb-4">
             <li>
-              <a href="#features" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
-                {lang === "en" ? "Features" : "ฟีเจอร์"}
+              <a href={`/${lang}`} class="block text-gray-700 hover:text-cyan-500 transition-colors font-medium py-2">
+                {lang === "en" ? "Home" : "หน้าหลัก"}
               </a>
             </li>
             <li>
-              <a href="#specifications" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
-                {lang === "en" ? "Specifications" : "รายละเอียด"}
+              <a href="#products" class="block text-gray-700 hover:text-cyan-500 transition-colors font-medium py-2">
+                {lang === "en" ? "Products" : "ผลิตภัณฑ์"}
               </a>
             </li>
             <li>
-              <a href="#about" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
-                {lang === "en" ? "About" : "เกี่ยวกับเรา"}
+              <a href="#about" class="block text-gray-700 hover:text-cyan-500 transition-colors font-medium py-2">
+                {lang === "en" ? "About Us" : "เกี่ยวกับเรา"}
               </a>
             </li>
             <li>
-              <a href="#contact" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+              <a href="#contact" class="block text-gray-700 hover:text-cyan-500 transition-colors font-medium py-2">
                 {lang === "en" ? "Contact" : "ติดต่อ"}
               </a>
             </li>
@@ -123,11 +122,11 @@ function altUrl(target: "th" | "en") {
         )}
         
         <!-- Mobile Language Switcher -->
-        <div class="flex gap-2 pt-3 border-t">
+        <div class="flex gap-2 pt-3 border-t border-gray-100">
           <a href={altUrl("th")}
              class={`flex-1 text-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                lang === "th" 
-                 ? "bg-blue-600 text-white" 
+                 ? "bg-cyan-500 text-white" 
                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
              }`}>
             ไทย
@@ -135,7 +134,7 @@ function altUrl(target: "th" | "en") {
           <a href={altUrl("en")}
              class={`flex-1 text-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                lang === "en" 
-                 ? "bg-blue-600 text-white" 
+                 ? "bg-cyan-500 text-white" 
                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
              }`}>
             English

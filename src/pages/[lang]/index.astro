@@ -1,253 +1,149 @@
 ---
+/**
+ * src/pages/[lang]/index.astro
+ * - ดึง Hero (title, subtitle, image) จาก WPGraphQL
+ * - รองรับกรณีภาษา default บน WP ไม่มี prefix (เช่น "/" แทน "/en/")
+ * - แสดงคอมเมนต์ดีบักว่าดึงข้อมูลจาก URI ไหน
+ */
 import Layout from "../../layouts/Layout.astro";
+import HOME_QUERY from "../../queries/home";
+import { wpQuery } from "../../lib/wp";
 
 export async function getStaticPaths() {
   return [{ params: { lang: "th" } }, { params: { lang: "en" } }];
 }
 
-const { lang } = Astro.params;
+const { lang } = Astro.params as { lang: "th" | "en" };
 
-// hreflang alternates
+// candidate URIs ที่จะลองถาม WP ตามภาษา (จัดลำดับความเป็นไปได้)
+const candidates = lang === "en"
+  ? ["/en/", "/", "/en"] // อังกฤษอาจเป็น root
+  : ["/th/", "/th"];     // ไทยมักจะมี prefix
+
+type GqlHeroImage = {
+  node?: {
+    sourceUrl?: string;
+    altText?: string;
+  };
+};
+type GqlHero = {
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  heroImage?: GqlHeroImage | null;
+};
+type GqlData = {
+  nodeByUri?: {
+    hero?: GqlHero | null;
+  } | null;
+};
+
+// ค่า fallback เผื่อยังตั้งค่า WP ไม่ครบ
+const FALLBACK_BG = "/assets/background.svg";
+
+let heroTitle = lang === "en" ? "Smart Bed" : "Smart Bed (TH)";
+let heroSubtitle =
+  lang === "en"
+    ? "Innovative Care for the Ones Your loved ones"
+    : "การดูแลที่สร้างสรรค์เพื่อคนที่คุณรัก";
+let heroBg = FALLBACK_BG;
+let usedUri: string | null = null;
+
+// ฟังก์ชันลองดึงจากหลาย URI จนเจอ
+async function loadHeroFromWp() {
+  for (const uri of candidates) {
+    try {
+      const data = await wpQuery<GqlData>(HOME_QUERY, { uri });
+      const hero = data?.nodeByUri?.hero ?? null;
+      const img = hero?.heroImage?.node?.sourceUrl ?? null;
+
+      // ถ้ามีรูป ถือว่าหน้านี้คือที่ใช่
+      if (img) {
+        usedUri = uri;
+        heroBg = img;
+        heroTitle = hero?.heroTitle ?? heroTitle;
+        heroSubtitle = hero?.heroSubtitle ?? heroSubtitle;
+        return;
+      }
+
+      // บางทีไม่มีรูป แต่มี title/subtitle ก็ถือว่าเจอหน้า
+      if (hero) {
+        usedUri = uri;
+        heroTitle = hero?.heroTitle ?? heroTitle;
+        heroSubtitle = hero?.heroSubtitle ?? heroSubtitle;
+        // ยังไม่มีรูปก็ใช้ fallback ต่อไป
+        return;
+      }
+    } catch (e) {
+      // ลองตัวถัดไป
+      console.error(`[HOME] WP fetch failed for ${uri}:`, e);
+    }
+  }
+}
+
+await loadHeroFromWp();
+
+/* ===== CTA / SEO ===== */
+const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
+const ctaHref = lang === "en" ? "/en#contact" : "/th#contact";
+
 const alternates = [
   { lang: "th", url: "/th" },
   { lang: "en", url: "/en" },
 ];
 
-// Content for different languages
-const content = {
-  th: {
-    hero: {
-      title: "เตียงอัจฉริยะ",
-      subtitle: "การดูแลที่เป็นนวัตกรรม\nสำหรับคนที่คุณรัก",
-      ctaButton: "ติดต่อเรา"
-    },
-    features: [
-      {
-        title: "ปรับเอียงซ้าย-ขวา",
-        description: "ระบบปรับเอียงด้านข้างอัตโนมัติ"
-      },
-      {
-        title: "ปรับระดับความสูง",
-        description: "ระบบยกลดเตียงตามต้องการ"
-      },
-      {
-        title: "ปรับส่วนขา ขึ้น-ลง",
-        description: "ระบบปรับมุมขาสำหรับความสบาย"
-      }
-    ],
-    featuresSection: {
-      title: "คุณสมบัติของเตียงอัจฉริยะ",
-      subtitle: "เทคโนโลジีการดูแลสุขภาพที่ทันสมัย"
-    }
-  },
-  en: {
-    hero: {
-      title: "Smart Bed",
-      subtitle: "Innovative Care\nfor the Ones Your loved ones",
-      ctaButton: "Contact Us"
-    },
-    features: [
-      {
-        title: "Left-right side tilt adjustment",
-        description: "Automatic lateral tilting system"
-      },
-      {
-        title: "Height adjustment",
-        description: "Elevating system for optimal positioning"
-      },
-      {
-        title: "Leg section up-down adjustment",
-        description: "Leg positioning system for comfort"
-      }
-    ],
-    featuresSection: {
-      title: "Smart Bed's Features",
-      subtitle: "Advanced healthcare technology solutions"
-    }
-  }
-};
-
-const currentContent = content[lang === "en" ? "en" : "th"];
+const pageTitle = heroTitle;
+const pageDesc =
+  lang === "en"
+    ? "Smart bed solutions for modern healthcare."
+    : "โซลูชันเตียงอัจฉริยะเพื่อการดูแลสุขภาพยุคใหม่";
 ---
 
-<Layout lang={lang} showNavLinks={true} alternates={alternates}>
-  <!-- Hero Section -->
-  <section class="bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 relative overflow-hidden">
-    <div class="mx-auto max-w-7xl px-6 py-16 lg:py-24">
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <!-- Hero Content -->
-        <div class="text-white">
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-            {currentContent.hero.title}
-          </h1>
-          <p class="text-xl lg:text-2xl mb-8 leading-relaxed whitespace-pre-line opacity-90">
-            {currentContent.hero.subtitle}
-          </p>
-          <button class="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-colors duration-300 shadow-lg">
-            {currentContent.hero.ctaButton}
-          </button>
-        </div>
+<!-- DEBUG: ถ้าอยากเช็คว่าเราใช้ URI อะไร ให้เปิด devtools ดู HTML comments -->
+<!-- Used WP URI: {usedUri ?? "NONE (fallback only)"} -->
+<!-- Hero BG: {heroBg} -->
 
-        <!-- Hero Image - Placeholder for now -->
-        <div class="relative">
-          <div class="bg-white/20 rounded-2xl p-8 backdrop-blur-sm border border-white/30">
-            <div class="aspect-[4/3] bg-white/10 rounded-xl flex items-center justify-center text-white/60">
-              <div class="text-center">
-                <div class="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>
-                  </svg>
-                </div>
-                <p class="text-sm">Smart Bed Image</p>
-                <p class="text-xs opacity-75 mt-1">จะเชื่อมต่อ WordPress ทีหลัง</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<Layout lang={lang} alternates={alternates} title={pageTitle} description={pageDesc}>
+  <!-- ============== HERO ============== -->
+  <section
+    class="relative overflow-hidden"
+    style={`background-image: url('${heroBg}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;`}
+  >
+    <!-- overlay ให้โทนฟ้าแบบดีไซน์ แต่ยังเห็นภาพด้านหลัง -->
+    <div class="absolute inset-0 bg-gradient-to-br from-sky-500/60 via-sky-500/50 to-blue-600/40"></div>
 
-    <!-- Decorative background elements -->
-    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
-    <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-24 -translate-x-24"></div>
-  </section>
+    <div class="relative z-10 max-w-6xl mx-auto px-6 md:px-8 py-24 md:py-32">
+      <h1 class="text-white text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
+        {heroTitle}
+      </h1>
 
-  <!-- Features Carousel Section -->
-  <section class="py-16 bg-gray-50">
-    <div class="mx-auto max-w-7xl px-6">
-      <div class="grid lg:grid-cols-4 gap-8 items-center">
-        <!-- Left arrow -->
-        <div class="flex justify-center lg:justify-end">
-          <button class="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow">
-            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Feature Cards -->
-        <div class="lg:col-span-2">
-          <div class="grid sm:grid-cols-3 gap-6">
-            {currentContent.features.map((feature, index) => (
-              <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                <!-- Feature Image Placeholder -->
-                <div class="aspect-[4/3] bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
-                  <div class="text-center">
-                    <div class="w-12 h-12 mx-auto mb-2 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                        {index === 0 && <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>}
-                        {index === 1 && <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>}
-                        {index === 2 && <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>}
-                      </svg>
-                    </div>
-                    <p class="text-xs text-gray-500">รูปภาพ</p>
-                  </div>
-                </div>
-                
-                <!-- Feature Text -->
-                <div class="text-center">
-                  <h3 class="font-semibold text-gray-800 mb-2 text-sm leading-tight">
-                    {feature.title}
-                  </h3>
-                  <p class="text-xs text-gray-600 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-                
-                <!-- Indicator dots -->
-                <div class="flex justify-center mt-4 space-x-1">
-                  {[0, 1, 2].map((dot) => (
-                    <div class={`w-2 h-2 rounded-full ${dot === index ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <!-- Right arrow -->
-        <div class="flex justify-center lg:justify-start">
-          <button class="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow">
-            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Smart Bed's Features Section -->
-  <section class="py-20 bg-white">
-    <div class="mx-auto max-w-7xl px-6">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 mb-4">
-          {currentContent.featuresSection.title}
-        </h2>
-        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-          {currentContent.featuresSection.subtitle}
-        </p>
-      </div>
-
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <!-- Features List -->
-        <div class="space-y-8">
-          {currentContent.features.map((feature, index) => (
-            <div class="flex items-start space-x-4">
-              <div class="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {index + 1}
-              </div>
-              <div>
-                <h3 class="text-xl font-semibold text-gray-800 mb-2">
-                  {feature.title}
-                </h3>
-                <p class="text-gray-600 leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <!-- Main Product Image Placeholder -->
-        <div class="relative">
-          <div class="aspect-[4/3] bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex items-center justify-center border-2 border-dashed border-blue-300">
-            <div class="text-center">
-              <div class="w-20 h-20 mx-auto mb-4 bg-blue-200 rounded-full flex items-center justify-center">
-                <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold text-blue-800 mb-2">รูปภาพเตียงหลัก</h3>
-              <p class="text-blue-600 text-sm mb-2">Main Smart Bed Image</p>
-              <p class="text-blue-500 text-xs">จะเชื่อมต่อกับ WordPress ทีหลัง</p>
-            </div>
-          </div>
-          
-          <!-- Floating elements -->
-          <div class="absolute -top-4 -left-4 w-8 h-8 bg-blue-500 rounded-full opacity-20"></div>
-          <div class="absolute -bottom-4 -right-4 w-12 h-12 bg-cyan-400 rounded-full opacity-20"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="py-16 bg-gradient-to-r from-blue-600 to-cyan-500">
-    <div class="mx-auto max-w-4xl px-6 text-center">
-      <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6">
-        {lang === "en" 
-          ? "Ready to Transform Healthcare?" 
-          : "พร้อมเปลี่ยนแปลงการดูแลสุขภาพหรือยัง?"}
-      </h2>
-      <p class="text-xl text-white/90 mb-8">
-        {lang === "en"
-          ? "Contact us today to learn more about our smart bed solutions"
-          : "ติดต่อเราวันนี้เพื่อเรียนรู้เพิ่มเติมเกี่ยวกับโซลูชันเตียงอัจฉริยะของเรา"}
+      <p class="text-white/95 text-xl md:text-2xl max-w-2xl leading-relaxed mb-10">
+        {heroSubtitle}
       </p>
-      <button class="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-colors duration-300 shadow-lg">
-        {currentContent.hero.ctaButton}
-      </button>
+
+      <a
+        href={ctaHref}
+        class="inline-flex items-center gap-2 bg-white text-blue-700 font-semibold px-7 py-4 rounded-full shadow-lg hover:shadow-xl transition"
+      >
+        {ctaText}
+        <span aria-hidden="true">→</span>
+      </a>
     </div>
+
+    <div class="h-8"></div>
+  </section>
+
+  <!-- ============== SECTION ตัวอย่าง ============== -->
+  <section class="max-w-6xl mx-auto px-6 md:px-8 py-16 md:py-24">
+    <h2 class="text-2xl md:text-3xl font-bold mb-4">
+      {lang === "en" ? "Why Choose Us" : "ทำไมต้องเลือกเรา"}
+    </h2>
+    <p class="text-gray-600 leading-relaxed max-w-3xl">
+      {lang === "en"
+        ? "We design and deliver dependable smart bed solutions to elevate patient comfort and caregiver efficiency."
+        : "เราออกแบบและส่งมอบโซลูชันเตียงอัจฉริยะที่เชื่อถือได้ เพื่อยกระดับความสบายของผู้ป่วยและประสิทธิภาพของผู้ดูแล"}
+    </p>
   </section>
 </Layout>
