@@ -11,19 +11,22 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: "th" | "en" };
 
-// hreflang alternates
+/* ---------------- hreflang ---------------- */
 const alternates = [
   { lang: "th", url: "/th" },
   { lang: "en", url: "/en" },
 ];
 
-// ========= ตัวแปรจาก WordPress =========
-let heroTitle = "";
-let heroSubtitle = "";
-let heroImageUrl = "";
-let wpDataFound = false;
+/* ---------------- HERO (พื้นหลัง + ข้อความ) ---------------- */
+/* <<<<  ส่วนนี้คงเดิม ไม่ยุ่ง  >>>> */
+let heroTitle = lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ";
+let heroSubtitle =
+  lang === "en"
+    ? "Innovative Care for the Ones You loved ones"
+    : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก";
 
-// ฟังก์ชันช่วยเลือกรูปขนาดที่เหมาะสม
+let heroImageUrl = "";
+
 function pickImageUrl(imageNode?: any): string | undefined {
   if (!imageNode) return undefined;
   const sizes: Array<any> = imageNode?.mediaDetails?.sizes ?? [];
@@ -35,64 +38,113 @@ function pickImageUrl(imageNode?: any): string | undefined {
   return rewriteWpUrl(imageNode?.sourceUrl);
 }
 
-// ข้อความตามภาษา (ไม่พึ่ง WP)
-heroTitle = lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ";
-heroSubtitle =
-  lang === "en"
-    ? "Innovative Care for the Ones You loved ones"
-    : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก";
-
-// พยายามดึงรูปพื้นหลังจาก WP (หน้า Home ของแต่ละภาษา)
-wpDataFound = true;
 const uriCandidates =
   lang === "en"
     ? ["/home", "/home/", "/", "/en", "/en/", "/home-en"]
     : ["/หน้าแรก", "/หน้าแรก/", "/", "/th", "/th/", "/home-th"];
 
+/* ดึงเฉพาะ Hero จาก HOME_QUERY เหมือนเดิม */
 for (const uri of uriCandidates) {
   try {
     const wpData = await wpQuery<{ nodeByUri: any }>(HOME_QUERY, { uri });
     const pageData = wpData?.nodeByUri;
     if (pageData?.hero?.heroImage?.node) {
       heroImageUrl = pickImageUrl(pageData.hero.heroImage.node) || "";
-      break;
+      break; // เจอรูปแล้วค่อยหยุด
     }
-  } catch (error: any) {
-    continue;
-  }
+  } catch {}
 }
 
-// CTA Button text
 const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
+
+/* ---------------- ACF: Smart Bed’s Features (ทำแค่ตรงนี้) ---------------- */
+/* Query แยก เพื่อไม่ไปยุ่งกับ HOME_QUERY */
+const FEATURES_QUERY = /* GraphQL */ `
+  query FeaturesByUri($uri: String!) {
+    nodeByUri(uri: $uri) {
+      ... on Page {
+        id
+        # ถ้า Field Group เปิด GraphQL และตั้งชื่อ smartBedsFeatures
+        smartBedsFeatures {
+          featuretitle
+          featuresub
+          featureUrl   # <-- รองรับชื่อแบบนี้
+          feature      # <-- และแบบนี้
+        }
+        # Fallback: บางโปรเจกต์โผล่ใต้ acf{}
+        acf {
+          featuretitle
+          featuresub
+          featureUrl
+          feature
+        }
+      }
+    }
+  }
+`;
+
+
+let featureTitle = "";
+let featureUrl = "";
+let featureSub = "";
+
+/* โหลดเฉพาะฟีเจอร์ ไม่กระทบ hero */
+for (const uri of uriCandidates) {
+  try {
+    const r = await wpQuery<any>(FEATURES_QUERY, { uri });
+    const node = r?.nodeByUri;
+    if (!node) continue;
+
+    const feat = node.smartBedsFeatures ?? node.acf;
+    if (feat && (feat.featuretitle || feat.featureUrl || feat.feature || feat.featuresub)) {
+      featureTitle = feat.featuretitle ?? "";
+      featureUrl   = (feat.featureUrl ?? feat.feature) ? rewriteWpUrl(feat.featureUrl ?? feat.feature) : "";
+      featureSub   = feat.featuresub ?? "";
+      break;
+}
+
+  } catch {}
+}
+
+/* helper: ตรวจชนิดสื่อจาก featureUrl */
+function toEmbed(u: string) {
+  if (!u) return { kind: "none" as const };
+  const url = u;
+
+  // YouTube
+  const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/i.exec(url);
+  if (yt?.[1]) return { kind: "youtube" as const, src: `https://www.youtube.com/embed/${yt[1]}?rel=0` };
+
+  // วิดีโอไฟล์
+  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) return { kind: "video" as const, src: url };
+
+  // รูปภาพไฟล์
+  if (/\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(url)) return { kind: "image" as const, src: url };
+
+  // อื่น ๆ (ลองฝังใน iframe)
+  return { kind: "iframe" as const, src: url };
+}
+const media = toEmbed(featureUrl);
 ---
 
 <Layout lang={lang} showNavLinks={true} alternates={alternates}>
-  <!-- ============== Hero Section ============== -->
-  <section class="relative overflow-hidden min-h-screen">
-    <!-- พื้นหลัง -->
+  <!-- ============== HERO (เหมือนเดิม) ============== -->
+  <section class="relative overflow-hidden min-h-screen -mt-[var(--nav-h,72px)] pt-[var(--nav-h,72px)]">
     {heroImageUrl ? (
-      <div class="absolute inset-0 z-0">
-        <img
-          src={heroImageUrl}
-          alt="Hero Background"
-          class="w-full h-full object-cover"
-          style="object-position:center; image-rendering: crisp-edges;"
-          loading="eager"
-        />
-      </div>
+      <img
+        src={heroImageUrl}
+        alt="Hero Background"
+        class="absolute inset-0 z-0 w-full h-full object-cover object-center"
+        style="image-rendering: crisp-edges;"
+        loading="eager"
+      />
     ) : (
-      <div class="absolute inset-0 z-0">
-        <!-- Gradient background with pattern -->
-        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-700"></div>
-        <div class="absolute inset-0 opacity-10" 
-             style="background-image: url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=0 0 60 60 xmlns=http://www.w3.org/2000/svg%3E%3Cg fill=none fill-rule=evenodd%3E%3Cg fill=%23ffffff fill-opacity=0.1%3E%3Ccircle cx=7 cy=7 r=5/%3E%3Ccircle cx=53 cy=7 r=5/%3E%3Ccircle cx=30 cy=30 r=5/%3E%3Ccircle cx=53 cy=53 r=5/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
-      </div>
+      <div class="absolute inset-0 z-0 bg-[radial-gradient(80%_80%_at_0%_0%,#42c3ff_0%,#2bb3f3_45%,#22a7e6_100%)]"></div>
     )}
 
-    <div class="relative z-10 mx-auto max-w-[1440px] px-6 pt-16 pb-20">
-      <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[600px] mb-16">
-        <!-- ซ้าย: ข้อความ -->
-        <div class="text-white lg:pr-8">
+    <div class="relative z-10 mx-auto max-w-[1440px] px-6 pt-0 pb-12">
+      <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[500px] mb-12">
+        <div class="text-white lg:pr-8 pt-12">
           <h1 class="font-extrabold leading-[1.05] mb-6 text-[clamp(40px,6.2vw,84px)]"
               style="text-shadow: 2px 2px 12px rgba(0,0,0,.8);">
             {heroTitle}
@@ -111,12 +163,10 @@ const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
             </svg>
           </a>
         </div>
-
-        <!-- ขวา: เว้นที่ภาพบุคคลตามเรฟ (ใช้พื้นหลังแทน) -->
         <div class="hidden lg:block"></div>
       </div>
 
-      <!-- ============== Hero Gallery Slider ============== -->
+      <!-- แกลเลอรีจากหมวด hero -->
       <HeroCategoryImages
         lang={lang}
         categorySlug="hero"
@@ -126,93 +176,74 @@ const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
     </div>
   </section>
 
-  <!-- ============== Smart Bed Features Section ============== -->
-  <section class="py-20 lg:py-32 bg-gradient-to-b from-white to-gray-50">
+  <!-- ============== Smart Bed’s Features (ACF) ============== -->
+  <section class="py-16 bg-white">
     <div class="mx-auto max-w-[1440px] px-6">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">
-          {lang === "en" ? "Smart Bed Features" : "คุณสมบัติเตียงอัจฉริยะ"}
-        </h2>
-        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-          {lang === "en" 
-            ? "Advanced technology meets exceptional patient care with our innovative hospital bed solutions."
-            : "เทคโนโลยีขั้นสูงผสานกับการดูแลผู้ป่วยที่โดดเด่นด้วยโซลูชันเตียงโรงพยาบาลอันล้ำสมัย"
-          }
-        </p>
-      </div>
+      <!-- หัวจาก featuretitle -->
+      <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-10">
+        {featureTitle || (lang === "en" ? "Smart Bed’s Features" : "คุณสมบัติของเตียงอัจฉริยะ")}
+      </h2>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-        {[
+      <div class="grid lg:grid-cols-2 gap-10 items-stretch">
+        <!-- ซ้าย: สื่อจาก feature (URL) -->
+        <div class="rounded-2xl overflow-hidden shadow-md">
           {
-            icon: "🔄",
-            title: lang === "en" ? "Left-right side tilt adjustment" : "ปรับเอียงซ้าย-ขวา",
-            desc:
-              lang === "en"
-                ? "Advanced lateral positioning system for optimal patient comfort and medical procedures."
-                : "ระบบปรับตำแหน่งด้านข้างขั้นสูงเพื่อความสบายและการรักษาที่เหมาะสม",
-            color: "from-blue-500 to-cyan-500"
-          },
-          {
-            icon: "📐",
-            title: lang === "en" ? "Height adjustment" : "ปรับระดับความสูง", 
-            desc:
-              lang === "en"
-                ? "Smooth height adjustment mechanism for easy patient transfer and caregiver access."
-                : "กลไกปรับความสูงที่ลื่นไหลสำหรับการย้ายผู้ป่วยและการเข้าถึงของผู้ดูแล",
-            color: "from-green-500 to-teal-500"
-          },
-          {
-            icon: "🦵",
-            title: lang === "en" ? "Leg section up-down adjustment" : "ปรับส่วนขา ขึ้น-ลง",
-            desc:
-              lang === "en"
-                ? "Ergonomic leg positioning for improved circulation and patient comfort."
-                : "การปรับตำแหน่งขาตามหลักสรีรศาสตร์เพื่อการไหลเวียนและความสบายที่ดีขึ้น",
-            color: "from-purple-500 to-pink-500"
-          },
-        ].map((feature, index) => (
-          <div class={`bg-gradient-to-br ${feature.color} p-1 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 group`}>
-            <div class="bg-white rounded-3xl p-8 h-full">
-              <div class="text-5xl mb-6 text-center transform group-hover:scale-110 transition-transform duration-300">
-                {feature.icon}
+            media.kind === "youtube" ? (
+              <div class="aspect-video">
+                <iframe
+                  src={media.src}
+                  title="Feature video"
+                  class="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                  loading="lazy"
+                ></iframe>
               </div>
-              <h3 class="text-xl font-bold text-gray-800 text-center mb-4 leading-tight">
-                {feature.title}
-              </h3>
-              <p class="text-gray-600 text-center leading-relaxed">
-                {feature.desc}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+            ) : media.kind === "video" ? (
+              <video class="w-full h-auto" src={media.src} controls playsinline preload="metadata"></video>
+            ) : media.kind === "image" ? (
+              <img class="w-full h-auto object-cover" src={media.src} alt={featureTitle || "feature"} loading="lazy" />
+            ) : media.kind === "iframe" ? (
+              <div class="aspect-video">
+                <iframe src={media.src} class="w-full h-full" loading="lazy"></iframe>
+              </div>
+            ) : (
+              <div class="aspect-video grid place-items-center bg-slate-100 text-slate-500">
+                {lang === "en" ? "No media URL" : "ยังไม่ได้ใส่ลิงก์สื่อ (feature URL)"}
+              </div>
+            )
+          }
+        </div>
 
-      <!-- Call-to-Action -->
-      <div class="text-center mt-16">
-        <a href={`/${lang}/contact`} 
-           class="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 text-lg">
-          {lang === "en" ? "Learn More About Our Solutions" : "เรียนรู้เพิ่มเติมเกี่ยวกับโซลูชันของเรา"}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12H19M19 12L12 5M19 12L12 19"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
+        <!-- ขวา: คำอธิบายจาก featuresub -->
+        <aside class="bg-sky-500 text-white rounded-[28px] p-8 lg:p-10 shadow-md flex flex-col justify-between">
+          <div>
+            <p class="whitespace-pre-line leading-relaxed text-[17px] lg:text-[18px]">
+              {featureSub || (lang === "en"
+                ? "Please add your product description in ACF → featuresub."
+                : "โปรดกรอกคำอธิบายใน ACF → featuresub")}
+            </p>
+          </div>
+
+          <div class="mt-8">
+            <a href={`/${lang}/contact`}
+               class="inline-flex items-center gap-3 bg-white text-sky-600 font-semibold px-6 py-3 rounded-full shadow hover:shadow-md">
+              {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </div>
+        </aside>
       </div>
     </div>
   </section>
 </Layout>
 
 <style>
-  /* Smooth animations */
   * {
     transition-property: transform, box-shadow, background-color;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  /* Glass effect for buttons */
-  .glass-effect {
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 </style>

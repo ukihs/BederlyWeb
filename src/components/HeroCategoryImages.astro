@@ -70,7 +70,6 @@ const languageFilter = lang.toUpperCase() as "TH" | "EN";
 // ลอง query แต่ละชื่อ category
 for (const catName of categoryNames) {
   try {
-    console.log(`Trying category: ${catName} for language: ${languageFilter}`);
     const res = await wpQuery<any>(POSTS_BY_CATEGORY, {
       first: limit,
       category: catName,
@@ -84,11 +83,9 @@ for (const catName of categoryNames) {
     if (foundPosts.length > 0) {
       posts = foundPosts;
       foundCategory = catName;
-      console.log(`Found ${foundPosts.length} posts in category: ${catName} (${languageFilter})`);
       break;
     }
   } catch (err) {
-    console.warn(`Category ${catName} failed:`, err);
     continue;
   }
 }
@@ -96,7 +93,6 @@ for (const catName of categoryNames) {
 // ถ้าไม่เจอเลย ลองเอาโพสต์ทั้งหมดที่มีรูป (ตามภาษา)
 if (posts.length === 0) {
   try {
-    console.log(`Fallback: Getting all posts with featured images (${languageFilter})`);
     const FALLBACK_QUERY = /* GraphQL */ `
       query FallbackPosts($first: Int!, $language: LanguageCodeFilterEnum) {
         posts(
@@ -151,9 +147,7 @@ if (posts.length === 0) {
       return p?.featuredImage?.node?.sourceUrl;
     });
     foundCategory = "fallback";
-    console.log(`Fallback found ${posts.length} posts with images (${languageFilter})`);
   } catch (err) {
-    console.error("Fallback query also failed:", err);
     posts = [];
   }
 }
@@ -195,45 +189,11 @@ function getBestImageUrl(imageNode?: any): string | undefined {
     
   return fix(largest?.sourceUrl || imageNode?.sourceUrl);
 }
-
-// Debug info
-console.log(`HeroCategoryImages: Found ${posts.length} posts from category "${foundCategory}"`);
-posts.forEach((p, i) => {
-  console.log(`${i+1}. ${p.title} - ${p.featuredImage?.node?.sourceUrl ? "✅" : "❌"} image`);
-});
 ---
-
-{/* Debug panel - แสดงเฉพาะใน dev mode */}
-{import.meta.env.DEV && (
-  <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-4 text-sm">
-    <strong>Debug:</strong> Found {posts.length} posts from category "{foundCategory || categorySlug}" (Lang: {languageFilter})
-    {posts.length > 0 && (
-      <ul class="mt-2 space-y-1">
-        {posts.slice(0, 3).map((p) => (
-          <li>• {p.title} {p.featuredImage?.node?.sourceUrl ? "✅" : "❌"} Lang: {p.language?.code || "?"}</li>
-        ))}
-        {posts.length > 3 && <li>... และอีก {posts.length - 3} รายการ</li>}
-      </ul>
-    )}
-  </div>
-)}
 
 {posts.length > 0 ? (
   <section data-hero-cat class={`relative ${klass}`}>
     <div class="relative">
-      <!-- Header ถ้าต้องการ -->
-      <div class="text-center mb-8">
-        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">
-          {lang === "en" ? "Our Smart Bed Solutions" : "โซลูชันเตียงอัจฉริยะของเรา"}
-        </h2>
-        <p class="text-white/90 text-lg">
-          {lang === "en" 
-            ? "Innovative care for the ones you love" 
-            : "นวัตกรรมการดูแลสำหรับคนที่คุณรัก"
-          }
-        </p>
-      </div>
-
       <!-- แถวภาพแบบ scroll-snap -->
       <div 
         class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-6"
@@ -323,9 +283,6 @@ posts.forEach((p, i) => {
           ? "Gallery images will appear here once uploaded to WordPress" 
           : "รูปภาพแกลเลอรี่จะแสดงที่นี่เมื่ออัปโหลดใน WordPress"
         }
-      </p>
-      <p class="text-white/70 text-sm">
-        Category: "{categorySlug}" • Found: {posts.length} posts • Lang: {languageFilter}
       </p>
     </div>
   </section>
