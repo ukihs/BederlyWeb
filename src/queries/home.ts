@@ -1,17 +1,16 @@
-// src/queries/home.ts
-import { gql } from "graphql-request";
-
-const HOME_QUERY = gql`
+// src/queries/home.ts - ปรับปรุง GraphQL Query
+const HOME_QUERY = /* GraphQL */ `
   query HomeByUri($uri: String!) {
     nodeByUri(uri: $uri) {
       ... on Page {
         id
         title
-
-        # === ACF Hero Fields (ใช้ชื่อจาก ACF Settings) ===
+        
+        # === ACF Hero Fields ===
         hero {
-          herotitle
-          heroimage {
+          heroTitle
+          heroSubtitle  
+          heroImage {
             node {
               id
               altText
@@ -30,7 +29,28 @@ const HOME_QUERY = gql`
           }
         }
 
-        
+        # === ACF Smart Bed Fields ===
+        smartbed {
+          smartbedTitle
+          smartbedSub
+          smartbedImage {
+            node {
+              id
+              altText
+              sourceUrl
+              mediaDetails {
+                width
+                height
+                sizes {
+                  name
+                  width
+                  height
+                  sourceUrl
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

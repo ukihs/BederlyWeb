@@ -57,13 +57,13 @@
     @apply inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl;
   }
 
-  /* Card styles */
+  /* Card styles - แก้ไขโดยไม่ใช้ 'group' ใน @apply */
   .card-primary {
     @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden;
   }
 
   .card-feature {
-    @apply bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group;
+    @apply bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105;
   }
 
   .card-hero {
@@ -211,6 +211,16 @@
   .hover-glow {
     @apply hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300;
   }
+}
+
+/* ============== Custom Group Effects (แทน @apply group) ============== */
+/* ใช้ vanilla CSS selector แทน @apply group */
+.group:hover .group-hover-scale {
+  transform: scale(1.1);
+}
+
+.group:hover .group-hover-translate {
+  transform: translateX(4px);
 }
 
 /* ============== Animations ============== */

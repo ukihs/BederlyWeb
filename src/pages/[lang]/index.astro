@@ -1,4 +1,5 @@
 ---
+// src/pages/[lang]/index.astro - แก้ไขการ query ตามภาษา
 import Layout from "../../layouts/Layout.astro";
 import HOME_QUERY from "../../queries/home";
 import { wpQuery } from "../../lib/wp";
@@ -10,11 +11,25 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: "th" | "en" };
 
-// ลองหลาย URI เพื่อหาเพจ Home ต่อภาษา (แก้ให้ตรง permalink จริงได้)
-const uriCandidates =
-  lang === "en"
-    ? ["/en/", "/home/", "/home", "/"]
-    : ["/", "/หน้าแรก/", "/หน้าแรก", "/th/"];
+// แปลง lang เป็น GraphQL enum ที่ถูกต้อง
+const languageFilter = lang.toUpperCase() as "TH" | "EN";
+
+// ลอง URI candidates ตามภาษาที่เฉพาะเจาะจงมากขึ้น
+const uriCandidates = lang === "en" 
+  ? [
+      "/", // หน้าแรกโดยทั่วไป
+      "/home/", 
+      "/home", 
+      "/en/",
+      "/en",
+    ]
+  : [
+      "/",
+      "/th/",
+      "/th", 
+      "/หน้าแรก/",
+      "/หน้าแรก",
+    ];
 
 type Size = { name: string; sourceUrl?: string };
 type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
@@ -35,48 +50,355 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
+// Query แรก: ลองหา page ตามภาษาที่ระบุ
+const LANGUAGE_SPECIFIC_QUERY = /* GraphQL */ `
+  query PageByLanguage($language: LanguageCodeFilterEnum!) {
+    pages(
+      first: 10
+      where: { 
+        language: $language,
+        status: PUBLISH
+      }
+    ) {
+      nodes {
+        id
+        title
+        uri
+        slug
+        isFrontPage
+        language {
+          code
+          name
+        }
+        hero {
+          heroTitle
+          heroSubtitle
+          heroImage {
+            node {
+              id
+              altText
+              sourceUrl
+              mediaDetails {
+                width
+                height
+                sizes {
+                  name
+                  width
+                  height
+                  sourceUrl
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 let heroTitle = "";
+let heroSubtitle = "";
 let heroImgUrl = "";
+let foundData = false;
+let debugInfo: any = {};
 
-for (const uri of uriCandidates) {
-  try {
-    const data = await wpQuery<any>(HOME_QUERY, { uri });
-    const hero = data?.nodeByUri?.hero;
-    if (!hero) continue;
+try {
+  console.log(`[DEBUG] Looking for pages in language: ${languageFilter}`);
+  
+  // ลอง query pages ตามภาษา
+  const languageData = await wpQuery<any>(LANGUAGE_SPECIFIC_QUERY, { 
+    language: languageFilter 
+  });
+  
+  console.log(`[DEBUG] Language-specific query result:`, JSON.stringify(languageData, null, 2));
+  
+  const pages = languageData?.pages?.nodes || [];
+  debugInfo.allPages = pages.map((p: any) => ({
+    title: p.title,
+    uri: p.uri,
+    slug: p.slug,
+    isFrontPage: p.isFrontPage,
+    language: p.language?.code,
+    hasHero: !!p.hero,
+    heroTitle: p.hero?.heroTitle
+  }));
+  
+  // หา page ที่เหมาะสม
+  let targetPage = null;
+  
+  // 1. หา Front Page ก่อน
+  targetPage = pages.find((p: any) => p.isFrontPage);
+  
+  // 2. ถ้าไม่มี Front Page หา page ที่ชื่อ "Home" หรือ "หน้าแรก"
+  if (!targetPage) {
+    const homeNames = lang === "en" ? ["Home", "home"] : ["หน้าแรก", "หน้าหลัก"];
+    targetPage = pages.find((p: any) => 
+      homeNames.some(name => 
+        p.title?.toLowerCase().includes(name.toLowerCase()) ||
+        p.slug?.toLowerCase().includes(name.toLowerCase())
+      )
+    );
+  }
+  
+  // 3. ถ้ายังไม่มี เอา page แรกที่มี hero data
+  if (!targetPage) {
+    targetPage = pages.find((p: any) => p.hero && (p.hero.heroTitle || p.hero.heroImage));
+  }
+  
+  // 4. สุดท้าย เอา page แรกเลย
+  if (!targetPage && pages.length > 0) {
+    targetPage = pages[0];
+  }
+  
+  if (targetPage) {
+    console.log(`[DEBUG] Selected page:`, targetPage.title, targetPage.uri);
+    debugInfo.selectedPage = {
+      title: targetPage.title,
+      uri: targetPage.uri,
+      language: targetPage.language?.code
+    };
+    
+    const hero = targetPage.hero;
+    if (hero) {
+      heroTitle = hero.heroTitle || heroTitle;
+      heroSubtitle = hero.heroSubtitle || heroSubtitle;
+      heroImgUrl = pickImageUrl(hero.heroImage) || heroImgUrl;
+      foundData = !!(heroTitle || heroSubtitle || heroImgUrl);
+    }
+  }
+  
+} catch (e) {
+  console.error("[DEBUG] Language-specific query failed:", e);
+  debugInfo.error = e.message;
+}
 
-    // ใช้ชื่อฟิลด์ตัวเล็กให้ตรง schema
-    heroTitle = hero?.herotitle ?? heroTitle;
-    heroImgUrl = pickImageUrl(hero?.heroimage) ?? heroImgUrl;
+// ถ้ายังไม่มีข้อมูล ลอง query แบบเดิม
+if (!foundData) {
+  console.log("[DEBUG] Trying fallback URI-based queries...");
+  
+  for (const uri of uriCandidates) {
+    try {
+      const data = await wpQuery<any>(HOME_QUERY, { uri });
+      const hero = data?.nodeByUri?.hero;
+      if (!hero) continue;
 
-    if (heroTitle || heroImgUrl) break;
-  } catch (e) {
-    console.warn("[Hero] fetch failed for", uri, e);
+      heroTitle = hero?.heroTitle || heroTitle;
+      heroSubtitle = hero?.heroSubtitle || heroSubtitle;  
+      heroImgUrl = pickImageUrl(hero?.heroImage) || heroImgUrl;
+
+      if (heroTitle || heroSubtitle || heroImgUrl) {
+        foundData = true;
+        debugInfo.fallbackUri = uri;
+        break;
+      }
+    } catch (e) {
+      console.warn(`[Hero] fallback fetch failed for ${uri}:`, e);
+    }
   }
 }
 
-if (!heroTitle) {
-  heroTitle =
-    lang === "en"
-      ? "Shaping the future of healthcare"
-      : "ร่วมสร้างอนาคตใหม่ แห่งการดูแลสุขภาพ";
-}
+
+
+console.log(`[DEBUG] Final result for ${lang}:`, { 
+  heroTitle, 
+  heroSubtitle, 
+  heroImgUrl, 
+  foundData,
+  debugInfo 
+});
 ---
 
 <Layout lang={lang} showNavLinks={true} alternates={[{lang:"th",url:"/th"},{lang:"en",url:"/en"}]}>
-  <section class="relative overflow-hidden min-h-screen">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden min-h-screen flex items-center">
+    <!-- Background -->
     <div class="absolute inset-0 -z-10">
       {heroImgUrl ? (
-        <img src={heroImgUrl} alt="" class="w-full h-full object-cover object-center" loading="eager" />
+        <>
+          <img 
+            src={heroImgUrl} 
+            alt="" 
+            class="w-full h-full object-cover object-center" 
+            loading="eager" 
+          />
+          <div class="absolute inset-0 bg-black/40" />
+        </>
       ) : (
-        <div class="w-full h-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400" />
+        <>
+          <!-- Gradient Background -->
+          <div class="w-full h-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400" />
+          <!-- Animated Patterns -->
+          <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-white rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-200 rounded-full blur-3xl animate-float"></div>
+          </div>
+        </>
       )}
-      <div class="absolute inset-0 bg-black/40" />
     </div>
 
-    <div class="max-w-5xl mx-auto px-6 lg:px-12 min-h-screen flex items-center">
-      <h1 class="text-white text-5xl md:text-6xl lg:text-7xl font-bold leading-tight whitespace-pre-line drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]">
-        {heroTitle}
-      </h1>
+    <!-- Content -->
+    <div class="container-primary relative z-10">
+      <div class="max-w-4xl">
+        <!-- Main Title -->
+        <h1 class="text-white text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 whitespace-pre-line drop-shadow-lg">
+          {heroTitle}
+        </h1>
+        
+        <!-- Subtitle -->
+        {heroSubtitle && (
+          <p class="text-white/90 text-xl md:text-2xl font-light mb-8 max-w-2xl leading-relaxed drop-shadow-md">
+            {heroSubtitle}
+          </p>
+        )}
+        
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a href="#products" class="btn-primary group">
+            <span>{lang === "en" ? "View Products" : "ดูผลิตภัณฑ์"}</span>
+            <svg class="w-5 h-5 transition-transform group-hover-translate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+          </a>
+          
+          <a href="#contact" class="btn-secondary group">
+            <span>{lang === "en" ? "Contact Us" : "ติดต่อเรา"}</span>
+            <svg class="w-5 h-5 transition-transform group-hover-scale" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Enhanced Debug Info -->
+        {import.meta.env.DEV && (
+          <div class="mt-8 p-4 bg-black/50 text-white text-sm rounded-lg backdrop-blur-sm">
+            <p><strong>Debug Info for /{lang}:</strong></p>
+            <p>Found Data: {foundData ? "Yes" : "No"}</p>
+            <p>Language Filter: {languageFilter}</p>
+            <p>Title: {heroTitle || "None"}</p>
+            <p>Subtitle: {heroSubtitle || "None"}</p>
+            <p>Image: {heroImgUrl || "None"}</p>
+            {debugInfo.selectedPage && (
+              <p>Selected Page: {debugInfo.selectedPage.title} ({debugInfo.selectedPage.language})</p>
+            )}
+            {debugInfo.error && (
+              <p class="text-red-400">Error: {debugInfo.error}</p>
+            )}
+            <details>
+              <summary>All Pages Found</summary>
+              <pre>{JSON.stringify(debugInfo.allPages, null, 2)}</pre>
+            </details>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/70 animate-bounce">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="products" class="section-padding bg-gray-50">
+    <div class="container-primary">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          {lang === "en" ? "Smart Features" : "ฟีเจอร์อัจฉริยะ"}
+        </h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          {lang === "en" 
+            ? "Advanced technology designed for optimal patient care and comfort"
+            : "เทคโนโลยีขั้นสูงที่ออกแบบเพื่อการดูแลผู้ป่วยและความสะดวกสบายที่ดีที่สุด"
+          }
+        </p>
+      </div>
+
+      <!-- Feature Cards -->
+      <div class="features-grid">
+        <div class="card-feature group">
+          <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover-scale transition-transform">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            {lang === "en" ? "Height Adjustment" : "ปรับความสูง"}
+          </h3>
+          <p class="text-gray-600">
+            {lang === "en" 
+              ? "Precise height control for optimal patient positioning and caregiver accessibility"
+              : "ควบคุมความสูงที่แม่นยำเพื่อตำแหน่งผู้ป่วยที่เหมาะสมและการเข้าถึงของผู้ดูแล"
+            }
+          </p>
+        </div>
+
+        <div class="card-feature group">
+          <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover-scale transition-transform">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            {lang === "en" ? "Side Tilt Control" : "ปรับเอียงซ้าย-ขวา"}
+          </h3>
+          <p class="text-gray-600">
+            {lang === "en" 
+              ? "Left-right tilting capability for improved patient comfort and medical procedures"
+              : "ความสามารถในการเอียงซ้าย-ขวาเพื่อความสะดวกสบายของผู้ป่วยและขั้นตอนทางการแพทย์"
+            }
+          </p>
+        </div>
+
+        <div class="card-feature group">
+          <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover-scale transition-transform">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            {lang === "en" ? "Leg Section Control" : "ปรับส่วนขาขึ้น-ลง"}
+          </h3>
+          <p class="text-gray-600">
+            {lang === "en" 
+              ? "Independent leg section positioning for enhanced circulation and patient comfort"
+              : "การปรับตำแหน่งส่วนขาแยกเป็นอิสระเพื่อการไหลเวียนเลือดที่ดีขึ้นและความสะดวกสบาย"
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="section-padding bg-white">
+    <div class="container-narrow text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        {lang === "en" ? "Get in Touch" : "ติดต่อเรา"}
+      </h2>
+      <p class="text-xl text-gray-600 mb-8">
+        {lang === "en" 
+          ? "Ready to transform your healthcare facility with smart bed solutions?"
+          : "พร้อมที่จะเปลี่ยนแปลงสถานพยาบาลของคุณด้วยโซลูชันเตียงอัจฉริยะแล้วหรือยัง?"
+        }
+      </p>
+      
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="tel:+66123456789" class="btn-secondary">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+          </svg>
+          {lang === "en" ? "Call Now" : "โทรเลย"}
+        </a>
+        
+        <a href="mailto:info@smartbed.com" class="btn-primary">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {lang === "en" ? "Send Email" : "ส่งอีเมล"}
+        </a>
+      </div>
     </div>
   </section>
 </Layout>
