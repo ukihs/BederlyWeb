@@ -1,4 +1,5 @@
 ---
+// src/layouts/Layout.astro
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
 
@@ -25,16 +26,84 @@ const {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AstroWP</title>
+    <title>Smart Bed - Innovative Hospital Care Solutions</title>
+    <meta name="description" content="Smart Bed provides innovative hospital bed solutions with advanced adjustment features for better patient care." />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     {alternates.map((alt) => (
       <link rel="alternate" hrefLang={alt.lang} href={alt.url} />
     ))}
   </head>
-  <body class="bg-slate-50 text-slate-900">
+  <body class="font-['Inter'] bg-white text-gray-800 antialiased">
     {showNav && <Navbar lang={lang} showLinks={showNavLinks} alternates={alternates} />}
     <main>
       <slot />
     </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-50 border-t py-12">
+      <div class="container mx-auto px-6">
+        <div class="grid md:grid-cols-4 gap-8">
+          <div class="md:col-span-2">
+            <h3 class="text-xl font-bold text-blue-600 mb-4">Smart Bed</h3>
+            <p class="text-gray-600 mb-4">
+              {lang === "en" 
+                ? "Innovative hospital bed solutions designed for optimal patient care and comfort."
+                : "นวัตกรรมเตียงผู้ป่วยที่ออกแบบเพื่อการดูแลและความสะดวกสบายที่ดีที่สุด"
+              }
+            </p>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold mb-4">
+              {lang === "en" ? "Products" : "ผลิตภัณฑ์"}
+            </h4>
+            <ul class="space-y-2 text-gray-600">
+              <li><a href="#features" class="hover:text-blue-600 transition-colors">
+                {lang === "en" ? "Smart Features" : "ฟีเจอร์อัจฉริยะ"}
+              </a></li>
+              <li><a href="#specifications" class="hover:text-blue-600 transition-colors">
+                {lang === "en" ? "Specifications" : "ข้อมูลจำเพาะ"}
+              </a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold mb-4">
+              {lang === "en" ? "Contact" : "ติดต่อเรา"}
+            </h4>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-center gap-2">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                </svg>
+                <a href="tel:+66123456789" class="hover:text-blue-600 transition-colors">
+                  +66 123 456 789
+                </a>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                <a href="mailto:info@smartbed.com" class="hover:text-blue-600 transition-colors">
+                  info@smartbed.com
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="border-t mt-8 pt-8 text-center text-gray-500">
+          <p>&copy; 2024 Smart Bed. {lang === "en" ? "All rights reserved." : "สงวนลิขสิทธิ์"}</p>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

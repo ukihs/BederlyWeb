@@ -1,4 +1,5 @@
 ---
+// src/components/Navbar.astro
 interface Alt { lang: string; url: string }
 
 const {
@@ -15,36 +16,153 @@ const {
 function altUrl(target: "th" | "en") {
   const found = alternates.find((a) => a.lang.toLowerCase() === target);
   if (found?.url) return found.url;
-  // fallback ถ้าไม่มี translation
   return `/${target}`;
 }
 ---
 
-<nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-  <a href={`/${lang}`} class="font-semibold">AstroWP</a>
+<nav class="absolute top-0 left-0 right-0 z-50 bg-transparent">
+  <div class="container mx-auto px-6 py-4">
+    <div class="flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href={`/${lang}`} class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 22V12H15V22" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="text-white font-bold text-xl">Smart Bed</span>
+      </a>
 
-  {showLinks && (
-    <ul class="flex items-center gap-6">
-      <li><a href={`/${lang}/articles`} class="hover:underline">
-        {lang === "en" ? "Articles" : "บทความ"}
-      </a></li>
-      <li><a href={`/${lang}#about`} class="hover:underline">
-        {lang === "en" ? "About" : "เกี่ยวกับเรา"}
-      </a></li>
-      <li><a href={`/${lang}#contact`} class="hover:underline">
-        {lang === "en" ? "Contact" : "ติดต่อ"}
-      </a></li>
-    </ul>
-  )}
+      <!-- Desktop Navigation -->
+      <div class="hidden lg:flex items-center gap-8">
+        {showLinks && (
+          <ul class="flex items-center gap-8">
+            <li>
+              <a href="#features" class="text-white/90 hover:text-white transition-colors font-medium">
+                {lang === "en" ? "Features" : "ฟีเจอร์"}
+              </a>
+            </li>
+            <li>
+              <a href="#specifications" class="text-white/90 hover:text-white transition-colors font-medium">
+                {lang === "en" ? "Specifications" : "รายละเอียด"}
+              </a>
+            </li>
+            <li>
+              <a href="#about" class="text-white/90 hover:text-white transition-colors font-medium">
+                {lang === "en" ? "About" : "เกี่ยวกับเรา"}
+              </a>
+            </li>
+            <li>
+              <a href="#contact" class="text-white/90 hover:text-white transition-colors font-medium">
+                {lang === "en" ? "Contact" : "ติดต่อ"}
+              </a>
+            </li>
+          </ul>
+        )}
 
-  <div class="flex items-center gap-2">
-    <a href={altUrl("th")}
-       class={`px-2 py-0.5 rounded ${lang==="th"?"bg-slate-900 text-white":"hover:underline"}`}>
-      TH
-    </a>
-    <a href={altUrl("en")}
-       class={`px-2 py-0.5 rounded ${lang==="en"?"bg-slate-900 text-white":"hover:underline"}`}>
-      EN
-    </a>
+        <!-- Language Switcher -->
+        <div class="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full p-1">
+          <a href={altUrl("th")}
+             class={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+               lang === "th" 
+                 ? "bg-white text-blue-600 shadow-sm" 
+                 : "text-white/80 hover:text-white hover:bg-white/10"
+             }`}>
+            TH
+          </a>
+          <a href={altUrl("en")}
+             class={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+               lang === "en" 
+                 ? "bg-white text-blue-600 shadow-sm" 
+                 : "text-white/80 hover:text-white hover:bg-white/10"
+             }`}>
+            EN
+          </a>
+        </div>
+      </div>
+
+      <!-- Mobile menu button -->
+      <button 
+        class="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm"
+        id="mobile-menu-button"
+      >
+        <svg width="24" height="24" fill="none" stroke="white" stroke-width="2">
+          <path d="M3 12h18M3 6h18M3 18h18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="lg:hidden hidden" id="mobile-menu">
+      <div class="mt-4 p-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl">
+        {showLinks && (
+          <ul class="space-y-3 mb-4">
+            <li>
+              <a href="#features" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                {lang === "en" ? "Features" : "ฟีเจอร์"}
+              </a>
+            </li>
+            <li>
+              <a href="#specifications" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                {lang === "en" ? "Specifications" : "รายละเอียด"}
+              </a>
+            </li>
+            <li>
+              <a href="#about" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                {lang === "en" ? "About" : "เกี่ยวกับเรา"}
+              </a>
+            </li>
+            <li>
+              <a href="#contact" class="block text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                {lang === "en" ? "Contact" : "ติดต่อ"}
+              </a>
+            </li>
+          </ul>
+        )}
+        
+        <!-- Mobile Language Switcher -->
+        <div class="flex gap-2 pt-3 border-t">
+          <a href={altUrl("th")}
+             class={`flex-1 text-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+               lang === "th" 
+                 ? "bg-blue-600 text-white" 
+                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+             }`}>
+            ไทย
+          </a>
+          <a href={altUrl("en")}
+             class={`flex-1 text-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+               lang === "en" 
+                 ? "bg-blue-600 text-white" 
+                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+             }`}>
+            English
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </nav>
+
+<script>
+  // Mobile menu toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+    
+    if (button && menu) {
+      button.addEventListener('click', function() {
+        menu.classList.toggle('hidden');
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!button.contains(e.target) && !menu.contains(e.target)) {
+          menu.classList.add('hidden');
+        }
+      });
+    }
+  });
+</script>
