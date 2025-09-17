@@ -1,0 +1,121 @@
+---
+import { wpQuery } from "../lib/wp";        // relative path
+import { rewriteWpUrl } from "../lib/wpUrl"; // ✅ ใช้รีไรท์ URL รูป
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug?: string;    // default: "hero"
+  limit?: number;           // จำนวนรูป
+  class?: string;
+}
+
+const { lang = "th", categorySlug = "hero", limit = 6, class: klass = "" } = Astro.props;
+
+/** --------- ดึงโพสต์ตามหมวด (ไม่พึ่ง language filter) --------- */
+const POSTS_BY_CATEGORY = /* GraphQL */ `
+  query PostsByCategory($first: Int!, $category: String!) {
+    posts(
+      first: $first
+      where: { categoryName: $category, orderby: { field: DATE, order: DESC } }
+    ) {
+      nodes {
+        id
+        title
+        uri
+        featuredImage {
+          node {
+            sourceUrl
+            altText
+            mediaDetails {
+              sizes { name width sourceUrl }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+let posts: any[] = [];
+try {
+  const res = await wpQuery<any>(POSTS_BY_CATEGORY, {
+    first: limit,
+    category: categorySlug,
+  });
+  posts = (res?.posts?.nodes ?? []).filter((p: any) => p?.featuredImage?.node?.sourceUrl);
+} catch (err) {
+  console.error("HeroCategoryImages > query failed:", err);
+  posts = [];
+}
+
+function fix(src?: string) {
+  return src ? rewriteWpUrl(src) : src;
+}
+function toSrcSet(sizes?: Array<{ sourceUrl: string; width: number }>) {
+  if (!sizes?.length) return undefined;
+  return sizes
+    .filter((s) => s?.sourceUrl && s?.width)
+    .sort((a, b) => (Number(a.width) || 0) - (Number(b.width) || 0))
+    .map((s) => `${fix(s.sourceUrl)} ${s.width}w`)
+    .join(", ");
+}
+---
+
+<section data-hero-cat class={`relative ${klass}`}>
+  <div class="relative">
+    <!-- แถวภาพแบบ scroll-snap -->
+    <div class="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+         style="scrollbar-width: none;"
+         aria-label="Hero category images">
+      {posts.map((p) => {
+        const img = p.featuredImage.node;
+        const src = fix(img.sourceUrl);        // ✅ ใช้ URL ที่รีไรท์แล้ว
+        const srcset = toSrcSet(img.mediaDetails?.sizes);
+        return (
+          <figure class="snap-center shrink-0 rounded-2xl overflow-hidden bg-slate-100
+                         min-w-[320px] md:min-w-[460px] lg:min-w-[520px]">
+            <img
+              src={src}
+              alt={img.altText || p.title}
+              loading="lazy"
+              decoding="async"
+              class="w-full h-full object-cover aspect-[4/3]"
+              srcset={srcset}
+              sizes="(min-width:1280px) 33vw, (min-width:768px) 45vw, 90vw"
+            />
+          </figure>
+        );
+      })}
+    </div>
+
+    <!-- ปุ่มเลื่อน -->
+    <button type="button"
+      class="absolute -left-4 top-1/2 -translate-y-1/2 grid place-items-center
+             h-12 w-12 rounded-full bg-white/80 shadow hover:bg-white"
+      aria-label="Previous">←</button>
+    <button type="button"
+      class="absolute -right-4 top-1/2 -translate-y-1/2 grid place-items-center
+             h-12 w-12 rounded-full bg-white/80 shadow hover:bg-white"
+      aria-label="Next">→</button>
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    const root = document.querySelector('[data-hero-cat]');
+    if (!root) return;
+    const scroller = root.querySelector('[aria-label="Hero category images"]');
+    const [prevBtn, nextBtn] = root.querySelectorAll('button');
+
+    function scrollByStep(dir) {
+      const step = scroller.clientWidth * 0.9;
+      scroller.scrollBy({ left: dir * step, behavior: 'smooth' });
+    }
+    prevBtn?.addEventListener('click', () => scrollByStep(-1));
+    nextBtn?.addEventListener('click', () => scrollByStep(1));
+  })();
+</script>
+
+<style is:global>
+  [data-hero-cat] [aria-label="Hero category images"]::-webkit-scrollbar { display: none; }
+</style>
