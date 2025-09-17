@@ -1,9 +1,8 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import HOME_QUERY from "../../queries/home";
 import { wpQuery } from "../../lib/wp";
 import { rewriteWpUrl } from "../../lib/wpUrl";
-import HOME_QUERY from "../../queries/home";
-import HeroCategoryImages from "../../components/HeroCategoryImages.astro";
 
 export async function getStaticPaths() {
   return [{ params: { lang: "th" } }, { params: { lang: "en" } }];
@@ -11,239 +10,73 @@ export async function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: "th" | "en" };
 
-/* ---------------- hreflang ---------------- */
-const alternates = [
-  { lang: "th", url: "/th" },
-  { lang: "en", url: "/en" },
-];
-
-/* ---------------- HERO (พื้นหลัง + ข้อความ) ---------------- */
-/* <<<<  ส่วนนี้คงเดิม ไม่ยุ่ง  >>>> */
-let heroTitle = lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ";
-let heroSubtitle =
-  lang === "en"
-    ? "Innovative Care for the Ones You loved ones"
-    : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก";
-
-let heroImageUrl = "";
-
-function pickImageUrl(imageNode?: any): string | undefined {
-  if (!imageNode) return undefined;
-  const sizes: Array<any> = imageNode?.mediaDetails?.sizes ?? [];
-  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
-  for (const name of prefer) {
-    const size = sizes.find((x: any) => x?.name === name);
-    if (size?.sourceUrl) return rewriteWpUrl(size.sourceUrl);
-  }
-  return rewriteWpUrl(imageNode?.sourceUrl);
-}
-
+// ลองหลาย URI เพื่อหาเพจ Home ต่อภาษา (แก้ให้ตรง permalink จริงได้)
 const uriCandidates =
   lang === "en"
-    ? ["/home", "/home/", "/", "/en", "/en/", "/home-en"]
-    : ["/หน้าแรก", "/หน้าแรก/", "/", "/th", "/th/", "/home-th"];
+    ? ["/en/", "/home/", "/home", "/"]
+    : ["/", "/หน้าแรก/", "/หน้าแรก", "/th/"];
 
-/* ดึงเฉพาะ Hero จาก HOME_QUERY เหมือนเดิม */
-for (const uri of uriCandidates) {
-  try {
-    const wpData = await wpQuery<{ nodeByUri: any }>(HOME_QUERY, { uri });
-    const pageData = wpData?.nodeByUri;
-    if (pageData?.hero?.heroImage?.node) {
-      heroImageUrl = pickImageUrl(pageData.hero.heroImage.node) || "";
-      break; // เจอรูปแล้วค่อยหยุด
-    }
-  } catch {}
+type Size = { name: string; sourceUrl?: string };
+type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
+
+function normalize(img: any): Img | undefined {
+  return img?.node ? img.node : img ?? undefined;
 }
 
-const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
-
-/* ---------------- ACF: Smart Bed’s Features (ทำแค่ตรงนี้) ---------------- */
-/* Query แยก เพื่อไม่ไปยุ่งกับ HOME_QUERY */
-const FEATURES_QUERY = /* GraphQL */ `
-  query FeaturesByUri($uri: String!) {
-    nodeByUri(uri: $uri) {
-      ... on Page {
-        id
-        # ถ้า Field Group เปิด GraphQL และตั้งชื่อ smartBedsFeatures
-        smartBedsFeatures {
-          featuretitle
-          featuresub
-          featureUrl   # <-- รองรับชื่อแบบนี้
-          feature      # <-- และแบบนี้
-        }
-        # Fallback: บางโปรเจกต์โผล่ใต้ acf{}
-        acf {
-          featuretitle
-          featuresub
-          featureUrl
-          feature
-        }
-      }
-    }
+function pickImageUrl(img: any): string | undefined {
+  const n = normalize(img);
+  if (!n) return undefined;
+  const sizes = n.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  for (const key of prefer) {
+    const hit = sizes.find((s) => s?.name === key && s?.sourceUrl);
+    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
   }
-`;
+  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
 
+let heroTitle = "";
+let heroImgUrl = "";
 
-let featureTitle = "";
-let featureUrl = "";
-let featureSub = "";
-
-/* โหลดเฉพาะฟีเจอร์ ไม่กระทบ hero */
 for (const uri of uriCandidates) {
   try {
-    const r = await wpQuery<any>(FEATURES_QUERY, { uri });
-    const node = r?.nodeByUri;
-    if (!node) continue;
+    const data = await wpQuery<any>(HOME_QUERY, { uri });
+    const hero = data?.nodeByUri?.hero;
+    if (!hero) continue;
 
-    const feat = node.smartBedsFeatures ?? node.acf;
-    if (feat && (feat.featuretitle || feat.featureUrl || feat.feature || feat.featuresub)) {
-      featureTitle = feat.featuretitle ?? "";
-      featureUrl   = (feat.featureUrl ?? feat.feature) ? rewriteWpUrl(feat.featureUrl ?? feat.feature) : "";
-      featureSub   = feat.featuresub ?? "";
-      break;
+    // ใช้ชื่อฟิลด์ตัวเล็กให้ตรง schema
+    heroTitle = hero?.herotitle ?? heroTitle;
+    heroImgUrl = pickImageUrl(hero?.heroimage) ?? heroImgUrl;
+
+    if (heroTitle || heroImgUrl) break;
+  } catch (e) {
+    console.warn("[Hero] fetch failed for", uri, e);
+  }
 }
 
-  } catch {}
+if (!heroTitle) {
+  heroTitle =
+    lang === "en"
+      ? "Shaping the future of healthcare"
+      : "ร่วมสร้างอนาคตใหม่ แห่งการดูแลสุขภาพ";
 }
-
-/* helper: ตรวจชนิดสื่อจาก featureUrl */
-function toEmbed(u: string) {
-  if (!u) return { kind: "none" as const };
-  const url = u;
-
-  // YouTube
-  const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/i.exec(url);
-  if (yt?.[1]) return { kind: "youtube" as const, src: `https://www.youtube.com/embed/${yt[1]}?rel=0` };
-
-  // วิดีโอไฟล์
-  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) return { kind: "video" as const, src: url };
-
-  // รูปภาพไฟล์
-  if (/\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(url)) return { kind: "image" as const, src: url };
-
-  // อื่น ๆ (ลองฝังใน iframe)
-  return { kind: "iframe" as const, src: url };
-}
-const media = toEmbed(featureUrl);
 ---
 
-<Layout lang={lang} showNavLinks={true} alternates={alternates}>
-  <!-- ============== HERO (เหมือนเดิม) ============== -->
-  <section class="relative overflow-hidden min-h-screen -mt-[var(--nav-h,72px)] pt-[var(--nav-h,72px)]">
-    {heroImageUrl ? (
-      <img
-        src={heroImageUrl}
-        alt="Hero Background"
-        class="absolute inset-0 z-0 w-full h-full object-cover object-center"
-        style="image-rendering: crisp-edges;"
-        loading="eager"
-      />
-    ) : (
-      <div class="absolute inset-0 z-0 bg-[radial-gradient(80%_80%_at_0%_0%,#42c3ff_0%,#2bb3f3_45%,#22a7e6_100%)]"></div>
-    )}
-
-    <div class="relative z-10 mx-auto max-w-[1440px] px-6 pt-0 pb-12">
-      <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[500px] mb-12">
-        <div class="text-white lg:pr-8 pt-12">
-          <h1 class="font-extrabold leading-[1.05] mb-6 text-[clamp(40px,6.2vw,84px)]"
-              style="text-shadow: 2px 2px 12px rgba(0,0,0,.8);">
-            {heroTitle}
-          </h1>
-          <p class="font-light opacity-95 whitespace-pre-line mb-10 text-[clamp(18px,2vw,28px)] leading-relaxed"
-             style="text-shadow: 1px 1px 8px rgba(0,0,0,.7);">
-            {heroSubtitle}
-          </p>
-
-          <a href={lang === "en" ? "/en/contact" : "/th/contact"}
-             class="inline-flex items-center gap-3 rounded-full bg-white text-cyan-600 font-semibold shadow-xl hover:shadow-2xl h-[60px] px-8 text-[18px] hover:bg-gray-50 transition-all duration-300 hover:scale-105 hover:-translate-y-1">
-            {ctaText}
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </a>
-        </div>
-        <div class="hidden lg:block"></div>
-      </div>
-
-      <!-- แกลเลอรีจากหมวด hero -->
-      <HeroCategoryImages
-        lang={lang}
-        categorySlug="hero"
-        limit={8}
-        class="mx-auto max-w-none"
-      />
+<Layout lang={lang} showNavLinks={true} alternates={[{lang:"th",url:"/th"},{lang:"en",url:"/en"}]}>
+  <section class="relative overflow-hidden min-h-screen">
+    <div class="absolute inset-0 -z-10">
+      {heroImgUrl ? (
+        <img src={heroImgUrl} alt="" class="w-full h-full object-cover object-center" loading="eager" />
+      ) : (
+        <div class="w-full h-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400" />
+      )}
+      <div class="absolute inset-0 bg-black/40" />
     </div>
-  </section>
 
-  <!-- ============== Smart Bed’s Features (ACF) ============== -->
-  <section class="py-16 bg-white">
-    <div class="mx-auto max-w-[1440px] px-6">
-      <!-- หัวจาก featuretitle -->
-      <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-10">
-        {featureTitle || (lang === "en" ? "Smart Bed’s Features" : "คุณสมบัติของเตียงอัจฉริยะ")}
-      </h2>
-
-      <div class="grid lg:grid-cols-2 gap-10 items-stretch">
-        <!-- ซ้าย: สื่อจาก feature (URL) -->
-        <div class="rounded-2xl overflow-hidden shadow-md">
-          {
-            media.kind === "youtube" ? (
-              <div class="aspect-video">
-                <iframe
-                  src={media.src}
-                  title="Feature video"
-                  class="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen
-                  loading="lazy"
-                ></iframe>
-              </div>
-            ) : media.kind === "video" ? (
-              <video class="w-full h-auto" src={media.src} controls playsinline preload="metadata"></video>
-            ) : media.kind === "image" ? (
-              <img class="w-full h-auto object-cover" src={media.src} alt={featureTitle || "feature"} loading="lazy" />
-            ) : media.kind === "iframe" ? (
-              <div class="aspect-video">
-                <iframe src={media.src} class="w-full h-full" loading="lazy"></iframe>
-              </div>
-            ) : (
-              <div class="aspect-video grid place-items-center bg-slate-100 text-slate-500">
-                {lang === "en" ? "No media URL" : "ยังไม่ได้ใส่ลิงก์สื่อ (feature URL)"}
-              </div>
-            )
-          }
-        </div>
-
-        <!-- ขวา: คำอธิบายจาก featuresub -->
-        <aside class="bg-sky-500 text-white rounded-[28px] p-8 lg:p-10 shadow-md flex flex-col justify-between">
-          <div>
-            <p class="whitespace-pre-line leading-relaxed text-[17px] lg:text-[18px]">
-              {featureSub || (lang === "en"
-                ? "Please add your product description in ACF → featuresub."
-                : "โปรดกรอกคำอธิบายใน ACF → featuresub")}
-            </p>
-          </div>
-
-          <div class="mt-8">
-            <a href={`/${lang}/contact`}
-               class="inline-flex items-center gap-3 bg-white text-sky-600 font-semibold px-6 py-3 rounded-full shadow hover:shadow-md">
-              {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12H19M19 12L12 5M19 12L12 19"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </a>
-          </div>
-        </aside>
-      </div>
+    <div class="max-w-5xl mx-auto px-6 lg:px-12 min-h-screen flex items-center">
+      <h1 class="text-white text-5xl md:text-6xl lg:text-7xl font-bold leading-tight whitespace-pre-line drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]">
+        {heroTitle}
+      </h1>
     </div>
   </section>
 </Layout>
-
-<style>
-  * {
-    transition-property: transform, box-shadow, background-color;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-</style>

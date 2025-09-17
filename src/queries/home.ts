@@ -8,11 +8,10 @@ const HOME_QUERY = gql`
         id
         title
 
-        # === ACF Hero ===
+        # === ACF Hero Fields (ใช้ชื่อจาก ACF Settings) ===
         hero {
-          heroTitle
-          heroSubtitle
-          heroImage {
+          herotitle
+          heroimage {
             node {
               id
               altText
@@ -20,10 +19,18 @@ const HOME_QUERY = gql`
               mediaDetails {
                 width
                 height
+                sizes {
+                  name
+                  width
+                  height
+                  sourceUrl
+                }
               }
             }
           }
         }
+
+        
       }
     }
   }
