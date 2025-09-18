@@ -1,5 +1,5 @@
 ---
-// src/pages/[lang]/index.astro - เพิ่ม Gallery Section
+// src/pages/[lang]/index.astro - หน้าหลักสมบูรณ์
 import Layout from "../../layouts/Layout.astro";
 import SmartBedSection from "../../components/SmartBedSection.astro";
 import HeroCategoryImages from "../../components/HeroCategoryImages.astro";
@@ -13,26 +13,12 @@ export async function getStaticPaths() {
 }
 
 const { lang } = Astro.params as { lang: "th" | "en" };
-
-// แปลง lang เป็น GraphQL enum ที่ถูกต้อง
 const languageFilter = lang.toUpperCase() as "TH" | "EN";
 
-// ลอง URI candidates ตามภาษาที่เฉพาะเจาะจงมากขึ้น
+// URI candidates สำหรับหา Hero data
 const uriCandidates = lang === "en" 
-  ? [
-      "/", // หน้าแรกโดยทั่วไป
-      "/home/", 
-      "/home", 
-      "/en/",
-      "/en",
-    ]
-  : [
-      "/",
-      "/th/",
-      "/th", 
-      "/หน้าแรก/",
-      "/หน้าแรก",
-    ];
+  ? ["/", "/home/", "/home", "/en/", "/en"]
+  : ["/", "/th/", "/th", "/หน้าแรก/", "/หน้าแรก"];
 
 type Size = { name: string; sourceUrl?: string };
 type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
@@ -53,7 +39,7 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-// Query แรก: ลองหา page ตามภาษาที่ระบุ
+// Query Hero data ตามภาษา
 const LANGUAGE_SPECIFIC_QUERY = /* GraphQL */ `
   query PageByLanguage($language: LanguageCodeFilterEnum!) {
     pages(
@@ -105,15 +91,11 @@ let heroImgUrl = "";
 let foundData = false;
 let debugInfo: any = {};
 
+// 1. ลองหา Hero data ตามภาษา
 try {
-  console.log(`[DEBUG] Looking for pages in language: ${languageFilter}`);
-  
-  // ลอง query pages ตามภาษา
   const languageData = await wpQuery<any>(LANGUAGE_SPECIFIC_QUERY, { 
     language: languageFilter 
   });
-  
-  console.log(`[DEBUG] Language-specific query result:`, JSON.stringify(languageData, null, 2));
   
   const pages = languageData?.pages?.nodes || [];
   debugInfo.allPages = pages.map((p: any) => ({
@@ -127,34 +109,11 @@ try {
   }));
   
   // หา page ที่เหมาะสม
-  let targetPage = null;
-  
-  // 1. หา Front Page ก่อน
-  targetPage = pages.find((p: any) => p.isFrontPage);
-  
-  // 2. ถ้าไม่มี Front Page หา page ที่ชื่อ "Home" หรือ "หน้าแรก"
-  if (!targetPage) {
-    const homeNames = lang === "en" ? ["Home", "home"] : ["หน้าแรก", "หน้าหลัก"];
-    targetPage = pages.find((p: any) => 
-      homeNames.some(name => 
-        p.title?.toLowerCase().includes(name.toLowerCase()) ||
-        p.slug?.toLowerCase().includes(name.toLowerCase())
-      )
-    );
-  }
-  
-  // 3. ถ้ายังไม่มี เอา page แรกที่มี hero data
-  if (!targetPage) {
-    targetPage = pages.find((p: any) => p.hero && (p.hero.heroTitle || p.hero.heroImage));
-  }
-  
-  // 4. สุดท้าย เอา page แรกเลย
-  if (!targetPage && pages.length > 0) {
-    targetPage = pages[0];
-  }
+  let targetPage = pages.find((p: any) => p.isFrontPage) ||
+                   pages.find((p: any) => p.hero && (p.hero.heroTitle || p.hero.heroImage)) ||
+                   pages[0];
   
   if (targetPage) {
-    console.log(`[DEBUG] Selected page:`, targetPage.title, targetPage.uri);
     debugInfo.selectedPage = {
       title: targetPage.title,
       uri: targetPage.uri,
@@ -169,16 +128,12 @@ try {
       foundData = !!(heroTitle || heroSubtitle || heroImgUrl);
     }
   }
-  
 } catch (e) {
-  console.error("[DEBUG] Language-specific query failed:", e);
   debugInfo.error = e.message;
 }
 
-// ถ้ายังไม่มีข้อมูล ลอง query แบบเดิม
+// 2. Fallback: ลอง URI-based query
 if (!foundData) {
-  console.log("[DEBUG] Trying fallback URI-based queries...");
-  
   for (const uri of uriCandidates) {
     try {
       const data = await wpQuery<any>(HOME_QUERY, { uri });
@@ -195,12 +150,12 @@ if (!foundData) {
         break;
       }
     } catch (e) {
-      console.warn(`[Hero] fallback fetch failed for ${uri}:`, e);
+      continue;
     }
   }
 }
 
-// Fallback หากไม่มีข้อมูลจาก WordPress
+// 3. Fallback data หากไม่มีจาก WordPress
 if (!foundData) {
   heroTitle = lang === "en" 
     ? "Shaping the future of\nhealthcare" 
@@ -210,14 +165,6 @@ if (!foundData) {
     ? "Advanced smart bed technology designed for optimal patient care and medical excellence"
     : "เทคโนโลยีเตียงอัจฉริยะขั้นสูงที่ออกแบบเพื่อการดูแลผู้ป่วยและความเป็นเลิศทางการแพทย์";
 }
-
-console.log(`[DEBUG] Final result for ${lang}:`, { 
-  heroTitle, 
-  heroSubtitle, 
-  heroImgUrl, 
-  foundData,
-  debugInfo 
-});
 ---
 
 <Layout lang={lang} showNavLinks={true} alternates={[{lang:"th",url:"/th"},{lang:"en",url:"/en"}]}>
@@ -237,9 +184,7 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
         </>
       ) : (
         <>
-          <!-- Gradient Background -->
           <div class="w-full h-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400" />
-          <!-- Animated Patterns -->
           <div class="absolute inset-0 opacity-20">
             <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-white rounded-full blur-3xl animate-pulse"></div>
             <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-200 rounded-full blur-3xl animate-float"></div>
@@ -251,19 +196,16 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
     <!-- Content -->
     <div class="container-primary relative z-10">
       <div class="max-w-4xl">
-        <!-- Main Title -->
         <h1 class="text-white text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 whitespace-pre-line drop-shadow-lg">
           {heroTitle}
         </h1>
         
-        <!-- Subtitle -->
         {heroSubtitle && (
           <p class="text-white/90 text-xl md:text-2xl font-light mb-8 max-w-2xl leading-relaxed drop-shadow-md">
             {heroSubtitle}
           </p>
         )}
         
-        <!-- CTA Buttons -->
         <div class="flex flex-col sm:flex-row gap-4">
           <a href="#smartbed" class="btn-primary group">
             <span>{lang === "en" ? "View Smart Bed" : "ดูสมาร์ทเบด"}</span>
@@ -279,24 +221,6 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
             </svg>
           </a>
         </div>
-
-        <!-- Enhanced Debug Info -->
-        {import.meta.env.DEV && (
-          <div class="mt-8 p-4 bg-black/50 text-white text-sm rounded-lg backdrop-blur-sm">
-            <p><strong>Debug Info for /{lang}:</strong></p>
-            <p>Found Data: {foundData ? "Yes" : "No"}</p>
-            <p>Language Filter: {languageFilter}</p>
-            <p>Title: {heroTitle || "None"}</p>
-            <p>Subtitle: {heroSubtitle || "None"}</p>
-            <p>Image: {heroImgUrl || "None"}</p>
-            {debugInfo.selectedPage && (
-              <p>Selected Page: {debugInfo.selectedPage.title} ({debugInfo.selectedPage.language})</p>
-            )}
-            {debugInfo.error && (
-              <p class="text-red-400">Error: {debugInfo.error}</p>
-            )}
-          </div>
-        )}
       </div>
     </div>
 
@@ -313,7 +237,7 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
     <SmartBedSection lang={lang} />
   </section>
 
-  <!-- Gallery Section - เพิ่มใหม่ -->
+  <!-- Product Gallery Section -->
   <section id="gallery" class="section-padding bg-gradient-to-br from-blue-50 to-cyan-50/30">
     <div class="container-primary">
       <!-- Section Header -->
@@ -329,10 +253,11 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
         </p>
       </div>
 
-      <!-- Image Slider - ดึงจาก Hero category และแชร์ทั้งสองภาษา -->
+      <!-- Image Slider -->
       <div class="max-w-5xl mx-auto">
         <HeroCategoryImages 
           lang={lang}
+          categorySlug="Hero"
           limit={9}
           class="rounded-3xl overflow-hidden shadow-2xl"
           separateByLanguage={false}
@@ -341,7 +266,7 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
     </div>
   </section>
 
-  <!-- ✅ Functions Section (ใหม่) -->
+  <!-- Functions Section -->
   <section id="functions" class="section-padding bg-white">
     <div class="container-primary">
       <FunctionSection 
@@ -354,6 +279,125 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
     </div>
   </section>
 
-  
-  
+  <!-- Contact Section -->
+  <section id="contact" class="section-padding bg-gray-50">
+    <div class="container-primary">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
+        </h2>
+        <p class="text-xl text-gray-600">
+          {lang === "en" 
+            ? "Ready to learn more about our smart bed solutions?"
+            : "พร้อมเรียนรู้เพิ่มเติมเกี่ยวกับโซลูชันเตียงอัจฉริยะของเราหรือไม่?"
+          }
+        </p>
+      </div>
+
+      <div class="max-w-4xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-12">
+          <!-- Contact Info -->
+          <div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-6">
+              {lang === "en" ? "Get in Touch" : "ติดต่อเรา"}
+            </h3>
+            
+            <div class="space-y-4">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-1">
+                    {lang === "en" ? "Phone" : "โทรศัพท์"}
+                  </h4>
+                  <p class="text-gray-600">+66 123 456 789</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-1">
+                    {lang === "en" ? "Email" : "อีเมล"}
+                  </h4>
+                  <p class="text-gray-600">info@smartbed.com</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-1">
+                    {lang === "en" ? "Address" : "ที่อยู่"}
+                  </h4>
+                  <p class="text-gray-600">
+                    {lang === "en" 
+                      ? "123 Healthcare St., Bangkok, Thailand"
+                      : "123 ถนนการแพทย์ กรุงเทพฯ ประเทศไทย"
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Form -->
+          <div class="bg-white rounded-2xl p-8 shadow-lg">
+            <form class="space-y-6">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  {lang === "en" ? "Name" : "ชื่อ"}
+                </label>
+                <input 
+                  type="text" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={lang === "en" ? "Your name" : "ชื่อของคุณ"}
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  {lang === "en" ? "Email" : "อีเมล"}
+                </label>
+                <input 
+                  type="email" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={lang === "en" ? "your@email.com" : "อีเมลของคุณ"}
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  {lang === "en" ? "Message" : "ข้อความ"}
+                </label>
+                <textarea 
+                  rows="4"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={lang === "en" ? "Tell us about your needs..." : "บอกเราเกี่ยวกับความต้องการของคุณ..."}
+                ></textarea>
+              </div>
+
+              <button 
+                type="submit"
+                class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 hover:scale-105 shadow-lg"
+              >
+                {lang === "en" ? "Send Message" : "ส่งข้อความ"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </Layout>
