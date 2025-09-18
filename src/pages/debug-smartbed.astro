@@ -1,8 +1,8 @@
 ---
-// src/pages/debug-smartbed.astro - Debug Smart Bed data
+// src/pages/debug-smartbed.astro - Debug Smart Bed data เหมือน Hero
 import { wpQuery } from "../lib/wp";
 
-// Test GraphQL query สำหรับ Smart Bed
+// Test GraphQL query สำหรับ Smart Bed เหมือน Hero pattern
 const SMARTBED_DEBUG_QUERY = /* GraphQL */ `
   query SmartBedDebug {
     pages(first: 10, where: { status: PUBLISH }) {
@@ -22,9 +22,9 @@ const SMARTBED_DEBUG_QUERY = /* GraphQL */ `
           heroSubtitle
         }
         smartbed {
-          smartbedTitle
-          smartbedSub
-          smartbedImage {
+          smartbedtitle
+          smartbedsub
+          smartbedimage {
             node {
               sourceUrl
               altText
@@ -36,7 +36,7 @@ const SMARTBED_DEBUG_QUERY = /* GraphQL */ `
   }
 `;
 
-// ลอง query แบบ nodeByUri ด้วย
+// ลอง query แบบ nodeByUri ด้วย - เหมือน Hero
 const URI_DEBUG_QUERY = /* GraphQL */ `
   query DebugByUri($uri: String!) {
     nodeByUri(uri: $uri) {
@@ -47,9 +47,9 @@ const URI_DEBUG_QUERY = /* GraphQL */ `
           heroTitle
         }
         smartbed {
-          smartbedTitle
-          smartbedSub
-          smartbedImage {
+          smartbedtitle
+          smartbedsub
+          smartbedimage {
             node {
               sourceUrl
             }
@@ -61,7 +61,7 @@ const URI_DEBUG_QUERY = /* GraphQL */ `
 `;
 
 let allPagesResult = null;
-let uriResult = null;
+let uriResults = [];
 
 try {
   allPagesResult = await wpQuery<any>(SMARTBED_DEBUG_QUERY);
@@ -69,15 +69,21 @@ try {
   allPagesResult = { error: e.message };
 }
 
-try {
-  uriResult = await wpQuery<any>(URI_DEBUG_QUERY, { uri: "/" });
-} catch (e) {
-  uriResult = { error: e.message };
+// ลอง URI หลายตัวเหมือน Hero
+const testUris = ["/", "/th", "/en", "/home", "/หน้าแรก"];
+
+for (const uri of testUris) {
+  try {
+    const result = await wpQuery<any>(URI_DEBUG_QUERY, { uri });
+    uriResults.push({ uri, data: result, success: true });
+  } catch (e) {
+    uriResults.push({ uri, error: e.message, success: false });
+  }
 }
 
-// ACF Field Groups test
-const ACF_GROUPS_QUERY = /* GraphQL */ `
-  query ACFGroups {
+// ลองดู GraphQL Schema
+const SCHEMA_QUERY = /* GraphQL */ `
+  query SchemaDebug {
     __type(name: "Page") {
       fields {
         name
@@ -95,12 +101,16 @@ const ACF_GROUPS_QUERY = /* GraphQL */ `
   }
 `;
 
-let acfResult = null;
+let schemaResult = null;
 try {
-  acfResult = await wpQuery<any>(ACF_GROUPS_QUERY);
+  schemaResult = await wpQuery<any>(SCHEMA_QUERY);
 } catch (e) {
-  acfResult = { error: e.message };
+  schemaResult = { error: e.message };
 }
+
+// สรุปผลลัพธ์
+const pagesWithSmartbed = allPagesResult?.pages?.nodes?.filter((p: any) => p.smartbed) || [];
+const pagesWithHero = allPagesResult?.pages?.nodes?.filter((p: any) => p.hero) || [];
 ---
 
 <!DOCTYPE html>
@@ -173,32 +183,41 @@ try {
     .status-ok { background: #dcfce7; color: #166534; }
     .status-error { background: #fee2e2; color: #991b1b; }
     .status-warning { background: #fef3c7; color: #92400e; }
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .comparison div {
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .working { background: #f0fdf4; border-color: #22c55e; }
+    .broken { background: #fef2f2; border-color: #ef4444; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔍 Smart Bed Debug Report</h1>
+    <h1>🛏️ Smart Bed vs 🏠 Hero Debug Comparison</h1>
     
     <div class="section">
       <h2>📊 Summary</h2>
-      <div class="grid">
-        <div>
-          <p><strong>All Pages Query:</strong> 
-            <span class={`status-badge ${allPagesResult?.error ? 'status-error' : 'status-ok'}`}>
-              {allPagesResult?.error ? 'Failed' : 'Success'}
-            </span>
-          </p>
-          <p><strong>Pages Found:</strong> {allPagesResult?.pages?.nodes?.length || 0}</p>
+      <div class="comparison">
+        <div class="working">
+          <h3>🏠 Hero (Working)</h3>
+          <p><strong>Pages with Hero:</strong> {pagesWithHero.length}</p>
+          <p><strong>Hero Fields:</strong> heroTitle, heroSubtitle</p>
+          <p><strong>Status:</strong> <span class="status-ok">Working</span></p>
         </div>
-        <div>
-          <p><strong>URI Query:</strong> 
-            <span class={`status-badge ${uriResult?.error ? 'status-error' : 'status-ok'}`}>
-              {uriResult?.error ? 'Failed' : 'Success'}
-            </span>
-          </p>
-          <p><strong>Smart Bed Fields:</strong> 
-            <span class={`status-badge ${uriResult?.nodeByUri?.smartbed ? 'status-ok' : 'status-warning'}`}>
-              {uriResult?.nodeByUri?.smartbed ? 'Available' : 'Not Found'}
+        <div class="broken">
+          <h3>🛏️ Smart Bed (Testing)</h3>
+          <p><strong>Pages with SmartBed:</strong> {pagesWithSmartbed.length}</p>
+          <p><strong>SmartBed Fields:</strong> smartbedTitle, smartbedSub</p>
+          <p><strong>Status:</strong> 
+            <span class={`status-badge ${pagesWithSmartbed.length > 0 ? 'status-ok' : 'status-error'}`}>
+              {pagesWithSmartbed.length > 0 ? 'Found Data' : 'No Data'}
             </span>
           </p>
         </div>
@@ -206,7 +225,7 @@ try {
     </div>
 
     <div class={`section ${allPagesResult?.error ? 'error' : 'success'}`}>
-      <h2>1. All Pages with Smart Bed Data</h2>
+      <h2>1. All Pages Analysis</h2>
       {allPagesResult?.error ? (
         <div>
           <p><strong>❌ Query Failed</strong></p>
@@ -222,14 +241,18 @@ try {
               <p><strong>URI:</strong> {page.uri} | <strong>Slug:</strong> {page.slug}</p>
               <p><strong>Is Front Page:</strong> {page.isFrontPage ? '✅ Yes' : '❌ No'}</p>
               
-              <div style="margin-top: 1rem;">
-                <h4>🏠 Hero Fields:</h4>
-                <p><strong>heroTitle:</strong> <span class="highlight">{page.hero?.heroTitle || 'ไม่มี'}</span></p>
-                
-                <h4>🛏️ Smart Bed Fields:</h4>
-                <p><strong>smartbedTitle:</strong> <span class="highlight">{page.smartbed?.smartbedTitle || 'ไม่มี'}</span></p>
-                <p><strong>smartbedSub:</strong> {page.smartbed?.smartbedSub ? `${page.smartbed.smartbedSub.substring(0, 50)}...` : 'ไม่มี'}</p>
-                <p><strong>smartbedImage:</strong> {page.smartbed?.smartbedImage?.node?.sourceUrl ? '✅ มีรูป' : '❌ ไม่มีรูป'}</p>
+              <div class="comparison">
+                <div class="working">
+                  <h4>🏠 Hero Fields:</h4>
+                  <p><strong>heroTitle:</strong> <span class="highlight">{page.hero?.heroTitle || 'ไม่มี'}</span></p>
+                  <p><strong>heroSubtitle:</strong> {page.hero?.heroSubtitle ? '✅ มี' : '❌ ไม่มี'}</p>
+                </div>
+                <div class={page.smartbed ? 'working' : 'broken'}>
+                  <h4>🛏️ Smart Bed Fields:</h4>
+                  <p><strong>smartbedtitle:</strong> <span class="highlight">{page.smartbed?.smartbedtitle || 'ไม่มี'}</span></p>
+                  <p><strong>smartbedsub:</strong> {page.smartbed?.smartbedsub ? '✅ มี' : '❌ ไม่มี'}</p>
+                  <p><strong>smartbedimage:</strong> {page.smartbed?.smartbedimage?.node?.sourceUrl ? '✅ มีรูป' : '❌ ไม่มีรูป'}</p>
+                </div>
               </div>
             </div>
           ))}
@@ -237,88 +260,85 @@ try {
       )}
     </div>
 
-    <div class={`section ${uriResult?.error ? 'error' : 'success'}`}>
-      <h2>2. URI-based Query Test (/ path)</h2>
-      {uriResult?.error ? (
-        <div>
-          <p><strong>❌ Query Failed</strong></p>
-          <p>Error: {uriResult.error}</p>
-        </div>
-      ) : (
-        <div>
-          <p><strong>✅ URI Query Successful</strong></p>
-          
-          {uriResult?.nodeByUri ? (
-            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
-              <h3>{uriResult.nodeByUri.title}</h3>
-              
-              <h4>🏠 Hero Data:</h4>
-              <p><strong>heroTitle:</strong> {uriResult.nodeByUri.hero?.heroTitle || 'ไม่มี'}</p>
-              
-              <h4>🛏️ Smart Bed Data:</h4>
-              <p><strong>smartbedTitle:</strong> <span class="highlight">{uriResult.nodeByUri.smartbed?.smartbedTitle || 'ไม่มี'}</span></p>
-              <p><strong>smartbedSub:</strong> {uriResult.nodeByUri.smartbed?.smartbedSub || 'ไม่มี'}</p>
-              <p><strong>smartbedImage:</strong> {uriResult.nodeByUri.smartbed?.smartbedImage?.node?.sourceUrl || 'ไม่มี'}</p>
-            </div>
-          ) : (
-            <p><strong>⚠️ No node found for URI "/"</strong></p>
-          )}
-        </div>
-      )}
-    </div>
-
     <div class="section">
-      <h2>3. GraphQL Schema Analysis</h2>
-      {acfResult?.error ? (
-        <p>Schema analysis failed: {acfResult.error}</p>
-      ) : (
-        <details>
-          <summary>Click to view Page type fields</summary>
-          <pre>{JSON.stringify(acfResult, null, 2)}</pre>
-        </details>
-      )}
+      <h2>2. URI-based Query Tests (เหมือน Hero pattern)</h2>
+      <div class="grid">
+        {uriResults.map((result, index) => (
+          <div key={index} class={result.success ? 'success' : 'error'} style="padding: 1rem; border-radius: 8px; border: 1px solid #ddd; margin: 0.5rem 0;">
+            <h3>URI: {result.uri}</h3>
+            {result.success ? (
+              <div>
+                <p><strong>✅ Success</strong></p>
+                {result.data?.nodeByUri ? (
+                  <div>
+                    <p><strong>Page:</strong> {result.data.nodeByUri.title}</p>
+                    <div class="comparison" style="font-size: 0.9rem;">
+                      <div>
+                        <strong>🏠 Hero:</strong> {result.data.nodeByUri.hero?.heroTitle ? '✅ Found' : '❌ None'}
+                      </div>
+                      <div>
+                        <strong>🛏️ SmartBed:</strong> {result.data.nodeByUri.smartbed?.smartbedtitle ? '✅ Found' : '❌ None'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p><strong>⚠️ No page found</strong></p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p><strong>❌ Failed</strong></p>
+                <p>Error: {result.error}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
 
     <div class="section warning">
-      <h2>🛠️ Troubleshooting Steps</h2>
+      <h2>🔧 Troubleshooting Steps</h2>
       
-      {!allPagesResult?.pages?.nodes?.some((p: any) => p.smartbed?.smartbedTitle) && (
+      {pagesWithSmartbed.length === 0 ? (
         <div style="margin: 1rem 0; padding: 1rem; background: #fee2e2; border-radius: 8px;">
-          <h3>❌ No Smart Bed data found</h3>
-          <p><strong>Possible solutions:</strong></p>
+          <h3>❌ No Smart Bed data found - Copy Hero setup!</h3>
+          <p><strong>Solution: สร้าง SmartBed Field Group เหมือน Hero ที่ทำงานได้:</strong></p>
           <ol>
-            <li>ตรวจสอบใน ACF Field Group "Smartbed":
+            <li><strong>ไปที่ ACF → Field Groups → Add New</strong></li>
+            <li><strong>Basic Settings:</strong>
               <ul>
-                <li>Settings → เปิด "Show in GraphQL"</li>
-                <li>GraphQL Field Name = "smartbed"</li>
+                <li>Title: "SmartBed" (เหมือน Hero)</li>
+                <li>เพิ่ม Fields: smartbedtitle (Text), smartbedsub (Textarea), smartbedimage (Image)</li>
               </ul>
             </li>
-            <li>ตรวจสอบใน individual fields:
+            <li><strong>Settings Tab:</strong>
               <ul>
-                <li>smartbedTitle → เปิด "Show in GraphQL"</li>
-                <li>smartbedSub → เปิด "Show in GraphQL"</li>
-                <li>smartbedImage → เปิด "Show in GraphQL"</li>
+                <li>✅ Show in GraphQL: เปิด</li>
+                <li>📝 GraphQL Field Name: "smartbed" (lowercase, เหมือน hero)</li>
               </ul>
             </li>
-            <li>ตรวจสอบ Location Rules:
+            <li><strong>Each Field Settings:</strong>
               <ul>
-                <li>Field Group ต้องแสดงใน Post Type = Page</li>
+                <li>✅ Show in GraphQL: เปิดทุก field</li>
+                <li>📝 GraphQL Field Names: "smartbedtitle", "smartbedsub", "smartbedimage" (lowercase!)</li>
               </ul>
             </li>
-            <li>ลองเข้า GraphiQL: <code>{import.meta.env.PUBLIC_WP_GRAPHQL?.replace('/graphql', '/graphiql')}</code></li>
+            <li><strong>Location Rules:</strong>
+              <ul>
+                <li>📍 Post Type == Page (เหมือน Hero)</li>
+              </ul>
+            </li>
           </ol>
         </div>
-      )}
-      
-      {allPagesResult?.pages?.nodes?.some((p: any) => p.smartbed?.smartbedTitle) && (
+      ) : (
         <div style="margin: 1rem 0; padding: 1rem; background: #dcfce7; border-radius: 8px;">
           <h3>✅ Smart Bed data found!</h3>
-          <p>Data is available in GraphQL. If it's not showing on the website:</p>
+          <p>Field Group ตั้งค่าถูกต้องแล้ว ตอนนี้:</p>
           <ol>
-            <li>ตรวจสอบว่าได้ import SmartBedSection component แล้ว</li>
-            <li>ตรวจสอบว่าได้เพิ่ม &lt;SmartBedSection lang={"{lang}"} /&gt; ใน homepage</li>
-            <li>ลอง restart development server</li>
-            <li>ตรวจสอบ browser console สำหรับ errors</li>
+            <li>ไปเพิ่มข้อมูลใน Page ที่ต้องการ</li>
+            <li>ตรวจสอบว่า SmartBedSection component ใช้ได้</li>
+            <li>ลบไฟล์ debug นี้</li>
+            <li><a href="/th">ไปดูหน้าเว็บหลัก</a></li>
           </ol>
         </div>
       )}
@@ -331,18 +351,23 @@ try {
         <pre>{JSON.stringify(allPagesResult, null, 2)}</pre>
       </details>
       <details>
-        <summary>URI Result</summary>
-        <pre>{JSON.stringify(uriResult, null, 2)}</pre>
+        <summary>URI Test Results</summary>
+        <pre>{JSON.stringify(uriResults, null, 2)}</pre>
+      </details>
+      <details>
+        <summary>GraphQL Schema</summary>
+        <pre>{JSON.stringify(schemaResult, null, 2)}</pre>
       </details>
     </div>
 
     <div class="section">
       <h2>🚀 Next Steps</h2>
       <ol>
-        <li>แก้ไขปัญหาตาม troubleshooting steps ด้านบน</li>
-        <li>อัพเดทโค้ดตาม artifacts ที่ให้ไว้</li>
-        <li>หากข้อมูลแสดงใน debug แล้ว ลบไฟล์ debug นี้</li>
-        <li><a href="/th" style="color: #2563eb;">ไปดูหน้าเว็บหลัก</a></li>
+        <li><strong>หาก SmartBed ไม่มีข้อมูล:</strong> สร้าง Field Group ตาม troubleshooting ด้านบน</li>
+        <li><strong>หาก SmartBed มีข้อมูลแล้ว:</strong> ไปเพิ่มข้อมูลใน WordPress Page</li>
+        <li><strong>ทดสอบ SmartBedSection:</strong> ดูว่า debug info แสดง "Found Data: ✅ Yes" หรือไม่</li>
+        <li><strong>เมื่อเสร็จแล้ว:</strong> ลบไฟล์ debug-smartbed.astro นี้</li>
+        <li><strong>ดูผลลัพธ์:</strong> <a href="/th" style="color: #2563eb;">ไปหน้าเว็บหลัก</a></li>
       </ol>
     </div>
   </div>

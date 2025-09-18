@@ -1,5 +1,5 @@
 ---
-// src/components/SmartBedSection.astro
+// src/components/SmartBedSection.astro - แก้ไขให้ดึงข้อมูลจาก WordPress ได้
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -12,9 +12,33 @@ const { lang = "th" } = Astro.props;
 // แปลง lang เป็น GraphQL enum
 const languageFilter = lang.toUpperCase() as "TH" | "EN";
 
-// GraphQL Query สำหรับดึงข้อมูล Smart Bed
-const SMARTBED_QUERY = /* GraphQL */ `
-  query SmartBedData($language: LanguageCodeFilterEnum!) {
+// ใช้ URI candidates เหมือน Hero section
+const uriCandidates = lang === "en" 
+  ? ["/", "/home/", "/home", "/en/", "/en"]
+  : ["/", "/th/", "/th", "/หน้าแรก/", "/หน้าแรก"];
+
+type Size = { name: string; sourceUrl?: string };
+type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
+
+function normalize(img: any): Img | undefined {
+  return img?.node ? img.node : img ?? undefined;
+}
+
+function pickImageUrl(img: any): string | undefined {
+  const n = normalize(img);
+  if (!n) return undefined;
+  const sizes = n.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  for (const key of prefer) {
+    const hit = sizes.find((s) => s?.name === key && s?.sourceUrl);
+    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+  }
+  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
+
+// ใช้ language-specific query เหมือน Hero section แทน URI-based
+const SMARTBED_LANGUAGE_QUERY = /* GraphQL */ `
+  query SmartBedByLanguage($language: LanguageCodeFilterEnum!) {
     pages(
       first: 10
       where: { 
@@ -33,9 +57,9 @@ const SMARTBED_QUERY = /* GraphQL */ `
           name
         }
         smartbed {
-          smartbedTitle
-          smartbedSub
-          smartbedImage {
+          smartbedtitle
+          smartbedsub
+          smartbedimage {
             node {
               id
               altText
@@ -58,125 +82,267 @@ const SMARTBED_QUERY = /* GraphQL */ `
   }
 `;
 
-function pickImageUrl(img: any): string | undefined {
-  if (!img?.node) return undefined;
-  
-  const n = img.node;
-  const sizes = n.mediaDetails?.sizes ?? [];
-  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
-  
-  for (const key of prefer) {
-    const hit = sizes.find((s: any) => s?.name === key && s?.sourceUrl);
-    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+// Fallback URI-based query (สำหรับกรณีที่ language-specific ไม่ได้ผล)
+const SMARTBED_URI_QUERY = /* GraphQL */ `
+  query SmartBedByUri($uri: String!) {
+    nodeByUri(uri: $uri) {
+      ... on Page {
+        id
+        title
+        smartbed {
+          smartbedtitle
+          smartbedsub
+          smartbedimage {
+            node {
+              id
+              altText
+              sourceUrl
+              mediaDetails {
+                width
+                height
+                sizes {
+                  name
+                  width
+                  height
+                  sourceUrl
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  
-  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
-}
+`;
 
 let smartbedTitle = "";
 let smartbedSub = "";
 let smartbedImageUrl = "";
 let foundSmartbedData = false;
+let debugInfo: any = {};
 
+console.log(`[SMARTBED] Looking for Smart Bed data in language: ${languageFilter}`);
+
+// 1. ลอง language-specific query ก่อน (วิธีหลัก)
 try {
-  console.log(`[SMARTBED] Looking for Smart Bed data in language: ${languageFilter}`);
+  console.log(`[SMARTBED] Trying language-specific query for: ${languageFilter}`);
+  const languageData = await wpQuery<any>(SMARTBED_LANGUAGE_QUERY, { 
+    language: languageFilter 
+  });
   
-  const data = await wpQuery<any>(SMARTBED_QUERY, { language: languageFilter });
-  const pages = data?.pages?.nodes || [];
+  const pages = languageData?.pages?.nodes || [];
+  console.log(`[SMARTBED] Found ${pages.length} pages for language ${languageFilter}`);
   
-  console.log(`[SMARTBED] Found ${pages.length} pages`);
-  
-  // หา page ที่มีข้อมูล Smart Bed
+  // หา page ที่มี smartbed data
   let targetPage = null;
   
   // 1. หา Front Page ก่อน
   targetPage = pages.find((p: any) => p.isFrontPage && p.smartbed);
   
-  // 2. หา page ใดๆ ที่มี smartbed data
+  // 2. หา page ที่ชื่อ "Home" หรือ "หน้าแรก"
+  if (!targetPage) {
+    const homeNames = lang === "en" ? ["Home", "home"] : ["หน้าแรก", "หน้าหลัก"];
+    targetPage = pages.find((p: any) => 
+      p.smartbed && homeNames.some(name => 
+        p.title?.toLowerCase().includes(name.toLowerCase()) ||
+        p.slug?.toLowerCase().includes(name.toLowerCase())
+      )
+    );
+  }
+  
+  // 3. หา page ใดๆ ที่มี smartbed data
   if (!targetPage) {
     targetPage = pages.find((p: any) => p.smartbed && 
-      (p.smartbed.smartbedTitle || p.smartbed.smartbedImage)
+      (p.smartbed.smartbedtitle || p.smartbed.smartbedimage)
     );
   }
   
   if (targetPage?.smartbed) {
-    console.log(`[SMARTBED] Found Smart Bed data in page: ${targetPage.title}`);
+    console.log(`[SMARTBED] Found smartbed data in page: ${targetPage.title} (${targetPage.language?.code})`);
     
     const smartbed = targetPage.smartbed;
-    smartbedTitle = smartbed.smartbedTitle || smartbedTitle;
-    smartbedSub = smartbed.smartbedSub || smartbedSub;
-    smartbedImageUrl = pickImageUrl(smartbed.smartbedImage) || smartbedImageUrl;
+    smartbedTitle = smartbed?.smartbedtitle || smartbedTitle;
+    smartbedSub = smartbed?.smartbedsub || smartbedSub;
+    smartbedImageUrl = pickImageUrl(smartbed?.smartbedimage) || smartbedImageUrl;
     
-    foundSmartbedData = !!(smartbedTitle || smartbedSub || smartbedImageUrl);
-    
-    console.log(`[SMARTBED] Data:`, { smartbedTitle, smartbedSub, smartbedImageUrl });
+    if (smartbedTitle || smartbedSub || smartbedImageUrl) {
+      foundSmartbedData = true;
+      debugInfo.successMethod = "language-specific";
+      debugInfo.successPage = {
+        title: targetPage.title,
+        uri: targetPage.uri,
+        language: targetPage.language?.code
+      };
+      debugInfo.foundData = { smartbedTitle, smartbedSub, smartbedImageUrl };
+      console.log(`[SMARTBED] Success with language-specific query!`);
+    }
   }
-  
 } catch (e) {
-  console.error("[SMARTBED] Query failed:", e);
+  console.warn(`[SMARTBED] Language-specific query failed:`, e);
+  debugInfo.languageError = e.message;
+}
+
+// 2. ถ้ายังไม่ได้ผล ลอง URI-based query (fallback)
+if (!foundSmartbedData) {
+  console.log(`[SMARTBED] Trying fallback URI-based queries...`);
+  
+  for (const uri of uriCandidates) {
+    try {
+      console.log(`[SMARTBED] Trying URI: ${uri}`);
+      const data = await wpQuery<any>(SMARTBED_URI_QUERY, { uri });
+      const smartbed = data?.nodeByUri?.smartbed;
+      
+      if (!smartbed) {
+        console.log(`[SMARTBED] No smartbed data found for URI: ${uri}`);
+        continue;
+      }
+
+      console.log(`[SMARTBED] Found smartbed data for URI: ${uri}`, smartbed);
+
+      smartbedTitle = smartbed?.smartbedtitle || smartbedTitle;
+      smartbedSub = smartbed?.smartbedsub || smartbedSub;
+      smartbedImageUrl = pickImageUrl(smartbed?.smartbedimage) || smartbedImageUrl;
+
+      if (smartbedTitle || smartbedSub || smartbedImageUrl) {
+        foundSmartbedData = true;
+        debugInfo.successMethod = "uri-based";
+        debugInfo.successUri = uri;
+        debugInfo.foundData = { smartbedTitle, smartbedSub, smartbedImageUrl };
+        console.log(`[SMARTBED] Success with URI-based query: ${uri}`);
+        break;
+      }
+    } catch (e) {
+      console.warn(`[SMARTBED] URI query failed for ${uri}:`, e);
+      debugInfo.uriErrors = debugInfo.uriErrors || [];
+      debugInfo.uriErrors.push({ uri, error: e.message });
+    }
+  }
 }
 
 // Fallback data หากไม่มีจาก WordPress
 if (!foundSmartbedData) {
   console.log("[SMARTBED] Using fallback data");
+  debugInfo.usingFallback = true;
   
   smartbedTitle = lang === "en" 
-    ? "Smart Bed" 
-    : "สมาร์ทเบด";
+    ? "Innovative Care for the Ones Your loved ones" 
+    : "การดูแลแบบนวัตกรรมสำหรับคนที่คุณรัก";
     
   smartbedSub = lang === "en"
-    ? "Innovative Care for the Ones Your loved ones. The Smart Bed is an electric bed that transforms pressure and supports adaptive repositioning system for comfort and effective nursing. It can provide smooth and continuous connection with your patients' health parameters, seamlessly and monitor your patients' health parameters, breathing seamlessly connection and improving with your sleep."
-    : "การดูแลแบบนวัตกรรมสำหรับคนที่คุณรัก เตียงอัจฉริยะเป็นเตียงไฟฟ้าที่เปลี่ยนแปลงแรงกดดันและรองรับระบบการจัดตำแหน่งที่ปรับได้เพื่อความสะดวกสบายและการพยาบาลที่มีประสิทธิภาพ สามารถให้การเชื่อมต่อที่ราบรื่นและต่อเนื่องกับพารามิเตอร์สุขภาพของผู้ป่วย ตรวจสอบและปรับปรุงการนอนหลับของคุณได้อย่างไร้รอยต่อ";
+    ? "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients. With IoT integration, it can be controlled remotely via smartphone. Embedded technology enhances its intelligence, enabling seamless connection and interaction with other devices."
+    : "เตียงอัจฉริยะเป็นเตียงไฟฟ้าที่กระจายแรงกดดันและช่วยเหลือผู้ดูแลในการจัดตำแหน่งผู้ป่วย ด้วยการผสานรวม IoT สามารถควบคุมระยะไกลผ่านสมาร์ทโฟน เทคโนโลยีที่ฝังอยู่ช่วยเพิ่มความฉลาดและเชื่อมต่อกับอุปกรณ์อื่นได้อย่างราบรื่น";
 }
+
+console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smartbedSub, smartbedImageUrl });
 ---
 
 <!-- Smart Bed Section -->
-<section class="section-padding bg-white overflow-hidden">
-  <div class="container-wide">
+<section class="section-padding bg-gradient-to-br from-gray-50 to-blue-50/30 overflow-hidden relative">
+  <!-- Background Pattern -->
+  <div class="absolute inset-0 opacity-5">
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-72 h-72 bg-cyan-400 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="container-wide relative z-10">
     <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
       
+      <!-- Image Column - วางไว้ฝั่งซ้าย -->
+      <div class="relative order-1 lg:order-1">
+        <!-- Background Decoration -->
+        <div class="absolute inset-0 bg-gradient-to-br from-cyan-100/50 to-blue-200/50 rounded-3xl transform rotate-3 scale-105"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-cyan-200/50 rounded-3xl transform -rotate-2 scale-105"></div>
+        
+        <!-- Main Image Container -->
+        <div class="relative bg-white rounded-3xl p-6 lg:p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105">
+          {smartbedImageUrl ? (
+            <img 
+              src={smartbedImageUrl}
+              alt={lang === "en" ? "Smart Bed Innovation" : "เตียงอัจฉริยะ"}
+              class="w-full h-auto rounded-2xl shadow-lg transition-transform duration-500 hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <!-- Fallback placeholder with smart bed visualization -->
+            <div class="aspect-[4/3] bg-gradient-to-br from-cyan-50 to-blue-100 rounded-2xl flex items-center justify-center relative overflow-hidden">
+              <!-- Background grid pattern -->
+              <div class="absolute inset-0 opacity-10">
+                <div class="grid grid-cols-8 grid-rows-6 h-full">
+                  {Array.from({length: 48}).map((_, i) => (
+                    <div key={i} class="border border-blue-300"></div>
+                  ))}
+                </div>
+              </div>
+              
+              <!-- Smart bed icon -->
+              <div class="relative text-center text-cyan-700 z-10">
+                <svg class="w-20 h-20 mx-auto mb-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>
+                </svg>
+                <p class="text-lg font-semibold">Smart Bed</p>
+                <p class="text-sm opacity-75">Advanced Care Technology</p>
+              </div>
+              
+              <!-- Floating tech indicators -->
+              <div class="absolute top-4 right-4 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <div class="absolute bottom-4 left-4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+            </div>
+          )}
+          
+          <!-- Floating Tech Elements -->
+          <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg animate-float">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          
+          <div class="absolute -bottom-3 -left-3 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg animate-float" style="animation-delay: -1s;">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      
       <!-- Content Column -->
-      <div class="lg:pr-8">
+      <div class="order-2 lg:order-2 lg:pl-8">
         <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-800 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-800 px-6 py-3 rounded-full text-sm font-semibold mb-6 shadow-md">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
           </svg>
-          {lang === "en" ? "Innovation" : "นวัตกรรม"}
+          {lang === "en" ? "Smart Innovation" : "นวัตกรรมอัจฉริยะ"}
         </div>
         
-        <!-- Main Title -->
+        <!-- Section Title (Fixed in code) -->
         <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          {smartbedTitle}
+          {lang === "en" ? "Smart Bed" : "สมาร์ทเบด"}
         </h2>
         
-        <!-- Subtitle -->
-        <div class="mb-6">
-          <h3 class="text-xl lg:text-2xl font-semibold text-cyan-600 mb-4">
-            {lang === "en" ? "Innovative Care" : "การดูแลแบบนวัตกรรม"}
+        <!-- Dynamic Title from WordPress -->
+        {smartbedTitle && (
+          <h3 class="text-2xl lg:text-3xl font-semibold text-gradient-primary mb-6 leading-tight">
+            {smartbedTitle}
           </h3>
-          <p class="text-lg text-cyan-700 font-medium">
-            {lang === "en" ? "for the Ones Your loved ones" : "สำหรับคนที่คุณรัก"}
-          </p>
-        </div>
+        )}
         
-        <!-- Description -->
+        <!-- Description from WordPress -->
         <div class="prose prose-lg text-gray-600 mb-8 max-w-none">
-          <p class="leading-relaxed">
+          <p class="text-lg leading-relaxed whitespace-pre-line">
             {smartbedSub}
           </p>
         </div>
         
-        <!-- CTA Button -->
-        <div class="flex flex-col sm:flex-row gap-4">
-          <a href="#contact" class="btn-secondary group inline-flex items-center">
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+          <a href="#contact" class="btn-primary group">
             <span>{lang === "en" ? "Contact Us" : "ติดต่อเรา"}</span>
             <svg class="w-5 h-5 transition-transform group-hover-translate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
             </svg>
           </a>
           
-          <a href="#products" class="btn-primary group inline-flex items-center">
+          <a href="#features" class="btn-secondary group">
             <span>{lang === "en" ? "Learn More" : "เรียนรู้เพิ่มเติม"}</span>
             <svg class="w-5 h-5 transition-transform group-hover-scale" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
@@ -185,85 +351,81 @@ if (!foundSmartbedData) {
         </div>
         
         <!-- Features List -->
-        <div class="mt-12 grid sm:grid-cols-2 gap-6">
-          <div class="flex items-start gap-3">
-            <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="grid sm:grid-cols-2 gap-6">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </div>
             <div>
-              <h4 class="font-semibold text-gray-900 mb-1">
-                {lang === "en" ? "Adaptive Positioning" : "ระบบปรับตำแหน่งอัตโนมัติ"}
+              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
+                {lang === "en" ? "Pressure Distribution" : "กระจายแรงกดดัน"}
               </h4>
-              <p class="text-sm text-gray-600">
+              <p class="text-gray-600">
                 {lang === "en" 
-                  ? "Intelligent pressure redistribution system"
-                  : "ระบบกระจายแรงกดดันอัจฉริยะ"
+                  ? "Advanced pressure redistribution for patient comfort"
+                  : "ระบบกระจายแรงกดดันขั้นสูงเพื่อความสะดวกสบาย"
                 }
               </p>
             </div>
           </div>
           
-          <div class="flex items-start gap-3">
-            <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
+                {lang === "en" ? "Remote Control" : "ควบคุมระยะไกล"}
+              </h4>
+              <p class="text-gray-600">
+                {lang === "en" 
+                  ? "Smartphone integration for remote monitoring"
+                  : "ผสานรวมสมาร์ทโฟนสำหรับการตรวจสอบระยะไกล"
+                }
+              </p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
             <div>
-              <h4 class="font-semibold text-gray-900 mb-1">
-                {lang === "en" ? "Health Monitoring" : "ตรวจสอบสุขภาพ"}
+              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
+                {lang === "en" ? "IoT Integration" : "การเชื่อมต่อ IoT"}
               </h4>
-              <p class="text-sm text-gray-600">
+              <p class="text-gray-600">
                 {lang === "en" 
-                  ? "Continuous health parameter monitoring"
-                  : "ตรวจสอบพารามิเตอร์สุขภาพอย่างต่อเนื่อง"
+                  ? "Seamless connection with healthcare devices"
+                  : "เชื่อมต่อกับอุปกรณ์ทางการแพทย์อย่างราบรื่น"
                 }
               </p>
             </div>
           </div>
-        </div>
-      </div>
-      
-      <!-- Image Column -->
-      <div class="relative">
-        <!-- Background Decoration -->
-        <div class="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-100 rounded-3xl transform rotate-3"></div>
-        <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-100 rounded-3xl transform -rotate-1"></div>
-        
-        <!-- Main Image Container -->
-        <div class="relative bg-white rounded-3xl p-8 shadow-2xl">
-          {smartbedImageUrl ? (
-            <img 
-              src={smartbedImageUrl}
-              alt={lang === "en" ? "Smart Bed Innovation" : "เตียงอัจฉริยะ"}
-              class="w-full h-auto rounded-2xl shadow-lg"
-              loading="lazy"
-            />
-          ) : (
-            <!-- Fallback placeholder -->
-            <div class="aspect-[4/3] bg-gradient-to-br from-cyan-100 to-blue-200 rounded-2xl flex items-center justify-center">
-              <div class="text-center text-cyan-700">
-                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                <p class="text-sm font-medium">Smart Bed Image</p>
-              </div>
+          
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+              </svg>
             </div>
-          )}
-          
-          <!-- Floating Elements -->
-          <div class="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          
-          <div class="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-            </svg>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
+                {lang === "en" ? "Patient Care" : "การดูแลผู้ป่วย"}
+              </h4>
+              <p class="text-gray-600">
+                {lang === "en" 
+                  ? "Enhanced support for caregivers and patients"
+                  : "การสนับสนุนที่ดียิ่งขึ้นสำหรับผู้ดูแลและผู้ป่วย"
+                }
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -271,13 +433,83 @@ if (!foundSmartbedData) {
     
     <!-- Debug Info (Development only) -->
     {import.meta.env.DEV && (
-      <div class="mt-8 p-4 bg-gray-100 text-gray-800 text-sm rounded-lg">
-        <p><strong>Smart Bed Debug ({lang}):</strong></p>
-        <p>Found Data: {foundSmartbedData ? "Yes" : "No"}</p>
-        <p>Title: {smartbedTitle || "None"}</p>
-        <p>Subtitle: {smartbedSub ? `${smartbedSub.substring(0, 50)}...` : "None"}</p>
-        <p>Image: {smartbedImageUrl || "None"}</p>
+      <div class="mt-12 p-6 bg-white/80 backdrop-blur-sm text-gray-800 text-sm rounded-2xl shadow-lg border border-gray-200">
+        <p><strong>🛏️ Smart Bed Debug ({lang}):</strong></p>
+        <p>Found Data: {foundSmartbedData ? "✅ Yes" : "❌ No"}</p>
+        <p>Method: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{debugInfo.successMethod || "fallback"}</span></p>
+        <p>Title: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{smartbedTitle || "None"}</span></p>
+        <p>Subtitle: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{smartbedSub ? `${smartbedSub.substring(0, 50)}...` : "None"}</span></p>
+        <p>Image: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{smartbedImageUrl || "None"}</span></p>
+        <p>Language Filter: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{languageFilter}</span></p>
+        {debugInfo.successPage && (
+          <p>Success Page: <span class="font-mono bg-green-100 px-2 py-1 rounded text-green-800">{debugInfo.successPage.title} ({debugInfo.successPage.language})</span></p>
+        )}
+        {debugInfo.successUri && (
+          <p>Success URI: <span class="font-mono bg-green-100 px-2 py-1 rounded text-green-800">{debugInfo.successUri}</span></p>
+        )}
+        {debugInfo.usingFallback && (
+          <p class="text-orange-600">⚠️ Using fallback data - WordPress not connected</p>
+        )}
+        {(debugInfo.languageError || debugInfo.uriErrors) && (
+          <details class="mt-2">
+            <summary class="cursor-pointer text-red-600">❌ Errors</summary>
+            {debugInfo.languageError && (
+              <p class="text-xs mt-1 bg-red-50 p-2 rounded">Language Query: {debugInfo.languageError}</p>
+            )}
+            {debugInfo.uriErrors && (
+              <pre class="text-xs mt-1 bg-red-50 p-2 rounded overflow-auto">{JSON.stringify(debugInfo.uriErrors, null, 2)}</pre>
+            )}
+          </details>
+        )}
       </div>
     )}
   </div>
 </section>
+
+<style>
+  /* Enhanced animations */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Gradient text */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Enhanced hover effects */
+  .group:hover .group-hover-translate {
+    transform: translateX(4px);
+  }
+
+  .group:hover .group-hover-scale {
+    transform: scale(1.05);
+  }
+
+  /* Smooth transitions */
+  * {
+    transition-property: transform, box-shadow, background-color, color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  /* Responsive typography */
+  @media (max-width: 640px) {
+    .prose p {
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+  }
+</style>
