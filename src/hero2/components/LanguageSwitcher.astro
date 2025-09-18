@@ -1,0 +1,18 @@
+---
+const { lang = "th", alternates = [] } = Astro.props;
+
+// หา url ของอีกภาษาจาก alternates
+const thUrl = alternates.find((a: any) => a.lang === "th")?.url || "/th";
+const enUrl = alternates.find((a: any) => a.lang === "en")?.url || "/en";
+---
+
+<div class="flex items-center gap-2 text-sm">
+  <a href={thUrl}   
+     class={`px-2 py-1 rounded ${lang === "th" ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"}`}>
+    TH
+  </a>  
+  <a href={enUrl}
+     class={`px-2 py-1 rounded ${lang === "en" ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"}`}>
+    EN
+  </a>
+</div>

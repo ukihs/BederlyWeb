@@ -1,0 +1,274 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { wpQuery } from "../../lib/wp";
+import { rewriteWpUrl } from "../../lib/wpUrl";
+import HOME_QUERY from "../../queries/home";
+
+export async function getStaticPaths() {
+  return [{ params: { lang: "th" } }, { params: { lang: "en" } }];
+}
+
+const { lang } = Astro.params as { lang: "th" | "en" };
+
+/* ---------------- hreflang ---------------- */
+const alternates = [
+  { lang: "th", url: "/th" },
+  { lang: "en", url: "/en" },
+];
+
+/* ---------------- HERO (ดึงจาก ACF Hero Fields) ---------------- */
+let heroTitle = "";
+let heroSubtitle = "";
+let heroImageUrl = "";
+
+function pickImageUrl(imageNode?: any): string | undefined {
+  if (!imageNode) return undefined;
+  const sizes: Array<any> = imageNode?.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  for (const name of prefer) {
+    const size = sizes.find((x: any) => x?.name === name);
+    if (size?.sourceUrl) return rewriteWpUrl(size.sourceUrl);
+  }
+  return rewriteWpUrl(imageNode?.sourceUrl);
+}
+
+const uriCandidates =
+  lang === "en"
+    ? ["/home", "/home/", "/", "/en", "/en/", "/home-en"]
+    : ["/หน้าแรก", "/หน้าแรก/", "/", "/th", "/th/", "/home-th"];
+
+/* ดึง Hero จาก HOME_QUERY */
+for (const uri of uriCandidates) {
+  try {
+    const wpData = await wpQuery<{ nodeByUri: any }>(HOME_QUERY, { uri });
+    const pageData = wpData?.nodeByUri;
+    const hero = pageData?.hero;
+    
+    if (hero) {
+      if (hero.heroTitle) {
+        heroTitle = hero.heroTitle;
+      }
+      if (hero.heroSubtitle) {
+        heroSubtitle = hero.heroSubtitle;
+      }
+      if (hero.heroImage?.node) {
+        heroImageUrl = pickImageUrl(hero.heroImage.node) || "";
+      }
+      break;
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch hero data for URI: ${uri}`, error);
+  }
+}
+
+/* ถ้าไม่มีข้อมูลใน ACF ใช้ default */
+if (!heroTitle) {
+  heroTitle = "Shaping the future of healthcare";
+}
+
+if (!heroSubtitle) {
+  heroSubtitle = lang === "en" 
+    ? "Innovative Care for the Ones You loved ones"
+    : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก";
+}
+
+/* ---------------- SMART BED FEATURES (ดึงจาก ACF) ---------------- */
+const FEATURES_QUERY = /* GraphQL */ `
+  query FeaturesByUri($uri: String!) {
+    nodeByUri(uri: $uri) {
+      ... on Page {
+        id
+        smartBedsFeatures {
+          featuretitle
+          featuresub
+          featureImage {
+            node {
+              sourceUrl
+              altText
+              mediaDetails {
+                sizes { 
+                  name 
+                  width 
+                  height
+                  sourceUrl 
+                }
+              }
+            }
+          }
+        }
+        acf {
+          featuretitle
+          featuresub
+          featureImage {
+            node {
+              sourceUrl
+              altText
+              mediaDetails {
+                sizes { 
+                  name 
+                  width 
+                  height
+                  sourceUrl 
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+let featureTitle = "";
+let featureSub = "";
+let featureImageUrl = "";
+
+for (const uri of uriCandidates) {
+  try {
+    const r = await wpQuery<any>(FEATURES_QUERY, { uri });
+    const node = r?.nodeByUri;
+    if (!node) continue;
+
+    const feat = node.smartBedsFeatures ?? node.acf;
+    if (feat) {
+      featureTitle = feat.featuretitle || "";
+      featureSub = feat.featuresub || "";
+      
+      if (feat.featureImage?.node) {
+        featureImageUrl = pickImageUrl(feat.featureImage.node) || "";
+      }
+      break;
+    }
+  } catch {}
+}
+
+/* ถ้าไม่มีข้อมูลใน ACF ใช้ default */
+if (!featureTitle) {
+  featureTitle = "Innovative Care for the Ones Your loved ones";
+}
+if (!featureSub) {
+  featureSub = "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients. With IoT integration, it can be controlled remotely via smartphone. Embedded technology enhances its intelligence, enabling seamless connection and interaction with other devices.";
+}
+
+const ctaText = lang === "en" ? "Contact Us" : "ติดต่อเรา";
+---
+
+<Layout lang={lang} showNavLinks={true} alternates={alternates}>
+  <!-- ============== HERO SECTION - Background เต็มจอ ============== -->
+  <section class="relative overflow-hidden min-h-screen">
+    <!-- Background image เต็มจอ -->
+    <div class="absolute inset-0 z-0">
+      {heroImageUrl ? (
+        <img
+          src={heroImageUrl}
+          alt="Hero Background"
+          class="w-full h-full object-cover object-center hero-bg-image"
+          loading="eager"
+        />
+      ) : (
+        <div class="w-full h-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400"></div>
+      )}
+      <div class="absolute inset-0 bg-black/40"></div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="relative z-10 flex items-center justify-start min-h-screen px-6 lg:px-12">
+      <div class="max-w-4xl">
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight text-shadow-lg">
+          <span set:html={heroTitle} />
+        </h1>
+        {heroSubtitle && (
+          <p class="text-xl md:text-2xl text-white/90 mt-6 text-shadow">
+            {heroSubtitle}
+          </p>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SMART BED SECTION ============== -->
+  <section class="py-16 lg:py-20">
+    <div class="container-primary">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        
+        <!-- Left: Smart Bed Info Card -->
+        <div class="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-3xl p-8 lg:p-12 text-white shadow-2xl">
+          <h2 class="text-3xl lg:text-4xl font-bold mb-4">Smart Bed</h2>
+          <h3 class="text-xl lg:text-2xl font-light mb-6 opacity-95">
+            {featureTitle}
+          </h3>
+          <p class="text-sm lg:text-base mb-8 leading-relaxed opacity-90">
+            {featureSub}
+          </p>
+          <a href={lang === "en" ? "/en/contact" : "/th/contact"}
+             class="inline-flex items-center gap-3 bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-lg">
+            {ctaText}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Right: Feature Image -->
+        <div class="relative">
+          <div class="rounded-3xl overflow-hidden shadow-2xl">
+            {featureImageUrl ? (
+              <img
+                src={featureImageUrl}
+                alt="Smart Bed Feature"
+                class="w-full h-auto object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div class="aspect-[4/3] bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
+                <div class="text-center text-gray-500">
+                  <p class="text-lg font-medium">Smart Bed Feature Image</p>
+                  <p class="text-sm">Add featureImage in WordPress ACF</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Enhanced styling */
+  .text-shadow-lg {
+    text-shadow: 3px 3px 15px rgba(0, 0, 0, 0.8);
+  }
+
+  .text-shadow {
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Background image optimization */
+  .hero-bg-image {
+    object-position: center;
+    filter: contrast(1.1) brightness(0.85) saturate(1.1);
+  }
+
+  /* Container utility */
+  .container-primary {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Smooth transitions */
+  * {
+    transition-property: transform, box-shadow, background-color, opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    .min-h-screen {
+      min-height: 100dvh;
+    }
+  }
+</style>

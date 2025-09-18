@@ -1,7 +1,9 @@
 ---
-// src/pages/[lang]/index.astro - เพิ่ม SmartBedSection
+// src/pages/[lang]/index.astro - เพิ่ม Gallery Section
 import Layout from "../../layouts/Layout.astro";
 import SmartBedSection from "../../components/SmartBedSection.astro";
+import HeroCategoryImages from "../../components/HeroCategoryImages.astro";
+import FunctionSection from "../../components/FunctionSection.astro";
 import HOME_QUERY from "../../queries/home";
 import { wpQuery } from "../../lib/wp";
 import { rewriteWpUrl } from "../../lib/wpUrl";
@@ -311,196 +313,47 @@ console.log(`[DEBUG] Final result for ${lang}:`, {
     <SmartBedSection lang={lang} />
   </section>
 
-  <!-- Features Section -->
-  <section id="features" class="section-padding bg-white">
+  <!-- Gallery Section - เพิ่มใหม่ -->
+  <section id="gallery" class="section-padding bg-gradient-to-br from-blue-50 to-cyan-50/30">
     <div class="container-primary">
-      <div class="text-center mb-16">
+      <!-- Section Header -->
+      <div class="text-center mb-12">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          {lang === "en" ? "Smart Features" : "ฟีเจอร์อัจฉริยะ"}
+          {lang === "en" ? "Product Gallery" : "แกลเลอรี่ผลิตภัณฑ์"}
         </h2>
         <p class="text-xl text-gray-600 max-w-2xl mx-auto">
           {lang === "en" 
-            ? "Advanced technology designed for optimal patient care and comfort"
-            : "เทคโนโลยีขั้นสูงที่ออกแบบเพื่อการดูแลผู้ป่วยและความสะดวกสบายที่ดีที่สุด"
+            ? "Explore our smart bed features and capabilities in action"
+            : "สำรวจฟีเจอร์และความสามารถของเตียงอัจฉริยะของเราในการใช้งานจริง"
           }
         </p>
       </div>
 
-      <!-- Feature Cards -->
-      <div class="features-grid">
-        <div class="card-feature group">
-          <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover-scale transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "Height Adjustment" : "ปรับความสูง"}
-          </h3>
-          <p class="text-gray-600">
-            {lang === "en" 
-              ? "Precise height control for optimal patient positioning and caregiver accessibility"
-              : "ควบคุมความสูงที่แม่นยำเพื่อตำแหน่งผู้ป่วยที่เหมาะสมและการเข้าถึงของผู้ดูแล"
-            }
-          </p>
-        </div>
-
-        <div class="card-feature group">
-          <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover-scale transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "Side Tilt Control" : "ปรับเอียงซ้าย-ขวา"}
-          </h3>
-          <p class="text-gray-600">
-            {lang === "en" 
-              ? "Left-right tilting capability for improved patient comfort and medical procedures"
-              : "ความสามารถในการเอียงซ้าย-ขวาเพื่อความสะดวกสบายของผู้ป่วยและขั้นตอนทางการแพทย์"
-            }
-          </p>
-        </div>
-
-        <div class="card-feature group">
-          <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover-scale transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "Leg Section Control" : "ปรับส่วนขาขึ้น-ลง"}
-          </h3>
-          <p class="text-gray-600">
-            {lang === "en" 
-              ? "Independent leg section positioning for enhanced circulation and patient comfort"
-              : "การปรับตำแหน่งส่วนขาแยกเป็นอิสระเพื่อการไหลเวียนเลือดที่ดีขึ้นและความสะดวกสบาย"
-            }
-          </p>
-        </div>
+      <!-- Image Slider - ดึงจาก Hero category และแชร์ทั้งสองภาษา -->
+      <div class="max-w-5xl mx-auto">
+        <HeroCategoryImages 
+          lang={lang}
+          limit={9}
+          class="rounded-3xl overflow-hidden shadow-2xl"
+          separateByLanguage={false}
+        />
       </div>
     </div>
   </section>
 
-  <!-- Technology Section -->
-  <section class="section-padding bg-gradient-to-br from-gray-50 to-blue-50/30">
+  <!-- ✅ Functions Section (ใหม่) -->
+  <section id="functions" class="section-padding bg-white">
     <div class="container-primary">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          {lang === "en" ? "Advanced Technology" : "เทคโนโลยีขั้นสูง"}
-        </h2>
-        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-          {lang === "en" 
-            ? "Our smart bed integrates cutting-edge technology to provide comprehensive healthcare solutions"
-            : "เตียงอัจฉริยะของเรารวมเทคโนโลยีล้ำสมัยเพื่อให้บริการดูแลสุขภาพที่ครอบคลุม"
-          }
-        </p>
-      </div>
-
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <!-- IoT Integration -->
-        <div class="text-center">
-          <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "IoT Connectivity" : "การเชื่อมต่อ IoT"}
-          </h3>
-          <p class="text-gray-600 text-sm">
-            {lang === "en" 
-              ? "Seamless integration with hospital systems"
-              : "การผสานรวมกับระบบโรงพยาบาลอย่างราบรื่น"
-            }
-          </p>
-        </div>
-
-        <!-- AI Monitoring -->
-        <div class="text-center">
-          <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "AI Monitoring" : "การตรวจสอบด้วย AI"}
-          </h3>
-          <p class="text-gray-600 text-sm">
-            {lang === "en" 
-              ? "Intelligent patient monitoring and alerts"
-              : "การตรวจสอบผู้ป่วยและการแจ้งเตือนอัจฉริยะ"
-            }
-          </p>
-        </div>
-
-        <!-- Mobile Control -->
-        <div class="text-center">
-          <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "Mobile Control" : "ควบคุมผ่านมือถือ"}
-          </h3>
-          <p class="text-gray-600 text-sm">
-            {lang === "en" 
-              ? "Remote control via smartphone app"
-              : "ควบคุมระยะไกลผ่านแอปสมาร์ทโฟน"
-            }
-          </p>
-        </div>
-
-        <!-- Data Analytics -->
-        <div class="text-center">
-          <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            {lang === "en" ? "Data Analytics" : "การวิเคราะห์ข้อมูล"}
-          </h3>
-          <p class="text-gray-600 text-sm">
-            {lang === "en" 
-              ? "Real-time health data analysis"
-              : "การวิเคราะห์ข้อมูลสุขภาพแบบเรียลไทม์"
-            }
-          </p>
-        </div>
-      </div>
+      <FunctionSection 
+        lang={lang}
+        categorySlug="Function" 
+        limit={10}
+        separateByLanguage={true}
+        class="mt-2"
+      />
     </div>
   </section>
 
-  <!-- Contact Section -->
-  <section id="contact" class="section-padding bg-white">
-    <div class="container-narrow text-center">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-        {lang === "en" ? "Get in Touch" : "ติดต่อเรา"}
-      </h2>
-      <p class="text-xl text-gray-600 mb-8">
-        {lang === "en" 
-          ? "Ready to transform your healthcare facility with smart bed solutions?"
-          : "พร้อมที่จะเปลี่ยนแปลงสถานพยาบาลของคุณด้วยโซลูชันเตียงอัจฉริยะแล้วหรือยัง?"
-        }
-      </p>
-      
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="tel:+66123456789" class="btn-secondary">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
-          {lang === "en" ? "Call Now" : "โทรเลย"}
-        </a>
-        
-        <a href="mailto:info@smartbed.com" class="btn-primary">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          {lang === "en" ? "Send Email" : "ส่งอีเมล"}
-        </a>
-      </div>
-    </div>
-  </section>
+  
+  
 </Layout>

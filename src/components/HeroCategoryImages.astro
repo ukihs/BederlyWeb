@@ -1,5 +1,5 @@
 ---
-// src/components/HeroCategoryImages.astro - Image Slider จาก WordPress Posts
+// src/components/HeroCategoryImages.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -8,74 +8,47 @@ export interface Props {
   categorySlug?: string;
   limit?: number;
   class?: string;
-  separateByLanguage?: boolean; // เพิ่ม option สำหรับแยกภาษาหรือไม่
+  separateByLanguage?: boolean;
 }
 
-const { 
-  lang = "th", 
-  categorySlug = "hero", // เปลี่ยนเป็น "hero" ตามที่เห็นใน WordPress
-  limit = 6, 
+const {
+  lang = "th",
+  categorySlug = "Hero",
+  limit = 9,
   class: klass = "",
-  separateByLanguage = false // default ไม่แยกภาษา
+  separateByLanguage = false,
 } = Astro.props;
 
-// แปลง lang เป็น GraphQL enum
 const languageFilter = lang.toUpperCase() as "TH" | "EN";
 
-// ลอง category names หลายแบบ
 const categoryNames = [
-  categorySlug, 
-  categorySlug.toLowerCase(), 
-  categorySlug.toUpperCase(), 
-  "hero", 
+  categorySlug,
+  categorySlug.toLowerCase(),
+  categorySlug.toUpperCase(),
+  "hero",
   "Hero",
-  "bed-features", 
-  "bed", 
+  "bed-features",
+  "bed",
   "products",
   "gallery",
-  "slider"
+  "slider",
 ];
 
-/** Query โพสต์ตามหมวด - แยกตามภาษา */
+/* ===== Queries ===== */
 const POSTS_BY_CATEGORY_WITH_LANG = /* GraphQL */ `
   query PostsByCategoryWithLang($first: Int!, $category: String!, $language: LanguageCodeFilterEnum) {
     posts(
       first: $first
-      where: { 
-        categoryName: $category, 
-        orderby: { field: DATE, order: DESC },
-        status: PUBLISH,
-        language: $language
-      }
+      where: { categoryName: $category, orderby: { field: DATE, order: ASC }, status: PUBLISH, language: $language }
     ) {
       nodes {
-        id
-        title
-        uri
-        slug
-        excerpt
-        language {
-          code
-          name
-        }
-        categories {
-          nodes { name slug }
-        }
+        id title uri slug excerpt
+        language { code name }
+        categories { nodes { name slug } }
         featuredImage {
           node {
-            id
-            sourceUrl
-            altText
-            mediaDetails {
-              width
-              height
-              sizes { 
-                name 
-                width 
-                height
-                sourceUrl 
-              }
-            }
+            id sourceUrl altText
+            mediaDetails { width height sizes { name width height sourceUrl } }
           }
         }
       }
@@ -83,45 +56,20 @@ const POSTS_BY_CATEGORY_WITH_LANG = /* GraphQL */ `
   }
 `;
 
-/** Query โพสต์ตามหมวด - ไม่แยกภาษา */
 const POSTS_BY_CATEGORY_ALL_LANG = /* GraphQL */ `
   query PostsByCategoryAllLang($first: Int!, $category: String!) {
     posts(
       first: $first
-      where: { 
-        categoryName: $category, 
-        orderby: { field: DATE, order: DESC },
-        status: PUBLISH
-      }
+      where: { categoryName: $category, orderby: { field: DATE, order: ASC }, status: PUBLISH }
     ) {
       nodes {
-        id
-        title
-        uri
-        slug
-        excerpt
-        language {
-          code
-          name
-        }
-        categories {
-          nodes { name slug }
-        }
+        id title uri slug excerpt
+        language { code name }
+        categories { nodes { name slug } }
         featuredImage {
           node {
-            id
-            sourceUrl
-            altText
-            mediaDetails {
-              width
-              height
-              sizes { 
-                name 
-                width 
-                height
-                sourceUrl 
-              }
-            }
+            id sourceUrl altText
+            mediaDetails { width height sizes { name width height sourceUrl } }
           }
         }
       }
@@ -129,148 +77,65 @@ const POSTS_BY_CATEGORY_ALL_LANG = /* GraphQL */ `
   }
 `;
 
+/* ===== Fetch posts ===== */
 let posts: any[] = [];
 let foundCategory = "";
 
-// ลอง query แต่ละชื่อ category
 for (const catName of categoryNames) {
   try {
-    // เลือก query ตาม separateByLanguage option
     const query = separateByLanguage ? POSTS_BY_CATEGORY_WITH_LANG : POSTS_BY_CATEGORY_ALL_LANG;
-    const variables = separateByLanguage 
+    const variables = separateByLanguage
       ? { first: limit, category: catName, language: languageFilter }
       : { first: limit, category: catName };
-    
+
     const res = await wpQuery<any>(query, variables);
-    
-    const foundPosts = (res?.posts?.nodes ?? []).filter((p: any) => {
-      return p?.featuredImage?.node?.sourceUrl;
-    });
-    
+    const foundPosts = (res?.posts?.nodes ?? []).filter((p: any) => p?.featuredImage?.node?.sourceUrl);
+
     if (foundPosts.length > 0) {
       posts = foundPosts;
       foundCategory = catName;
-      console.log(`[SLIDER] Found ${foundPosts.length} posts in category: ${catName} ${separateByLanguage ? `(${languageFilter})` : '(All Languages)'}`);
       break;
     }
-  } catch (err) {
-    continue;
+  } catch {
+    // try next name
   }
 }
 
-// ถ้าไม่เจอเลย ลองเอาโพสต์ทั้งหมดที่มีรูป
 if (posts.length === 0) {
   try {
-    const FALLBACK_QUERY = separateByLanguage ? 
-      /* GraphQL */ `
+    const FALLBACK_QUERY = separateByLanguage
+      ? /* GraphQL */ `
         query FallbackPostsWithLang($first: Int!, $language: LanguageCodeFilterEnum) {
-          posts(
-            first: $first
-            where: { 
-              orderby: { field: DATE, order: DESC },
-              status: PUBLISH,
-              hasPassword: false,
-              language: $language
-            }
-          ) {
+          posts(first: $first, where: { orderby: { field: DATE, order: ASC }, status: PUBLISH, hasPassword: false, language: $language }) {
             nodes {
-              id
-              title
-              uri
-              slug
-              excerpt
-              language {
-                code
-                name
-              }
-              categories {
-                nodes { name slug }
-              }
-              featuredImage {
-                node {
-                  id
-                  sourceUrl
-                  altText
-                  mediaDetails {
-                    width
-                    height
-                    sizes { 
-                      name 
-                      width 
-                      height
-                      sourceUrl 
-                    }
-                  }
-                }
-              }
+              id title uri slug excerpt language { code name } categories { nodes { name slug } }
+              featuredImage { node { id sourceUrl altText mediaDetails { width height sizes { name width height sourceUrl } } } }
             }
           }
-        }
-      ` : 
-      /* GraphQL */ `
+        }`
+      : /* GraphQL */ `
         query FallbackPostsAllLang($first: Int!) {
-          posts(
-            first: $first
-            where: { 
-              orderby: { field: DATE, order: DESC },
-              status: PUBLISH,
-              hasPassword: false
-            }
-          ) {
+          posts(first: $first, where: { orderby: { field: DATE, order: ASC }, status: PUBLISH, hasPassword: false }) {
             nodes {
-              id
-              title
-              uri
-              slug
-              excerpt
-              language {
-                code
-                name
-              }
-              categories {
-                nodes { name slug }
-              }
-              featuredImage {
-                node {
-                  id
-                  sourceUrl
-                  altText
-                  mediaDetails {
-                    width
-                    height
-                    sizes { 
-                      name 
-                      width 
-                      height
-                      sourceUrl 
-                    }
-                  }
-                }
-              }
+              id title uri slug excerpt language { code name } categories { nodes { name slug } }
+              featuredImage { node { id sourceUrl altText mediaDetails { width height sizes { name width height sourceUrl } } } }
             }
           }
-        }
-      `;
-    
-    const variables = separateByLanguage 
-      ? { first: limit, language: languageFilter }
-      : { first: limit };
-    
-    const fallbackRes = await wpQuery<any>(FALLBACK_QUERY, variables);
-    posts = (fallbackRes?.posts?.nodes ?? []).filter((p: any) => {
-      return p?.featuredImage?.node?.sourceUrl;
-    });
+        }`;
+
+    const variables = separateByLanguage ? { first: limit, language: languageFilter } : { first: limit };
+    const res = await wpQuery<any>(FALLBACK_QUERY, variables);
+    posts = (res?.posts?.nodes ?? []).filter((p: any) => p?.featuredImage?.node?.sourceUrl);
     foundCategory = "fallback";
-    console.log(`[SLIDER] Using fallback: found ${posts.length} posts ${separateByLanguage ? `(${languageFilter})` : '(All Languages)'}`);
-  } catch (err) {
+  } catch {
     posts = [];
   }
 }
 
+/* ===== helpers ===== */
 function fix(src?: string) {
   return src ? rewriteWpUrl(src) : src;
 }
-
 function toSrcSet(sizes?: Array<{ sourceUrl: string; width: number }>) {
   if (!sizes?.length) return undefined;
   return sizes
@@ -279,340 +144,211 @@ function toSrcSet(sizes?: Array<{ sourceUrl: string; width: number }>) {
     .map((s) => `${fix(s.sourceUrl)} ${s.width}w`)
     .join(", ");
 }
-
 function getBestImageUrl(imageNode?: any): string | undefined {
-  if (!imageNode?.mediaDetails?.sizes) {
-    return fix(imageNode?.sourceUrl);
-  }
-  
+  if (!imageNode?.mediaDetails?.sizes) return fix(imageNode?.sourceUrl);
   const sizes = imageNode.mediaDetails.sizes;
-  const preferredSizes = ["2048x2048", "1536x1536", "large", "medium_large"];
-  
-  for (const sizeName of preferredSizes) {
-    const size = sizes.find((s: any) => s?.name === sizeName);
-    if (size?.sourceUrl && size?.width >= 800) {
-      return fix(size.sourceUrl);
-    }
+  const preferred = ["2048x2048", "1536x1536", "large", "medium_large"];
+  for (const n of preferred) {
+    const s = sizes.find((x: any) => x?.name === n);
+    if (s?.sourceUrl && s?.width >= 800) return fix(s.sourceUrl);
   }
-  
-  const largest = sizes
-    .filter((s: any) => s?.sourceUrl && s?.width)
-    .sort((a: any, b: any) => (b.width || 0) - (a.width || 0))[0];
-    
+  const largest = sizes.filter((s: any) => s?.sourceUrl && s?.width).sort((a: any, b: any) => (b.width || 0) - (a.width || 0))[0];
   return fix(largest?.sourceUrl || imageNode?.sourceUrl);
 }
 
-// ถ้าไม่มีโพสต์จาก WordPress ใช้ข้อมูล fallback
+/* ===== fallback data (if WP empty) ===== */
 const fallbackFeatures = [
-  {
-    title: lang === "en" ? "Left-right side lift adjustment" : "ปรับเอียงซ้าย-ขวา",
-    image: "/api/placeholder/400/300",
-    id: "adjust-lr"
-  },
-  {
-    title: lang === "en" ? "Height adjustment" : "ปรับความสูง", 
-    image: "/api/placeholder/400/300",
-    id: "adjust-height"
-  },
-  {
-    title: lang === "en" ? "Leg section up-down adjustment" : "ปรับส่วนขาขึ้น-ลง",
-    image: "/api/placeholder/400/300", 
-    id: "adjust-leg"
-  }
+  { title: lang === "en" ? "Left-right side tilt adjustment" : "ปรับเอียงซ้าย-ขวา", image: "/api/placeholder/400/300", id: "adjust-lr" },
+  { title: lang === "en" ? "Height adjustment" : "ปรับความสูง", image: "/api/placeholder/400/300", id: "adjust-height" },
+  { title: lang === "en" ? "Leg section up-down adjustment" : "ปรับส่วนขาขึ้น-ลง", image: "/api/placeholder/400/300", id: "adjust-leg" },
+  { title: lang === "en" ? "Safety side rails" : "ราวป้องกันด้านข้าง", image: "/api/placeholder/400/300", id: "safety-rails" },
+  { title: lang === "en" ? "Electric remote control" : "รีโมทคอนโทรลไฟฟ้า", image: "/api/placeholder/400/300", id: "remote-control" },
+  { title: lang === "en" ? "Durable caster wheels" : "ล้อเลื่อนทนทาน", image: "/api/placeholder/400/300", id: "caster-wheels" },
 ];
 
-// ใช้โพสต์จาก WP หรือ fallback
+/* ===== prepare groups: pad to multiple of 3 ===== */
 const displayPosts = posts.length > 0 ? posts : fallbackFeatures;
+const remainder = displayPosts.length % 3;
+const padCount = remainder === 0 ? 0 : 3 - remainder;
+const paddedPosts = padCount > 0 ? displayPosts.concat(displayPosts.slice(0, padCount)) : displayPosts;
+
+const groupedPosts: any[] = [];
+for (let i = 0; i < paddedPosts.length; i += 3) {
+  groupedPosts.push(paddedPosts.slice(i, i + 3));
+}
 ---
 
-{displayPosts.length > 0 && (
+{groupedPosts.length > 0 && (
   <section data-slider class={`relative ${klass}`}>
-    <div class="relative">
-      <!-- Main Slider Container -->
-      <div 
-        class="overflow-hidden rounded-2xl bg-white shadow-2xl"
-        aria-label="Smart bed features gallery"
-        id="hero-slider"
-      >
-        <!-- Slides Wrapper -->
-        <div 
-          class="flex transition-transform duration-500 ease-in-out"
-          id="slides-container"
-          style="transform: translateX(0%)"
-        >
-          {displayPosts.map((item, index) => {
-            // สำหรับ WordPress posts
-            if (item.featuredImage) {
-              const img = item.featuredImage.node;
-              const src = getBestImageUrl(img);
-              const srcset = toSrcSet(img.mediaDetails?.sizes);
-              
-              return (
-                <div class="w-full flex-shrink-0 relative aspect-[16/9] bg-gradient-to-br from-blue-50 to-cyan-50">
-                  <img
-                    src={src}
-                    alt={img.altText || item.title}
-                    loading={index < 2 ? "eager" : "lazy"}
-                    decoding="async"
-                    class="w-full h-full object-cover"
-                    srcset={srcset}
-                    sizes="100vw"
-                  />
-                  
-                  <!-- Text Overlay -->
-                  <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                    <div class="bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 inline-block">
-                      <h3 class="font-semibold text-gray-900 text-lg" set:html={item.title} />
+    <div class="relative pb-10">
+      <!-- Slider -->
+      <div id="hero-slider" class="overflow-hidden rounded-2xl bg-white shadow-2xl" aria-label="Smart bed features gallery">
+        <div id="slides-container" class="flex transition-transform duration-500 ease-in-out" style="transform: translateX(0%)">
+          {groupedPosts.map((group, groupIndex) => (
+            <div class="w-full flex-shrink-0">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch">
+                {group.map((item, itemIndex) => {
+                  if (item.featuredImage) {
+                    const img = item.featuredImage.node;
+                    const src = getBestImageUrl(img);
+                    const srcset = toSrcSet(img.mediaDetails?.sizes);
+                    return (
+                      <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="relative aspect-[4/3]">
+                          <img
+                            src={src}
+                            alt={img.altText || item.title}
+                            loading={groupIndex === 0 && itemIndex < 3 ? "eager" : "lazy"}
+                            decoding="async"
+                            class="absolute inset-0 w-full h-full object-cover"
+                            srcset={srcset}
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                          />
+                        </div>
+                        <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
+                          <span class="pointer-events-auto inline-block rounded-full bg-sky-400 text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
+                            <span set:html={item.title} />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden">
+                      <div class="relative aspect-[4/3] flex items-center justify-center bg-gradient-to-br from-cyan-50 to-blue-100">
+                        <svg class="w-16 h-16 text-cyan-600/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>
+                        </svg>
+                      </div>
+                      <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
+                        <span class="pointer-events-auto inline-block rounded-full bg-sky-400 text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
+                          {item.title}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            }
-            
-            // สำหรับ fallback features
-            return (
-              <div class="w-full flex-shrink-0 relative aspect-[16/9] bg-gradient-to-br from-blue-50 to-cyan-50">
-                <div class="w-full h-full bg-gradient-to-br from-cyan-100 to-blue-200 flex items-center justify-center">
-                  <!-- Bed Icon -->
-                  <svg class="w-24 h-24 text-cyan-600 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>
-                  </svg>
-                </div>
-                
-                <!-- Text Overlay -->
-                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                  <div class="bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 inline-block">
-                    <h3 class="font-semibold text-gray-900 text-lg">
-                      {item.title}
-                    </h3>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
 
-      <!-- Navigation Arrows -->
-      <button 
-        class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 flex items-center justify-center group"
-        id="prev-slide"
-        aria-label="Previous slide"
-      >
-        <svg class="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-      </button>
+      {/* Arrows */}
+      {groupedPosts.length > 1 && (
+        <>
+          <button id="prev-slide" aria-label="Previous slide"
+            class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center">
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button id="next-slide" aria-label="Next slide"
+            class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center">
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </>
+      )}
 
-      <button 
-        class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 flex items-center justify-center group"
-        id="next-slide"
-        aria-label="Next slide"
-      >
-        <svg class="w-6 h-6 text-gray-700 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </button>
-
-      <!-- Dots Indicator -->
-      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" id="dots-container">
-        {displayPosts.map((_, index) => (
-          <button 
-            class={`w-3 h-3 rounded-full transition-all duration-200 ${index === 0 ? 'bg-white shadow-lg scale-125' : 'bg-white/50 hover:bg-white/80'}`}
-            data-slide={index}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
+      {/* Dots */}
+      {groupedPosts.length > 1 && (
+        <div id="dots-container" class="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-2">
+          {groupedPosts.map((_, index) => (
+            <button
+              class={`w-2.5 h-2.5 rounded-full ${index === 0 ? "bg-sky-500" : "bg-gray-300 hover:bg-gray-400"} transition-all`}
+              data-slide={index}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
 
-    <!-- Debug Info (Development only) -->
     {import.meta.env.DEV && (
-      <div class="mt-4 p-4 bg-white/80 backdrop-blur-sm text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200">
-        <p><strong>🖼️ Image Slider Debug ({lang}):</strong></p>
-        <p>Posts Found: {posts.length > 0 ? `✅ ${posts.length}` : `❌ 0`}</p>
-        <p>Category: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{foundCategory || "None"}</span></p>
-        <p>Language Filter: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{languageFilter}</span></p>
-        <p>Display Posts: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{displayPosts.length}</span></p>
-        {posts.length === 0 && (
-          <p class="text-orange-600">⚠️ Using fallback images - no posts found</p>
-        )}
+      <div class="mt-4 p-4 bg-white/80 backdrop-blur-sm text-gray-800 text-xs rounded-lg shadow border border-gray-200">
+        <p><strong>🖼️ Slider Debug ({lang})</strong></p>
+        <p>Category: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded">{foundCategory || "None"}</span></p>
+        <p>Display Posts: {displayPosts.length} | Padded: {paddedPosts.length} | Slides: {groupedPosts.length}</p>
       </div>
     )}
   </section>
 )}
-
 <script>
-  // Image Slider Functionality
-  document.addEventListener('DOMContentLoaded', function() {
-    const slidesContainer = document.getElementById('slides-container');
-    const prevButton = document.getElementById('prev-slide');
-    const nextButton = document.getElementById('next-slide');
-    const dotsContainer = document.getElementById('dots-container');
-    
-    if (!slidesContainer || !prevButton || !nextButton || !dotsContainer) return;
-    
-    const slides = slidesContainer.children;
-    const totalSlides = slides.length;
-    let currentSlide = 0;
-    
-    // Auto-play functionality
-    let autoPlayInterval;
-    const autoPlayDelay = 5000; // 5 seconds
-    
-    function updateSlider() {
-      const translateX = -currentSlide * 100;
-      slidesContainer.style.transform = `translateX(${translateX}%)`;
-      
-      // Update dots
-      const dots = dotsContainer.querySelectorAll('button');
-      dots.forEach((dot, index) => {
-        if (index === currentSlide) {
-          dot.className = 'w-3 h-3 rounded-full transition-all duration-200 bg-white shadow-lg scale-125';
-        } else {
-          dot.className = 'w-3 h-3 rounded-full transition-all duration-200 bg-white/50 hover:bg-white/80';
-        }
-      });
-    }
-    
-    function nextSlide() {
-      currentSlide = (currentSlide + 1) % totalSlides;
-      updateSlider();
-    }
-    
-    function prevSlide() {
-      currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-      updateSlider();
-    }
-    
-    function goToSlide(index) {
-      currentSlide = index;
-      updateSlider();
-    }
-    
-    function startAutoPlay() {
-      autoPlayInterval = setInterval(nextSlide, autoPlayDelay);
-    }
-    
-    function stopAutoPlay() {
-      clearInterval(autoPlayInterval);
-    }
-    
-    // Event listeners
-    nextButton.addEventListener('click', () => {
-      nextSlide();
-      stopAutoPlay();
-      startAutoPlay(); // Restart auto-play
-    });
-    
-    prevButton.addEventListener('click', () => {
-      prevSlide();
-      stopAutoPlay();
-      startAutoPlay(); // Restart auto-play
-    });
-    
-    // Dots click handlers
+document.addEventListener('DOMContentLoaded', () => {
+  const slidesContainer = document.getElementById('slides-container');
+  const prevButton = document.getElementById('prev-slide');
+  const nextButton = document.getElementById('next-slide');
+  const dotsContainer = document.getElementById('dots-container');
+  if (!slidesContainer) return;
+
+  const slides = slidesContainer.children;
+  const totalSlides = slides.length;
+  let currentSlide = 0;
+
+  let autoPlayInterval;
+  const autoPlayDelay = 6000;
+
+  function updateDots(){
+    if (!dotsContainer) return;
     const dots = dotsContainer.querySelectorAll('button');
-    dots.forEach((dot, index) => {
-      dot.addEventListener('click', () => {
-        goToSlide(index);
-        stopAutoPlay();
-        startAutoPlay(); // Restart auto-play
-      });
+    dots.forEach((dot, idx) => {
+      dot.className = idx === currentSlide
+        ? 'w-2.5 h-2.5 rounded-full bg-sky-500 transition-all'
+        : 'w-2.5 h-2.5 rounded-full bg-gray-300 hover:bg-gray-400 transition-all';
     });
-    
-    // Pause auto-play on hover
-    const slider = document.getElementById('hero-slider');
-    if (slider) {
-      slider.addEventListener('mouseenter', stopAutoPlay);
-      slider.addEventListener('mouseleave', startAutoPlay);
-    }
-    
-    // Touch/swipe support
-    let startX = 0;
-    let isDragging = false;
-    
-    slidesContainer.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].clientX;
-      isDragging = true;
-      stopAutoPlay();
+  }
+
+  function updateSlider() {
+    slidesContainer.style.transform = `translateX(${-currentSlide * 100}%)`;
+    updateDots();
+  }
+
+  function nextSlide(){ currentSlide = (currentSlide + 1) % totalSlides; updateSlider(); }
+  function prevSlide(){ currentSlide = (currentSlide - 1 + totalSlides) % totalSlides; updateSlider(); }
+  function goToSlide(i){ currentSlide = ((i % totalSlides) + totalSlides) % totalSlides; updateSlider(); }
+
+  function startAuto(){ if (totalSlides > 1) autoPlayInterval = setInterval(nextSlide, autoPlayDelay); }
+  function stopAuto(){ clearInterval(autoPlayInterval); }
+
+  nextSlide.bind; prevSlide.bind;
+
+  if (nextButton) nextButton.addEventListener('click', () => { nextSlide(); stopAuto(); startAuto(); });
+  if (prevButton) prevButton.addEventListener('click', () => { prevSlide(); stopAuto(); startAuto(); });
+
+  if (dotsContainer) {
+    dotsContainer.querySelectorAll('button').forEach((dot, idx) => {
+      dot.addEventListener('click', () => { goToSlide(idx); stopAuto(); startAuto(); });
     });
-    
-    slidesContainer.addEventListener('touchmove', (e) => {
-      if (!isDragging) return;
-      e.preventDefault();
-    });
-    
-    slidesContainer.addEventListener('touchend', (e) => {
-      if (!isDragging) return;
-      
-      const endX = e.changedTouches[0].clientX;
-      const diff = startX - endX;
-      
-      if (Math.abs(diff) > 50) { // Minimum swipe distance
-        if (diff > 0) {
-          nextSlide();
-        } else {
-          prevSlide();
-        }
-      }
-      
-      isDragging = false;
-      startAutoPlay();
-    });
-    
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') {
-        prevSlide();
-        stopAutoPlay();
-        startAutoPlay();
-      } else if (e.key === 'ArrowRight') {
-        nextSlide();
-        stopAutoPlay();
-        startAutoPlay();
-      }
-    });
-    
-    // Start auto-play
-    if (totalSlides > 1) {
-      startAutoPlay();
-    }
+  }
+
+  const slider = document.getElementById('hero-slider');
+  if (slider) {
+    slider.addEventListener('mouseenter', stopAuto);
+    slider.addEventListener('mouseleave', startAuto);
+  }
+
+  // Touch swipe
+  let startX = 0, isDragging = false;
+  slidesContainer.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; isDragging = true; stopAuto(); });
+  slidesContainer.addEventListener('touchmove', (e) => { if (!isDragging) return; e.preventDefault(); });
+  slidesContainer.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) (diff > 0 ? nextSlide() : prevSlide());
+    isDragging = false; startAuto();
   });
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { prevSlide(); stopAuto(); startAuto(); }
+    if (e.key === 'ArrowRight') { nextSlide(); stopAuto(); startAuto(); }
+  });
+
+  startAuto();
+  updateDots();
+});
 </script>
 
 <style>
-  /* Enhanced slider styling */
-  [data-slider] {
-    position: relative;
-  }
-  
-  /* Smooth transitions */
-  #slides-container {
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  /* Button hover effects */
-  button:hover {
-    transform: scale(1.1);
-  }
-  
-  /* Focus states for accessibility */
-  button:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .absolute.left-4 {
-      left: 1rem;
-    }
-    .absolute.right-4 {
-      right: 1rem;
-    }
-    .absolute.bottom-6 {
-      bottom: 1.5rem;
-    }
-  }
+[data-slider] { position: relative; }
+#slides-container { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
 </style>

@@ -1,0 +1,107 @@
+---
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug?: string;
+  limit?: number;
+  separateByLanguage?: boolean;
+  class?: string;
+}
+
+const {
+  lang = "th",
+  categorySlug = "Function",
+  limit = 10,
+  separateByLanguage = true,
+  class: klass = "",
+} = Astro.props;
+
+const languageFilter = lang.toUpperCase() as "TH" | "EN";
+
+/* ===== GraphQL ===== */
+const QUERY = /* GraphQL */ `
+  query FunctionPosts($first:Int!,$category:String!,$language:LanguageCodeFilterEnum){
+    posts(
+      first:$first
+      where:{categoryName:$category, language:$language, status:PUBLISH, orderby:{field:DATE,order:ASC}}
+    ){
+      nodes{
+        id
+        title
+        excerpt
+        featuredImage{ node{ sourceUrl altText } }
+      }
+    }
+  }
+`;
+
+let posts: any[] = [];
+try {
+  const data = await wpQuery<any>(QUERY, {
+    first: limit,
+    category: categorySlug,
+    language: languageFilter,
+  });
+  posts = data?.posts?.nodes ?? [];
+} catch (err) {
+  console.error("FunctionSlider fetch error:", err);
+}
+
+/* แปลงรูป */
+function img(post:any){
+  return post.featuredImage?.node?.sourceUrl ? rewriteWpUrl(post.featuredImage.node.sourceUrl) : null;
+}
+---
+
+<section class={`relative ${klass}`}>
+  <!-- Heading -->
+  <div class="text-center mb-12">
+    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+      {lang === "en" ? "Functions for Your Convenience" : "ฟังก์ชันเพิ่มความสะดวก"}
+    </h2>
+  </div>
+
+  <!-- Slider Wrapper -->
+  <div class="relative overflow-hidden">
+    <div class="flex transition-transform duration-500 ease-in-out" id="function-track">
+      {posts.map((post) => (
+        <div class="min-w-full sm:min-w-[50%] lg:min-w-[33.333%] px-4">
+          <div class="bg-cyan-50 rounded-2xl p-6 shadow hover:shadow-lg transition h-full">
+            {img(post) && (
+              <img src={img(post)} alt={post.title} class="w-10 h-10 object-contain mb-4" />
+            )}
+            <h3 class="font-semibold text-gray-900 mb-2" set:html={post.title}></h3>
+            <p class="text-gray-700 text-sm" set:html={post.excerpt}></p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Controls -->
+    <button class="absolute top-1/2 -translate-y-1/2 left-2 bg-white rounded-full shadow p-2" onclick="slidePrev()">‹</button>
+    <button class="absolute top-1/2 -translate-y-1/2 right-2 bg-white rounded-full shadow p-2" onclick="slideNext()">›</button>
+  </div>
+</section>
+
+<script>
+  let index = 0;
+  const track = document.getElementById("function-track");
+  const slides = track?.children.length || 0;
+
+  function updateSlide() {
+    const offset = -index * 100;
+    track.style.transform = `translateX(${offset}%)`;
+  }
+
+  function slideNext() {
+    index = (index + 1) % slides;
+    updateSlide();
+  }
+
+  function slidePrev() {
+    index = (index - 1 + slides) % slides;
+    updateSlide();
+  }
+</script>
