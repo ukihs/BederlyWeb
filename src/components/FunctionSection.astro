@@ -4,104 +4,161 @@ import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
+  // ไม่จำเป็นต้องส่ง categorySlug แล้ว แต่ยังรองรับไว้เผื่อใช้ภายหลัง
   categorySlug?: string;
   limit?: number;
-  separateByLanguage?: boolean;
   class?: string;
 }
 
 const {
   lang = "th",
-  categorySlug = "Function",
   limit = 10,
-  separateByLanguage = true,
   class: klass = "",
 } = Astro.props;
 
-const languageFilter = lang.toUpperCase() as "TH" | "EN";
+// ใช้หมวดเฉพาะภาษาตามโครงสร้างที่คุณตั้งใน WP: function-th / function-en
+const resolvedCategory = lang === "en" ? "function-en" : "function-th";
 
-/* ===== GraphQL ===== */
-const QUERY = /* GraphQL */ `
-  query FunctionPosts($first:Int!,$category:String!,$language:LanguageCodeFilterEnum){
+let posts: any[] = [];
+let debugInfo: any = {
+  lang,
+  resolvedCategory,
+};
+
+/* ===== Strict query by category slug ===== */
+const POSTS_BY_CATEGORY = /* GraphQL */ `
+  query PostsByCategory($first: Int!, $category: String!) {
     posts(
-      first:$first
-      where:{categoryName:$category, language:$language, status:PUBLISH, orderby:{field:DATE,order:ASC}}
-    ){
-      nodes{
+      first: $first
+      where: {
+        status: PUBLISH
+        orderby: { field: DATE, order: ASC }
+        categoryName: $category
+      }
+    ) {
+      nodes {
         id
         title
         excerpt
-        featuredImage{ node{ sourceUrl altText } }
+        categories { nodes { name slug } }
+        featuredImage {
+          node {
+            sourceUrl
+            altText
+            mediaDetails {
+              sizes { name width height sourceUrl }
+            }
+          }
+        }
       }
     }
   }
 `;
 
-let posts: any[] = [];
 try {
-  const data = await wpQuery<any>(QUERY, {
+  const res = await wpQuery<any>(POSTS_BY_CATEGORY, {
     first: limit,
-    category: categorySlug,
-    language: languageFilter,
+    category: resolvedCategory,
   });
-  posts = data?.posts?.nodes ?? [];
-} catch (err) {
-  console.error("FunctionSlider fetch error:", err);
+  posts = res?.posts?.nodes ?? [];
+  debugInfo.found = posts.length;
+} catch (e) {
+  debugInfo.error = String(e);
 }
 
-/* แปลงรูป */
-function img(post:any){
-  return post.featuredImage?.node?.sourceUrl ? rewriteWpUrl(post.featuredImage.node.sourceUrl) : null;
+/* ===== helpers ===== */
+function bestImage(node?: any): string | undefined {
+  if (!node) return;
+  const sizes = node.mediaDetails?.sizes ?? [];
+  const pref = ["large", "medium_large", "medium", "thumbnail"];
+  for (const n of pref) {
+    const s = sizes.find((x: any) => x?.name === n && x?.sourceUrl);
+    if (s?.sourceUrl) return rewriteWpUrl(s.sourceUrl);
+  }
+  return node?.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
+}
+
+// ฟอลแบ็กไอคอนง่ายๆ (ถ้าโพสต์ไม่มีรูป)
+function getIconSvg(title = "") {
+  const t = title.toLowerCase();
+  if (t.includes("tilt") || t.includes("เอียง")) {
+    return `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><path d="M4 14l8-8 8 8" /><path d="M12 6v12"/></svg>`;
+  }
+  if (t.includes("head") || t.includes("ศีรษะ")) {
+    return `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>`;
+  }
+  if (t.includes("leg") || t.includes("ขา")) {
+    return `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><path d="M11 12H9a3 3 0 0 0-3 3v7h7v-7a3 3 0 0 0-3-3z"/><path d="M12 2v10"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 }
 ---
 
 <section class={`relative ${klass}`}>
-  <!-- Heading -->
   <div class="text-center mb-12">
-    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-      {lang === "en" ? "Functions for Your Convenience" : "ฟังก์ชันเพิ่มความสะดวก"}
+    <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
+      {lang === "en" ? "Functions for Your Convenience" : "ฟังก์ชันเพื่อความสะดวกของคุณ"}
     </h2>
   </div>
 
-  <!-- Slider Wrapper -->
-  <div class="relative overflow-hidden">
-    <div class="flex transition-transform duration-500 ease-in-out" id="function-track">
-      {posts.map((post) => (
-        <div class="min-w-full sm:min-w-[50%] lg:min-w-[33.333%] px-4">
-          <div class="bg-cyan-50 rounded-2xl p-6 shadow hover:shadow-lg transition h-full">
-            {img(post) && (
-              <img src={img(post)} alt={post.title} class="w-10 h-10 object-contain mb-4" />
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+    {posts.map((post) => {
+      const imgUrl = bestImage(post?.featuredImage?.node);
+      return (
+        <article class="function-card">
+          <div class="function-icon-wrapper">
+            {imgUrl ? (
+              <img src={imgUrl} alt={post?.featuredImage?.node?.altText || post.title} class="w-full h-full object-contain rounded-lg" loading="lazy" />
+            ) : (
+              <div class="function-icon" set:html={getIconSvg(post.title)} />
             )}
-            <h3 class="font-semibold text-gray-900 mb-2" set:html={post.title}></h3>
-            <p class="text-gray-700 text-sm" set:html={post.excerpt}></p>
           </div>
-        </div>
-      ))}
-    </div>
-
-    <!-- Controls -->
-    <button class="absolute top-1/2 -translate-y-1/2 left-2 bg-white rounded-full shadow p-2" onclick="slidePrev()">‹</button>
-    <button class="absolute top-1/2 -translate-y-1/2 right-2 bg-white rounded-full shadow p-2" onclick="slideNext()">›</button>
+          <h3 class="function-title" set:html={post.title} />
+          {post.excerpt && <p class="function-description" set:html={post.excerpt} />}
+        </article>
+      );
+    })}
   </div>
+
+  {import.meta.env.DEV && (
+    <div class="mt-8 p-4 bg-white/80 text-gray-800 text-xs rounded-lg shadow border border-gray-200">
+      <p><strong>🔍 Function Section Debug</strong></p>
+      <p>Lang: {lang}</p>
+      <p>Using category: <code>{resolvedCategory}</code></p>
+      <p>Posts found: {debugInfo.found || 0}</p>
+      {debugInfo.error && <p class="text-red-600">Error: {debugInfo.error}</p>}
+    </div>
+  )}
 </section>
 
-<script>
-  let index = 0;
-  const track = document.getElementById("function-track");
-  const slides = track?.children.length || 0;
-
-  function updateSlide() {
-    const offset = -index * 100;
-    track.style.transform = `translateX(${offset}%)`;
+<style>
+  .function-card {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,.07);
+    transition: all .3s ease;
+    min-height: 280px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: relative; overflow: hidden;
   }
-
-  function slideNext() {
-    index = (index + 1) % slides;
-    updateSlide();
+  .function-card::before {
+    content: ""; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,.3) 0%, transparent 70%);
+    pointer-events: none;
   }
+  .function-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,.12); }
 
-  function slidePrev() {
-    index = (index - 1 + slides) % slides;
-    updateSlide();
+  .function-icon-wrapper {
+    width: 60px; height: 60px; background: rgba(255,255,255,.9);
+    border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
   }
-</script>
+  .function-icon { color: #0891b2; display: flex; align-items: center; justify-content: center; }
+
+  .function-title {
+    font-size: 1rem; font-weight: 600; color: #0c4a6e; margin-bottom: .75rem;
+    line-height: 1.4; min-height: 2.8rem; display: flex; align-items: center;
+  }
+  .function-description { font-size: .875rem; color: #075985; line-height: 1.6; opacity: .9; }
+</style>

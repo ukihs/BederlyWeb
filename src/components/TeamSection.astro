@@ -1,0 +1,143 @@
+---
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug: string;     // เช่น "team-th" หรือ "team-en" หรือ "team"
+  limit?: number;           // default 12
+  class?: string;           // class เสริมให้ section
+}
+
+const { lang, categorySlug, limit = 12, class: sectionClass = "" } = Astro.props;
+
+/* ======== WPGraphQL: ดึงโพสต์ตามหมวด ======== */
+const TEAM_QUERY = /* GraphQL */ `
+  query TeamByCategory($slug: String!, $limit: Int) {
+    posts(
+      first: $limit
+      where: {
+        status: PUBLISH
+        categoryName: $slug
+        orderby: { field: DATE, order: ASC }
+      }
+    ) {
+      nodes {
+        id
+        title
+        excerpt
+        featuredImage {
+          node {
+            altText
+            sourceUrl
+            mediaDetails { sizes { name width height sourceUrl } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+/* ======== utils เลือกรูปที่เหมาะสม ======== */
+type Size = { name: string; sourceUrl?: string };
+type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
+
+function normalize(img: any): Img | undefined {
+  return img?.node ? img.node : img ?? undefined;
+}
+function pickImageUrl(img: any): string | undefined {
+  const n = normalize(img);
+  if (!n) return undefined;
+  const sizes = n.mediaDetails?.sizes ?? [];
+  const prefer = ["medium_large", "large", "1536x1536", "2048x2048", "medium"];
+  for (const key of prefer) {
+    const hit = sizes.find((s) => s?.name === key && s?.sourceUrl);
+    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+  }
+  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
+
+/* ======== fetch ======== */
+let people: any[] = [];
+try {
+  const res = await wpQuery<any>(TEAM_QUERY, { slug: categorySlug, limit });
+  people = res?.posts?.nodes ?? [];
+} catch {}
+
+/* ======== Hardcode: heading & subtext ======== */
+const heading = lang === "en" ? "Meet Our Team" : "รู้จักทีมของเรา";
+const subtext =
+  lang === "en"
+    ? "Our teams specializes in the development of medical innovations with expertise in various fields to ensure highest quality of our products and services​"
+    : "ทีมงานของเรามีความเชี่ยวชาญในการพัฒนานวัตกรรมทางการแพทย์ พร้อมความรู้ความสามารถในหลายสาขา เพื่อให้มั่นใจในคุณภาพสูงสุดของผลิตภัณฑ์และบริการของเรา";
+
+/* ฟังก์ชันล้าง HTML สั้น ๆ ใช้กับ excerpt */
+function cleanHtml(html?: string) {
+  return (html || "").trim();
+}
+---
+
+<section class={`section-padding ${sectionClass}`.trim()}>
+  <div class="container-primary">
+    <!-- Hardcode heading -->
+    <div class="max-w-3xl mb-8">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{heading}</h2>
+      <p class="mt-3 text-gray-600">{subtext}</p>
+    </div>
+
+    {people.length === 0 ? (
+      <div class="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-gray-500">
+        {lang === "en" ? "No team members yet." : "ยังไม่มีสมาชิกทีม"}
+      </div>
+    ) : (
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8"
+        aria-label={heading}
+      >
+        {people.map((m) => {
+          const imgUrl = pickImageUrl(m?.featuredImage);
+          const alt = normalize(m?.featuredImage)?.altText || m?.title || "member";
+          const sub = cleanHtml(m?.excerpt); // ถ้ามี excerpt จะแสดงใต้ชื่อ
+
+          return (
+            <article class="flex flex-col items-center text-center">
+              {/* รูป / Placeholder */}
+              <div class="w-full aspect-square rounded-2xl overflow-hidden bg-gray-200/80 shadow-sm">
+                {imgUrl ? (
+                  <img
+                    src={imgUrl}
+                    alt={alt}
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="w-full h-full grid place-items-center">
+                    <div class="w-2/3 h-2/3 rounded-xl bg-gray-300" />
+                  </div>
+                )}
+              </div>
+
+              {/* ชื่อ */}
+              <h3 class="mt-4 text-sm md:text-base font-semibold text-gray-900 leading-snug">
+                {m?.title || ""}
+              </h3>
+
+              {/* บรรทัดย่อยจาก excerpt (ถ้ามี) */}
+              {sub && (
+                <div
+                  class="mt-1 text-xs md:text-[13px] text-gray-600 leading-relaxed [&_p]:m-0"
+                  set:html={sub}
+                />
+              )}
+            </article>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  /* ตัด margin เริ่มต้นของ p ภายใต้ excerpt ให้แนบชิด */
+  [data-astro-cid] .team-excerpt p { margin: 0; }
+</style>

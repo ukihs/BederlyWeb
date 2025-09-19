@@ -219,19 +219,7 @@ if (!foundSmartbedData) {
   }
 }
 
-// Fallback data หากไม่มีจาก WordPress
-if (!foundSmartbedData) {
-  console.log("[SMARTBED] Using fallback data");
-  debugInfo.usingFallback = true;
-  
-  smartbedTitle = lang === "en" 
-    ? "Innovative Care for the Ones Your loved ones" 
-    : "การดูแลแบบนวัตกรรมสำหรับคนที่คุณรัก";
-    
-  smartbedSub = lang === "en"
-    ? "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients. With IoT integration, it can be controlled remotely via smartphone. Embedded technology enhances its intelligence, enabling seamless connection and interaction with other devices."
-    : "เตียงอัจฉริยะเป็นเตียงไฟฟ้าที่กระจายแรงกดดันและช่วยเหลือผู้ดูแลในการจัดตำแหน่งผู้ป่วย ด้วยการผสานรวม IoT สามารถควบคุมระยะไกลผ่านสมาร์ทโฟน เทคโนโลยีที่ฝังอยู่ช่วยเพิ่มความฉลาดและเชื่อมต่อกับอุปกรณ์อื่นได้อย่างราบรื่น";
-}
+
 
 console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smartbedSub, smartbedImageUrl });
 ---
@@ -316,7 +304,7 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
         
         <!-- Section Title (Fixed in code) -->
         <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          {lang === "en" ? "Smart Bed" : "สมาร์ทเบด"}
+          {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
         </h2>
         
         <!-- Dynamic Title from WordPress -->

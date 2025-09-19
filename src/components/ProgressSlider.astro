@@ -1,0 +1,276 @@
+---
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug: string; // เช่น progress-th / progress-en
+  limit?: number;
+  class?: string;
+}
+
+const { lang, categorySlug, limit = 6, class: sectionClass = "" } = Astro.props;
+
+/* ดึงโพสต์ตามหมวด เรียงเก่าสุด -> ใหม่สุด + รวม ACF (Progress Extras) */
+const POSTS_BY_CATEGORY = /* GraphQL */ `
+  query PostsByCategory($slug: String!, $limit: Int) {
+    posts(
+      first: $limit
+      where: {
+        status: PUBLISH
+        categoryName: $slug
+        orderby: { field: DATE, order: ASC }
+      }
+    ) {
+      nodes {
+        id
+        title
+        uri
+        excerpt
+        content
+        featuredImage {
+          node {
+            altText
+            sourceUrl
+            mediaDetails { sizes { name sourceUrl width height } }
+          }
+        }
+        # ⬇️ เพิ่ม ACF กลุ่ม Progress Extras (logo1-4)
+        progressExtras {
+          logo1 { node { altText sourceUrl } }
+          logo2 { node { altText sourceUrl } }
+          logo3 { node { altText sourceUrl } }
+          logo4 { node { altText sourceUrl } }
+        }
+      }
+    }
+  }
+`;
+
+type Size = { name: string; sourceUrl?: string };
+type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
+
+function normalize(img: any): Img | undefined {
+  return img?.node ? img.node : img ?? undefined;
+}
+
+function pickImageUrl(img: any): string | undefined {
+  const n = normalize(img);
+  if (!n) return undefined;
+  const sizes = n.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  for (const key of prefer) {
+    const hit = sizes.find((s) => s?.name === key && s?.sourceUrl);
+    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+  }
+  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
+
+/* เลือก HTML ที่จะโชว์: ให้ excerpt มาก่อน, กันเคส HTML ว่าง */
+function pickHtml(p: any): string {
+  const ex = (p?.excerpt ?? "").trim();
+  const cn = (p?.content ?? "").trim();
+  const isBlankHtml = (s: string) =>
+    !s || s.replace(/(<[^>]*>)|(&nbsp;)|\s+/g, "") === "";
+  if (!isBlankHtml(ex)) return ex;
+  if (!isBlankHtml(cn)) return cn;
+  return "";
+}
+
+/* รวมโลโก้ที่มีอยู่จริง (สูงสุด 4) */
+function collectLogos(p: any) {
+  const pe = p?.progressExtras;
+  const items = [pe?.logo1, pe?.logo2, pe?.logo3, pe?.logo4]
+    .map((x) => x?.node)
+    .filter(Boolean)
+    .map((n: any) => ({
+      alt: n?.altText || "logo",
+      src: rewriteWpUrl(n?.sourceUrl || ""),
+    }))
+    .filter((x) => !!x.src);
+  return items;
+}
+
+let posts: any[] = [];
+try {
+  const res = await wpQuery<any>(POSTS_BY_CATEGORY, { slug: categorySlug, limit });
+  posts = res?.posts?.nodes ?? [];
+} catch {}
+
+const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคืบหน้าล่าสุดของเรา";
+---
+
+<section class={`section-padding ${sectionClass}`.trim()}>
+  <div class="container-primary">
+    <div class="mb-6">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{sectionTitle}</h2>
+    </div>
+
+    {posts.length === 0 ? (
+      <div class="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-gray-500">
+        {lang === "en" ? "No posts in this category yet." : "ยังไม่มีโพสต์ในหมวดนี้"}
+      </div>
+    ) : (
+      <div class="relative">
+        <div
+          id="progress-track"
+          class="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 px-1 hide-scrollbar"
+          aria-label={sectionTitle}
+        >
+          {posts.map((p) => {
+            const imgUrl = pickImageUrl(p?.featuredImage);
+            const alt = normalize(p?.featuredImage)?.altText || p?.title || "";
+            const html = pickHtml(p);
+            const logos = collectLogos(p);
+
+            return (
+              <article class="snap-start shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
+                <div class="group block">
+                  <div class="rounded-[22px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white">
+                    <div class="grid md:grid-cols-[1.05fr,1fr] items-stretch">
+                      {/* ซ้าย: รูปภาพ (ความสูงขั้นต่ำเท่ากับแผงฟ้า) */}
+                      <figure class="min-h-[260px] sm:min-h-[300px] md:min-h-[360px]">
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt={alt}
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div class="w-full h-full bg-gray-100" />
+                        )}
+                      </figure>
+
+                      {/* ขวา: แผงฟ้า */}
+                      <div class="min-h-[260px] sm:min-h-[300px] md:min-h-[360px] bg-[#38A2F8] text-white p-5 md:p-6 lg:p-7 flex flex-col">
+                        <h3 class="text-[16px] md:text-[18px] font-semibold mb-2 leading-tight">
+                          {p?.title || ""}
+                        </h3>
+
+                        {html && (
+                          <div
+                            class="progress-copy prose prose-invert max-w-none
+                                   prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                            set:html={html}
+                          />
+                        )}
+
+                        {/* แถวโลโก้ (เฉพาะเมื่อมีอย่างน้อย 1 รูป) */}
+                        {logos.length > 0 && (
+                          <div class="mt-4 md:mt-5 flex flex-wrap items-center gap-4 md:gap-5">
+                            {logos.map((lg, i) => (
+                              <div
+                                class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/95 shadow-sm grid place-items-center overflow-hidden"
+                                aria-label={`partner-logo-${i + 1}`}
+                              >
+                                <img
+                                  src={lg.src}
+                                  alt={lg.alt}
+                                  class="max-w-[70%] max-h-[70%] object-contain"
+                                  loading="lazy"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* ปุ่มเลื่อนก่อน/ถัดไป */}
+        <button
+          id="progress-prev"
+          class="absolute -left-3 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:shadow-md border text-gray-600"
+          aria-label="Previous" type="button">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          id="progress-next"
+          class="absolute -right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:shadow-md border text-gray-600"
+          aria-label="Next" type="button">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {/* จุดบอกตำแหน่งสไลด์ */}
+        <div id="progress-dots" class="mt-4 flex items-center justify-center gap-2"></div>
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  /* ลิงก์บนพื้นฟ้าให้อ่านง่าย */
+  .prose-invert :where(a):not(.not-prose) { color: #fff; text-decoration: underline; }
+
+  /* ซ่อน scrollbar แนวนอนแบบ cross-browser */
+  .hide-scrollbar { scrollbar-width: none; }
+  .hide-scrollbar::-webkit-scrollbar { height: 0; }
+
+  /* ย่อฟอนต์ของบล็อกเนื้อหาให้พอดีกรอบ + แน่นขึ้น */
+  .progress-copy { font-size: 13.5px; line-height: 1.45; }
+  @media (min-width: 768px) { .progress-copy { font-size: 14px; } }
+  @media (min-width: 1024px) { .progress-copy { font-size: 15px; } }
+
+  /* ถ้า content มีหัวข้อย่อยจาก WP ให้เล็กลงด้วย */
+  .progress-copy :where(h1,h2,h3,h4){ font-size: 1rem; line-height: 1.35; margin: .25rem 0; }
+  .progress-copy :where(p){ margin: .35rem 0; }
+  .progress-copy :where(ul,ol){ padding-left: 1rem; }
+</style>
+
+<script>
+  const track = document.getElementById("progress-track");
+  if (track) {
+    const prev = document.getElementById("progress-prev");
+    const next = document.getElementById("progress-next");
+    const dotsWrap = document.getElementById("progress-dots");
+
+    const slides = Array.from(track.children);
+    const gap = 24; // gap-6
+    const slideWidth = () => slides[0]?.getBoundingClientRect().width || 300;
+
+    // สร้างจุดบอกตำแหน่ง
+    dotsWrap.innerHTML = "";
+    slides.forEach((_, i) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "h-2 w-2 rounded-full bg-gray-300";
+      dot.addEventListener("click", () => {
+        track.scrollTo({ left: i * (slideWidth() + gap), behavior: "smooth" });
+      });
+      dotsWrap.appendChild(dot);
+    });
+
+    const setActiveDot = (idx) => {
+      dotsWrap.querySelectorAll("button").forEach((d, i) => {
+        d.className =
+          "h-2 rounded-full transition-all " + (i === idx ? "bg-blue-600 w-5" : "bg-gray-300 w-2");
+      });
+    };
+
+    const updateActive = () => {
+      const x = track.scrollLeft + slideWidth() / 2;
+      const idx = Math.max(0, Math.min(slides.length - 1, Math.round(x / (slideWidth() + gap))));
+      setActiveDot(idx);
+    };
+
+    setActiveDot(0);
+    track.addEventListener("scroll", () => requestAnimationFrame(updateActive));
+
+    prev?.addEventListener("click", () =>
+      track.scrollBy({ left: -(slideWidth() + gap), behavior: "smooth" })
+    );
+    next?.addEventListener("click", () =>
+      track.scrollBy({ left: +(slideWidth() + gap), behavior: "smooth" })
+    );
+  }
+</script>

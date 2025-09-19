@@ -1,0 +1,104 @@
+---
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug: string; // testimonials-th / testimonials-en
+  limit?: number;
+  class?: string;
+}
+
+const { lang, categorySlug, limit = 20, class: sectionClass = "" } = Astro.props;
+
+const LOGOS_BY_CATEGORY = /* GraphQL */ `
+  query LogosByCategory($slug: String!, $limit: Int) {
+    posts(
+      first: $limit
+      where: {
+        status: PUBLISH
+        categoryName: $slug
+        orderby: { field: DATE, order: ASC }
+      }
+    ) {
+      nodes {
+        id
+        title
+        featuredImage {
+          node {
+            altText
+            sourceUrl
+            mediaDetails { sizes { name sourceUrl } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+function normalize(img: any) {
+  return img?.node ? img.node : img ?? undefined;
+}
+function pickImageUrl(img: any): string | undefined {
+  const n = normalize(img);
+  if (!n) return undefined;
+  const sizes = n.mediaDetails?.sizes ?? [];
+  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  for (const key of prefer) {
+    const hit = sizes.find((s: any) => s?.name === key && s?.sourceUrl);
+    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+  }
+  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
+
+let logos: any[] = [];
+try {
+  const res = await wpQuery<any>(LOGOS_BY_CATEGORY, { slug: categorySlug, limit });
+  logos = res?.posts?.nodes ?? [];
+} catch {}
+
+const heading = lang === "en" ? "Testimonials" : "การรับรอง";
+const sub =
+  lang === "en"
+    ? "Our innovations are being recognized by reputable domestic and international organizations"
+    : "นวัตกรรมของเราได้รับการยอมรับจากองค์กรชั้นนำทั้งในและต่างประเทศ";
+---
+
+<section class={`section-padding ${sectionClass}`.trim()}>
+  <div class="container-primary">
+    <!-- หัวข้อ hardcode -->
+    <div class="mb-6">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{heading}</h2>
+      <p class="text-gray-600 mt-2">{sub}</p>
+    </div>
+
+    {logos.length === 0 ? (
+      <div class="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-gray-500">
+        {lang === "en" ? "No logos yet." : "ยังไม่มีโลโก้"}
+      </div>
+    ) : (
+      <div
+        class="grid gap-5 sm:gap-6 lg:gap-7
+               grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {logos.map((l) => {
+          const imgUrl = pickImageUrl(l?.featuredImage);
+          const alt = normalize(l?.featuredImage)?.altText || l?.title || "logo";
+          return (
+            <div class="rounded-2xl bg-white shadow-md ring-1 ring-black/5 p-6 flex items-center justify-center">
+              {imgUrl ? (
+                <img
+                  src={imgUrl}
+                  alt={alt}
+                  class="max-h-14 sm:max-h-16 md:max-h-20 object-contain"
+                  loading="lazy"
+                />
+              ) : (
+                <div class="h-14 sm:h-16 md:h-20 w-full bg-gray-100 rounded-md" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</section>
