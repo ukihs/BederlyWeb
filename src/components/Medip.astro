@@ -1,0 +1,96 @@
+---
+// src/components/Medip.astro
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug: string;      // medip-th / medip-en
+  class?: string;
+}
+
+const { lang, categorySlug, class: sectionClass = "" } = Astro.props;
+
+const POSTS_BY_CATEGORY = /* GraphQL */ `
+  query PostsByCategory($slug: String!, $limit: Int) {
+    posts(
+      first: $limit
+      where: { status: PUBLISH, categoryName: $slug, orderby: { field: DATE, order: ASC } }
+    ) {
+      nodes {
+        id
+        title
+        featuredImage {
+          node {
+            altText
+            sourceUrl
+            mediaDetails {
+              width
+              height
+              sizes { name width height sourceUrl }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// เลือกรูป "ใหญ่สุด" ที่มี
+function pickBestImageUrl(img: any): string | undefined {
+  const n = img?.node;
+  if (!n) return undefined;
+
+  const sizes = n.mediaDetails?.sizes ?? [];
+  // เรียงลำดับความต้องการจากใหญ่สุด -> เล็ก
+  const prefer = ["2048x2048", "1536x1536", "full", "large", "medium_large", "medium"];
+  for (const key of prefer) {
+    const hit = sizes.find((s: any) => s?.name?.toLowerCase() === key && s?.sourceUrl);
+    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+  }
+  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
+
+let imageUrl = "";
+let imageAlt = "";
+
+try {
+  const res = await wpQuery<any>(POSTS_BY_CATEGORY, { slug: categorySlug, limit: 1 });
+  const node = res?.posts?.nodes?.[0];
+  imageUrl = pickBestImageUrl(node?.featuredImage) || "";
+  imageAlt = node?.featuredImage?.node?.altText || node?.title || "Med devices standards";
+} catch {}
+---
+
+<section class={`section-padding ${sectionClass}`.trim()}>
+  <div class="container-primary">
+    <!-- หัวข้อ -->
+    <div class="text-center mb-8">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
+        {lang === "en" ? "Med Devices Standards & IP" : "มาตรฐานเครื่องมือแพทย์ & ทรัพย์สินทางปัญญา"}
+      </h2>
+      <p class="text-gray-600 mt-3">
+        {lang === "en"
+          ? "Certificates, registrations, and compliance documents"
+          : "เอกสารรับรอง การขึ้นทะเบียน และเอกสารการปฏิบัติตามมาตรฐาน"}
+      </p>
+    </div>
+
+    {imageUrl ? (
+      /* ภาพนิ่งภาพเดียว ขยายได้เต็มกรอบจริง ๆ */
+      <figure class="max-w-6xl mx-auto">
+        <img
+          src={imageUrl}
+          alt={imageAlt}
+          class="w-full h-auto rounded-2xl shadow-xl"
+          loading="lazy"
+          decoding="async"
+        />
+      </figure>
+    ) : (
+      <div class="max-w-3xl mx-auto text-center text-gray-500">
+        {lang === "en" ? "No image found for this section." : "ยังไม่มีรูปสำหรับส่วนนี้"}
+      </div>
+    )}
+  </div>
+</section>

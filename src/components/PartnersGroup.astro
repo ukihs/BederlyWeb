@@ -1,0 +1,113 @@
+---
+/* src/components/PartnersGroup.astro */
+import { wpQuery } from "../lib/wp";
+import { rewriteWpUrl } from "../lib/wpUrl";
+
+export interface Props {
+  lang: "th" | "en";
+  categorySlug: string;        // เช่น public-th / public-en / foundation-th ...
+  limit?: number;              // จำนวนสูงสุดที่ดึง (ดีฟอลต์ 20)
+  class?: string;              // คลาสของ section ภายนอก
+  showHeading?: boolean;       // แสดงหัวข้อใหญ่ Our Partners and Customers (ครั้งเดียวพอ)
+  sectionLabel?: string;       // หัวข้อย่อยของกลุ่ม เช่น "Public Organizations"
+}
+
+const {
+  lang,
+  categorySlug,
+  limit = 20,
+  class: sectionClass = "",
+  showHeading = false,
+  sectionLabel = "",
+} = Astro.props;
+
+/* Query: ดึงโพสต์จากหมวดที่กำหนด */
+const POSTS_BY_CATEGORY = /* GraphQL */ `
+  query PostsByCategory($slug: String!, $limit: Int) {
+    posts(
+      first: $limit
+      where: { status: PUBLISH, categoryName: $slug, orderby: { field: DATE, order: ASC } }
+    ) {
+      nodes {
+        id
+        title
+        featuredImage {
+          node {
+            altText
+            sourceUrl
+          }
+        }
+      }
+    }
+  }
+`;
+
+function pickImageUrl(img: any): string | undefined {
+  const n = img?.node;
+  return n?.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+}
+
+let posts: any[] = [];
+try {
+  const res = await wpQuery<any>(POSTS_BY_CATEGORY, { slug: categorySlug, limit });
+  posts = res?.posts?.nodes ?? [];
+} catch {
+  posts = [];
+}
+
+const bigTitle =
+  lang === "en" ? "Our Partners and Customers" : "ลูกค้าและพันธมิตรของเรา";
+
+const bigSubtitle =
+  lang === "en"
+    ? "Our trusted partners who walk with us on this journey"
+    : "พันธมิตรที่เชื่อถือได้และเดินเคียงข้างเราตลอดเส้นทางนี้";
+---
+
+<section class={`section-padding ${sectionClass}`.trim()}>
+  <div class="container-primary">
+    <!-- หัวข้อใหญ่: แสดงเฉพาะเมื่อ showHeading = true -->
+    {showHeading && (
+      <div class="mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{bigTitle}</h2>
+        <p class="text-gray-600 mt-2">{bigSubtitle}</p>
+      </div>
+    )}
+
+    <!-- หัวข้อย่อยของกลุ่ม (ถ้ามี) -->
+    {sectionLabel && (
+      <h3 class="text-xl font-semibold mb-4 text-gray-900">{sectionLabel}</h3>
+    )}
+
+    {posts.length === 0 ? (
+      <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-gray-600">
+        {lang === "en" ? "No logos yet." : "ยังไม่มีโลโก้ในหมวดนี้"}
+      </div>
+    ) : (
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6"
+        aria-label={sectionLabel || bigTitle}
+      >
+        {posts.map((p) => {
+          const imgUrl = pickImageUrl(p?.featuredImage);
+          return (
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-5 flex items-center justify-center hover:shadow-md transition"
+            >
+              {imgUrl ? (
+                <img
+                  src={imgUrl}
+                  alt={p?.featuredImage?.node?.altText || p?.title || ""}
+                  class="max-h-16 md:max-h-20 object-contain w-full"
+                  loading="lazy"
+                />
+              ) : (
+                <span class="text-gray-400 text-sm">{p?.title || "No image"}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</section>

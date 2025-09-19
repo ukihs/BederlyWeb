@@ -1,0 +1,122 @@
+---
+import { wpQuery } from "../lib/wp";
+
+export interface Props {
+  lang: "th" | "en";
+  class?: string;
+}
+
+/** กำหนด URI ของเพจที่จะเก็บ ACF: Contact สำหรับแต่ละภาษา
+ *  - ถ้าคุณใช้เพจอื่น ให้แก้ uriTh / uriEn ให้ตรงกับของจริง
+ */
+const uriTh = "/";              // หน้าไทยที่เก็บ ACF: Contact
+const uriEn = "/en/welcome/";   // หน้าอังกฤษที่เก็บ ACF: Contact
+
+const { lang, class: sectionClass = "" } = Astro.props;
+const pageUri = lang === "en" ? uriEn : uriTh;
+
+/** GraphQL: ดึง ACF group "contact" (address, contact, subtitle) จาก page ที่ระบุด้วย URI */
+const FOOTER_QUERY = /* GraphQL */ `
+  query FooterContact($uri: String!) {
+    nodeByUri(uri: $uri) {
+      __typename
+      ... on Page {
+        id
+        contact {
+          address
+          contact
+          subtitle
+        }
+      }
+    }
+  }
+`;
+
+let contact: { address?: string; contact?: string; subtitle?: string } = {};
+
+try {
+  const data = await wpQuery<any>(FOOTER_QUERY, { uri: pageUri });
+  contact = data?.nodeByUri?.contact ?? {};
+} catch {}
+
+/** Fallback ถ้าฟิลด์ว่าง */
+const address =
+  (contact.address ?? "").trim() ||
+  (lang === "en"
+    ? "Bederly Co., Ltd.\nAddress here..."
+    : "บริษัท เบเดอลี่ จำกัด\nที่อยู่นี้จะโชว์เมื่อยังไม่ได้ใส่ใน ACF");
+
+const contactLine =
+  (contact.contact ?? "").trim() ||
+  (lang === "en"
+    ? "Phone: 084-826-3345  Email: bederlyinfo@gmail.com"
+    : "Phone: 084-826-3345  Email: bederlyinfo@gmail.com");
+
+const subtitle =
+  (contact.subtitle ?? "").trim() ||
+  (lang === "en"
+    ? "We create innovations and technologies to improve the quality of life, for you and your loved ones"
+    : "เราสร้างนวัตกรรมและเทคโนโลยีเพื่อยกระดับคุณภาพชีวิตของคุณและคนที่คุณรัก");
+
+/** address เป็น Text Area → แตกบรรทัดให้สวย ๆ */
+const addressLines = address.split(/\r?\n/).filter(Boolean);
+---
+
+<footer class={`bg-white border-t section-padding ${sectionClass}`.trim()}>
+  <div class="container-primary">
+    <div class="grid md:grid-cols-3 gap-8 items-start">
+      <!-- Left: Logo + Address -->
+      <div>
+        <div class="mb-4">
+          <img src="/logo-bederly.svg" alt="Bederly" class="h-7" />
+        </div>
+        <div class="text-sm text-gray-700 space-y-1">
+          {addressLines.map((line) => <p>{line}</p>)}
+        </div>
+      </div>
+
+      <!-- Middle: Contact + Subtitle -->
+      <div>
+        <h4 class="font-semibold text-gray-900 mb-2">{lang === "en" ? "Contact" : "ติดต่อ"}</h4>
+        <p class="text-sm text-gray-700">{contactLine}</p>
+
+        <p class="mt-4 text-sm text-gray-600 leading-relaxed">{subtitle}</p>
+      </div>
+
+      <!-- Right: ปุ่มดาวน์โหลด (hardcode) -->
+      <div class="flex flex-col items-start gap-3">
+        <a
+          href="https://play.google.com/store"
+          class="inline-flex items-center justify-center rounded-2xl bg-[#1aa1d1]/10 border border-white/60 shadow-sm px-5 py-3 hover:shadow transition"
+        >
+          <img src="/badges/google-play.svg" alt="Google Play" class="h-8" />
+        </a>
+        <a
+          href="https://apps.apple.com/"
+          class="inline-flex items-center justify-center rounded-2xl bg-[#1aa1d1]/10 border border-white/60 shadow-sm px-5 py-3 hover:shadow transition"
+        >
+          <img src="/badges/app-store.svg" alt="App Store" class="h-8" />
+        </a>
+      </div>
+    </div>
+
+    <div class="mt-10 pt-6 border-t text-sm text-gray-500 flex items-center justify-between gap-4">
+      <div>© {new Date().getFullYear()} | Bederly Co., Ltd.</div>
+      <div class="flex items-center gap-3 opacity-80">
+        <a href="#" aria-label="Facebook">
+          <img src="/icons/facebook.svg" class="h-5" alt="" />
+        </a>
+        <a href="#" aria-label="YouTube">
+          <img src="/icons/youtube.svg" class="h-5" alt="" />
+        </a>
+        <a href="mailto:bederlyinfo@gmail.com" aria-label="Email">
+          <img src="/icons/mail.svg" class="h-5" alt="" />
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .section-padding { padding: 3rem 0; }
+</style>
