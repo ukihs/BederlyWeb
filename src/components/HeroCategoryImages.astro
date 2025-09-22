@@ -123,7 +123,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
                                class="absolute inset-0 w-full h-full object-cover"/>
                         </div>
                         <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
-                          <span class="pointer-events-auto inline-block rounded-full bg-sky-500 text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
+                          <span class="pointer-events-auto inline-block rounded-full bg-sky-500 text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md whitespace-nowrap">
                             <span set:html={(it as any).title}/>
                           </span>
                         </div>
@@ -171,14 +171,6 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
       )}
     </div>
 
-    {import.meta.env.DEV && (
-      <div class="mt-4 p-4 bg-white/80 text-gray-800 text-xs rounded-lg shadow border border-gray-200">
-        <p><strong>🖼️ Slider Debug</strong></p>
-        <p>Hero slug used: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded">{heroSlug}</span></p>
-        {debug && <p class="text-red-600">Error: {debug}</p>}
-        <p>Display Posts: {display.length} | Padded: {padded.length} | Slides: {grouped.length}</p>
-      </div>
-    )}
   </section>
 )}
 

@@ -1,4 +1,5 @@
 ---
+// src/components/ProgressCarousel.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -126,10 +127,10 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
             return (
               <article class="snap-start shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
                 <div class="group block">
-                  <div class="rounded-[22px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white">
-                    <div class="grid md:grid-cols-[1.05fr,1fr] items-stretch">
-                      {/* ซ้าย: รูปภาพ (ความสูงขั้นต่ำเท่ากับแผงฟ้า) */}
-                      <figure class="min-h-[260px] sm:min-h-[300px] md:min-h-[360px]">
+                  <div class="rounded-[22px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white h-full">
+                    <div class="grid md:grid-cols-[1.05fr,1fr] items-stretch slide-grid">
+                      {/* ซ้าย: รูปภาพ (ให้ยืดเต็มกรอบ) */}
+                      <figure class="h-full">
                         {imgUrl ? (
                           <img
                             src={imgUrl}
@@ -142,8 +143,8 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
                         )}
                       </figure>
 
-                      {/* ขวา: แผงฟ้า */}
-                      <div class="min-h-[260px] sm:min-h-[300px] md:min-h-[360px] bg-[#38A2F8] text-white p-5 md:p-6 lg:p-7 flex flex-col">
+                      {/* ขวา: แผงฟ้า (ยืดเต็มกรอบ + กันเนื้อหาดันสูงเกิน) */}
+                      <div class="h-full bg-[#38A2F8] text-white p-5 md:p-6 lg:p-7 flex flex-col overflow-hidden">
                         <h3 class="text-[16px] md:text-[18px] font-semibold mb-2 leading-tight">
                           {p?.title || ""}
                         </h3>
@@ -216,10 +217,20 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
   .hide-scrollbar { scrollbar-width: none; }
   .hide-scrollbar::-webkit-scrollbar { height: 0; }
 
-  /* ย่อฟอนต์ของบล็อกเนื้อหาให้พอดีกรอบ + แน่นขึ้น */
-  .progress-copy { font-size: 13.5px; line-height: 1.45; }
-  @media (min-width: 768px) { .progress-copy { font-size: 14px; } }
-  @media (min-width: 1024px) { .progress-copy { font-size: 15px; } }
+  /* ความสูงคงที่ของแต่ละสไลด์ (การ์ดทุกใบจะสูงเท่ากัน) */
+  .slide-grid { height: 320px; }
+  @media (min-width: 768px) { .slide-grid { height: 360px; } }
+  @media (min-width: 1024px) { .slide-grid { height: 420px; } }
+
+  /* ย่อฟอนต์ของบล็อกเนื้อหาให้พอดีกรอบ + จำกัดความสูงคอนเทนต์ไม่ให้ดันกรอบ */
+  .progress-copy { 
+    font-size: 13.5px; 
+    line-height: 1.45; 
+    overflow: hidden; 
+    max-height: 9.5rem; /* ~4-6 บรรทัด ขึ้นกับ viewport */
+  }
+  @media (min-width: 768px) { .progress-copy { font-size: 14px; max-height: 11rem; } }
+  @media (min-width: 1024px) { .progress-copy { font-size: 15px; max-height: 12.5rem; } }
 
   /* ถ้า content มีหัวข้อย่อยจาก WP ให้เล็กลงด้วย */
   .progress-copy :where(h1,h2,h3,h4){ font-size: 1rem; line-height: 1.35; margin: .25rem 0; }

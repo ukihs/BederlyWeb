@@ -1,4 +1,5 @@
 ---
+// src/components/DownloadCTA_Band.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -8,11 +9,8 @@ export interface Props {
 }
 
 const { lang, class: sectionClass = "" } = Astro.props;
-
-// ใช้ slug ตามภาษา
 const categorySlug = lang === "en" ? "download-en" : "download-th";
 
-// ดึงโพสต์ตัวแรกในหมวด download-xx
 const DOWNLOAD_QUERY = /* GraphQL */ `
   query DownloadByCategory($slug: String!) {
     posts(
@@ -28,9 +26,7 @@ const DOWNLOAD_QUERY = /* GraphQL */ `
           node {
             altText
             sourceUrl
-            mediaDetails {
-              sizes { name sourceUrl width height }
-            }
+            mediaDetails { sizes { name sourceUrl width height } }
           }
         }
       }
@@ -41,23 +37,17 @@ const DOWNLOAD_QUERY = /* GraphQL */ `
 type Size = { name: string; sourceUrl?: string };
 type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
 
-function normalize(img: any): Img | undefined {
-  return img?.node ? img.node : img ?? undefined;
-}
-
+function normalize(img: any): Img | undefined { return img?.node ? img.node : img ?? undefined; }
 function pickImageUrl(img: any): string | undefined {
-  const n = normalize(img);
-  if (!n) return undefined;
+  const n = normalize(img); if (!n) return undefined;
   const sizes = n.mediaDetails?.sizes ?? [];
-  // เลือก size ที่ใหญ่พอ
-  const prefer = ["1536x1536", "2048x2048", "large", "medium_large"];
+  const prefer = ["2048x2048", "1536x1536", "large", "medium_large"];
   for (const key of prefer) {
     const hit = sizes.find((s) => s?.name === key && s?.sourceUrl);
     if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
   }
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
-
 function htmlOrBlank(s?: string) {
   const t = (s ?? "").trim();
   return t && t.replace(/(<[^>]*>)|(&nbsp;)|\s+/g, "") !== "" ? t : "";
@@ -70,82 +60,97 @@ try {
 } catch {}
 
 const titleText =
-  (post?.title as string) ??
+  (post?.title as string) ||
   (lang === "en"
     ? "Download the Bederly PHR App to track your health"
     : "ดาวน์โหลดแอป Bederly PHR เพื่อติดตามสุขภาพของคุณ");
 
-const descHtml =
-  htmlOrBlank(post?.excerpt) ||
-  htmlOrBlank(post?.content) ||
-  "";
-
+const descHtml = htmlOrBlank(post?.excerpt) || htmlOrBlank(post?.content) || "";
 const imgUrl = pickImageUrl(post?.featuredImage);
 const imgAlt = normalize(post?.featuredImage)?.altText || titleText;
 
-// ลิงก์ปุ่ม (hardcode)
-const googlePlay =
-  "https://play.google.com/store/apps/details?id=com.bederly.phr";
-const appStore =
-  "https://apps.apple.com/th/app/bederly-phr/idXXXXXXXXXX"; // ใส่ไอดีจริงภายหลัง
+const googlePlay = "https://play.google.com/store/apps/details?id=com.bederly.phr";
+const appStore   = "https://apps.apple.com/th/app/id0000000000";
 ---
 
-<section class={`section-padding ${sectionClass}`.trim()}>
-  <div class="container-primary">
-    <div class="rounded-[28px] p-6 md:p-10 bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-400 shadow-[0_25px_80px_-20px_rgba(0,0,0,.25)]">
-      <div class="grid md:grid-cols-2 gap-8 items-center">
-        <!-- ซ้าย: ข้อความ + ปุ่ม -->
-        <div>
-          <h2 class="text-white text-2xl md:text-4xl font-bold mb-3">
-            {titleText}
-          </h2>
+<section class={`relative isolate py-14 md:py-16 lg:py-20 ${sectionClass}`.trim()}>
+  <!-- แถบพื้นหลังฟ้าไล่เฉด: สี่เหลี่ยมคม (ไม่โค้ง) และสูงขึ้น -->
+  <div
+    class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-0
+           h-[300px] sm:h-[340px] lg:h-[380px]
+           bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-400">
+  </div>
 
-          {descHtml && (
-            <div
-              class="prose prose-invert max-w-none mb-6 prose-p:my-2"
-              set:html={descHtml}
+  <div class="container-primary relative z-10">
+    <div class="grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
+      <!-- ซ้าย: รูป (ขยายสูงขึ้น) -->
+      <div class="order-1 md:order-none">
+        {imgUrl ? (
+          <div class="inline-block p-3">
+            <img
+              src={imgUrl}
+              alt={imgAlt}
+              class="w-full max-w-[800px] h-[320px] sm:h-[380px] md:h-[420px] lg:h-[460px] object-contain scale-150"
+              loading="lazy"
             />
-          )}
-
-          <div class="flex gap-4">
-            <a
-              href={googlePlay}
-              class="inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-white/90 hover:bg-white text-gray-800 font-medium shadow transition"
-              target="_blank" rel="noopener"
-            >
-              <img src="/images/google-play-badge.svg" alt="" class="h-6" />
-              <span class="hidden sm:inline">Google Play</span>
-            </a>
-
-            <a
-              href={appStore}
-              class="inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-white/90 hover:bg-white text-gray-800 font-medium shadow transition"
-              target="_blank" rel="noopener"
-            >
-              <img src="/images/app-store-badge.svg" alt="" class="h-6" />
-              <span class="hidden sm:inline">App Store</span>
-            </a>
           </div>
-        </div>
+        ) : (
+          <div class="h-[320px] sm:h-[360px] md:h-[420px] grid place-content-center text-white/80">
+            {lang === "en" ? "Add a featured image to the Download post" : "เพิ่มรูป Featured Image ในโพสต์ Download"}
+          </div>
+        )}
+      </div>
 
-        <!-- ขวา: ภาพจาก Featured Image -->
-        <div class="relative">
-          {imgUrl ? (
-            <div class="rounded-3xl bg-white/10 ring-1 ring-white/20 p-2">
-              <img
-                src={imgUrl}
-                alt={imgAlt}
-                class="w-full h-[280px] sm:h-[340px] md:h-[380px] lg:h-[420px] object-contain rounded-2xl bg-white"
-                loading="lazy"
-              />
-            </div>
-          ) : (
-            <div class="h-[260px] sm:h-[320px] md:h-[360px] rounded-3xl bg-white/10 ring-1 ring-white/20 grid place-content-center text-white/70">
-              {lang === "en" ? "Add a featured image to the Download post" : "เพิ่มรูป Featured Image ในโพสต์ Download"}
-            </div>
-          )}
+      <!-- ขวา: ข้อความ + ปุ่ม (จัด center, ขยายฟอนต์, ขยับปุ่มลง) -->
+      <div class="text-white text-center">
+        <h2 class="font-extrabold leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+          {titleText}
+        </h2>
+
+        {descHtml && (
+          <div
+            class="prose prose-invert max-w-none mx-auto mt-4 mb-8 prose-p:my-2 text-base sm:text-lg"
+            set:html={descHtml}
+          />
+        )}
+
+        <div class="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-5">
+          <!-- Google Play - แค่ icon กับชื่อ -->
+          <a
+            href={googlePlay}
+            target="_blank" rel="noopener"
+            class="store-badge inline-flex items-center rounded-xl bg-white text-gray-900 px-6 py-3.5 shadow hover:shadow-md transition"
+            aria-label="Get it on Google Play"
+          >
+            <img 
+              src="/blackgoogleplay.png" 
+              alt="Google Play" 
+              class="h-8 sm:h-9 w-auto mr-3" 
+            />
+      
+          </a>
+
+          <!-- App Store - แค่ icon กับชื่อ -->
+          <a
+            href={appStore}
+            target="_blank" rel="noopener"
+            class="store-badge inline-flex items-center rounded-xl bg-white text-gray-900 px-6 py-3.5 shadow hover:shadow-md transition"
+            aria-label="Download on the App Store"
+          >
+            <img 
+              src="/apple.png" 
+              alt="App Store" 
+              class="h-8 sm:h-9 w-auto mr-3" 
+            />
+          </a>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  .prose :where(p){ margin: .45rem 0; }
+  .store-badge { will-change: transform, box-shadow; }
+  .store-badge:hover { transform: translateY(-1.5px); }
+</style>

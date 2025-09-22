@@ -4,8 +4,8 @@ import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
-  limit?: number;          // จำนวนโพสต์สูงสุด
-  class?: string;          // class เสริมที่ wrapper
+  limit?: number;
+  class?: string;
 }
 
 const {
@@ -14,10 +14,8 @@ const {
   class: klass = "",
 } = Astro.props;
 
-// map slug ตามภาษา
 const innovationSlug = lang === "en" ? "innovation-en" : "innovation-th";
 
-// ===== GraphQL =====
 const POSTS_BY_CATEGORY = /* GraphQL */ `
   query PostsByCategory($first: Int!, $category: String!, $language: LanguageCodeFilterEnum) {
     posts(
@@ -54,7 +52,6 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
 
 const languageFilter = (lang.toUpperCase() as "TH" | "EN");
 
-// ===== helpers =====
 function normalize(img?: any) {
   return img?.node ? img.node : img;
 }
@@ -85,21 +82,18 @@ try {
 }
 ---
 
-
 <section class={`py-16 md:py-24 ${klass}`}>
-  <!-- หัวข้อบนสุด (hardcode) -->
   <div class="container-primary mb-10 md:mb-14">
     <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900">
-      {lang === "en" ? "Our Other Innovations" : "นวัตกรรมอื่น ๆ ของเรา"}
+      {lang === "en" ? <>Our Other <br /> Innovations</> : <>นวัตกรรมอื่น ๆ <br /> ของเรา</>}
     </h2>
     <p class="mt-3 text-gray-600 max-w-2xl">
       {lang === "en"
-        ? "Bederly is an Integrated Platform Offering Interconnected Proprietary Products​"
-        : "เป็นแพลตฟอร์มที่เชื่อมต่อผลิตภัณฑ์ต่างๆ เข้าด้วยกันอย่างครบวงจร"}
+        ? <>Bederly is an Integrated Platform Offering <br /> Interconnected Proprietary Products​</>
+        : <>เป็นแพลตฟอร์มที่เชื่อมต่อผลิตภัณฑ์ต่างๆ <br /> เข้าด้วยกันอย่างครบวงจร​</>}
     </p>
   </div>
 
-  <!-- รายการนวัตกรรมจากโพสต์ -->
   <div class="container-primary">
     {posts.length > 0 ? (
       <div class="grid gap-6 md:gap-8 lg:grid-cols-2">
@@ -108,48 +102,35 @@ try {
           const src = pickImageUrl(img);
 
           return (
-            <article class="group relative overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-black/5">
-              <div class="grid grid-cols-1 md:grid-cols-2">
-                <!-- ภาพ -->
-                <div class="relative p-6 md:p-8">
-                  <div class="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 to-cyan-50">
-                    {src ? (
-                      <img
-                        src={src}
-                        alt={img?.altText || p.title}
-                        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div class="flex h-full w-full items-center justify-center text-sky-400/60">
-                        <svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7m-8 10V7m0 0L9 10m3-3l3 3"/>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <!-- เนื้อหา -->
-                <div class="p-6 md:p-8 flex flex-col">
-                  <h3 class="text-2xl font-bold text-gray-900 mb-3 leading-tight" set:html={p.title} />
-                  {p.excerpt && (
-                    <div class="prose prose-slate max-w-none text-gray-600 prose-p:my-0"
-                         set:html={p.excerpt} />
-                  )}
-
-                  <div class="mt-auto pt-6">
-                    <a href={p.uri || `/${lang}/${p.slug}`}
-                       class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-white shadow hover:bg-sky-700 transition">
-                      {lang === "en" ? "Learn more" : "ดูรายละเอียด"}
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                      </svg>
-                    </a>
-                  </div>
-                </div>
+            <article
+              class="group relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/5
+                     shadow-xl transform-gpu transition-transform duration-300
+                     hover:scale-[1.02] hover:shadow-2xl hover:ring-sky-200/70"
+            >
+              <div class="relative z-10 flex flex-col items-center text-center p-6 md:p-10">
+                <h3 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-3" set:html={p.title}></h3>
+                {p.excerpt && (
+                  <div class="prose prose-slate max-w-2xl md:max-w-3xl mx-auto text-gray-700 prose-p:my-0" set:html={p.excerpt}></div>
+                )}
               </div>
+
+              {src && (
+                <div class="relative z-0 px-6 md:px-10 pb-6">
+                  <div class="mx-auto w-full max-w-[500px] aspect-[4/3] overflow-hidden rounded-xl">
+                    <img
+                      src={src}
+                      alt={img?.altText || p.title}
+                      class="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div class="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-transparent group-hover:ring-sky-200/70 transition-colors duration-500"></div>
+
+              <a href={p.uri || `/${lang}/${p.slug}`} class="absolute inset-0" aria-label="Open innovation"></a>
             </article>
           );
         })}
@@ -162,19 +143,4 @@ try {
       </div>
     )}
   </div>
-
-  {/* Debug (DEV only) */}
-  {import.meta.env.DEV && (
-    <div class="container-primary mt-6">
-      <details class="rounded-xl bg-white p-4 text-sm text-gray-700 shadow">
-        <summary class="cursor-pointer select-none">🔎 Innovation Debug</summary>
-        <div class="mt-2 space-y-1">
-          <div>Lang: <code class="bg-gray-100 px-1 rounded">{lang}</code></div>
-          <div>Category: <code class="bg-gray-100 px-1 rounded">{innovationSlug}</code></div>
-          <div>Count: {posts.length}</div>
-          {errorMsg && <div class="text-red-600">Error: {errorMsg}</div>}
-        </div>
-      </details>
-    </div>
-  )}
 </section>

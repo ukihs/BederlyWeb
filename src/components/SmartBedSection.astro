@@ -1,5 +1,5 @@
 ---
-// src/components/SmartBedSection.astro - แก้ไขให้ดึงข้อมูลจาก WordPress ได้
+// src/components/SmartBedSection.astro - Full Background Version
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -219,285 +219,75 @@ if (!foundSmartbedData) {
   }
 }
 
-
-
 console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smartbedSub, smartbedImageUrl });
 ---
 
-<!-- Smart Bed Section -->
-<section class="section-padding bg-gradient-to-br from-gray-50 to-blue-50/30 overflow-hidden relative">
-  <!-- Background Pattern -->
-  <div class="absolute inset-0 opacity-5">
-    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-72 h-72 bg-cyan-400 rounded-full blur-3xl"></div>
-  </div>
+<!-- Smart Bed Section — background image card, same width as Hero -->
+<section class="pt-12 md:pt-14 lg:pt-16 pb-2 md:pb-3 lg:pb-4 bg-white">
 
-  <div class="container-wide relative z-10">
-    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-      
-      <!-- Image Column - วางไว้ฝั่งซ้าย -->
-      <div class="relative order-1 lg:order-1">
-        <!-- Background Decoration -->
-        <div class="absolute inset-0 bg-gradient-to-br from-cyan-100/50 to-blue-200/50 rounded-3xl transform rotate-3 scale-105"></div>
-        <div class="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-cyan-200/50 rounded-3xl transform -rotate-2 scale-105"></div>
-        
-        <!-- Main Image Container -->
-        <div class="relative bg-white rounded-3xl p-6 lg:p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105">
-          {smartbedImageUrl ? (
-            <img 
-              src={smartbedImageUrl}
-              alt={lang === "en" ? "Smart Bed Innovation" : "เตียงอัจฉริยะ"}
-              class="w-full h-auto rounded-2xl shadow-lg transition-transform duration-500 hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <!-- Fallback placeholder with smart bed visualization -->
-            <div class="aspect-[4/3] bg-gradient-to-br from-cyan-50 to-blue-100 rounded-2xl flex items-center justify-center relative overflow-hidden">
-              <!-- Background grid pattern -->
-              <div class="absolute inset-0 opacity-10">
-                <div class="grid grid-cols-8 grid-rows-6 h-full">
-                  {Array.from({length: 48}).map((_, i) => (
-                    <div key={i} class="border border-blue-300"></div>
-                  ))}
-                </div>
-              </div>
-              
-              <!-- Smart bed icon -->
-              <div class="relative text-center text-cyan-700 z-10">
-                <svg class="w-20 h-20 mx-auto mb-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31.84 2.41 2 2.83V22h2v-2.17c1.16-.41 2-1.52 2-2.83 0-1.66-1.34-3-3-3zM20.5 6c-.28 0-.5.22-.5.5V8h-1V6.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5V8H4V6.5C4 6.22 3.78 6 3.5 6S3 6.22 3 6.5V18c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.28-.22-.5-.5-.5z"/>
-                </svg>
-                <p class="text-lg font-semibold">Smart Bed</p>
-                <p class="text-sm opacity-75">Advanced Care Technology</p>
-              </div>
-              
-              <!-- Floating tech indicators -->
-              <div class="absolute top-4 right-4 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-              <div class="absolute bottom-4 left-4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
-            </div>
-          )}
-          
-          <!-- Floating Tech Elements -->
-          <div class="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg animate-float">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          
-          <div class="absolute -bottom-3 -left-3 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg animate-float" style="animation-delay: -1s;">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Content Column -->
-      <div class="order-2 lg:order-2 lg:pl-8">
-        <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-800 px-6 py-3 rounded-full text-sm font-semibold mb-6 shadow-md">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-          {lang === "en" ? "Smart Innovation" : "นวัตกรรมอัจฉริยะ"}
-        </div>
-        
-        <!-- Section Title (Fixed in code) -->
-        <h2 class="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
-        </h2>
-        
-        <!-- Dynamic Title from WordPress -->
-        {smartbedTitle && (
-          <h3 class="text-2xl lg:text-3xl font-semibold text-gradient-primary mb-6 leading-tight">
-            {smartbedTitle}
+  <div class="container-primary">
+    <!-- Card -->
+    <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl min-h-[520px]">
+
+      <!-- BG image covers the whole card -->
+      {smartbedImageUrl ? (
+        <img
+          src={smartbedImageUrl}
+          alt={lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
+          class="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div class="absolute inset-0 bg-blue-200" />
+      )}
+
+   
+
+      <!-- Content on top of image -->
+      <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-8 md:p-12 lg:p-16">
+        <div class="max-w-xl lg:max-w-2xl text-white">
+          <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+            {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
+          </h2>
+
+          <h3 class="text-lg md:text-xl lg:text-2xl font-medium mb-6">
+            {smartbedTitle ||
+              (lang === "en"
+                ? "Innovative Care for the Ones Your loved ones"
+                : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก")}
           </h3>
-        )}
-        
-        <!-- Description from WordPress -->
-        <div class="prose prose-lg text-gray-600 mb-8 max-w-none">
-          <p class="text-lg leading-relaxed whitespace-pre-line">
-            {smartbedSub}
+
+          <p class="text-sm md:text-base/7 mb-8 opacity-95">
+            {smartbedSub ||
+              (lang === "en"
+                ? "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients. With IoT integration, it can be controlled remotely via smartphone. Embedded technology enhances its intelligence, enabling seamless connection and interaction with other devices."
+                : "เตียงอัจฉริยะเป็นเตียงไฟฟ้าที่กระจายแรงกดและสนับสนุนผู้ดูแลในการจัดท่าผู้ป่วย ด้วยการผสาน IoT สามารถควบคุมระยะไกลผ่านสมาร์ทโฟน เทคโนโลยีฝังตัวช่วยเพิ่มความอัจฉริยะ ทำให้เชื่อมต่อและโต้ตอบกับอุปกรณ์อื่นได้อย่างราบรื่น")}
           </p>
-        </div>
-        
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 mb-8">
-          <a href="#contact" class="btn-primary group">
-            <span>{lang === "en" ? "Contact Us" : "ติดต่อเรา"}</span>
-            <svg class="w-5 h-5 transition-transform group-hover-translate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-            </svg>
-          </a>
-          
-          <a href="#features" class="btn-secondary group">
-            <span>{lang === "en" ? "Learn More" : "เรียนรู้เพิ่มเติม"}</span>
-            <svg class="w-5 h-5 transition-transform group-hover-scale" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+
+          <a
+            href="#footer"
+            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-6 py-3 rounded-full font-semibold
+                   hover:bg-gray-50 transition shadow-lg"
+          >
+            {lang === "en" ? "Contact Us " : "ติดต่อเรา"}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </a>
         </div>
-        
-        <!-- Features List -->
-        <div class="grid sm:grid-cols-2 gap-6">
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
-                {lang === "en" ? "Pressure Distribution" : "กระจายแรงกดดัน"}
-              </h4>
-              <p class="text-gray-600">
-                {lang === "en" 
-                  ? "Advanced pressure redistribution for patient comfort"
-                  : "ระบบกระจายแรงกดดันขั้นสูงเพื่อความสะดวกสบาย"
-                }
-              </p>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
-                {lang === "en" ? "Remote Control" : "ควบคุมระยะไกล"}
-              </h4>
-              <p class="text-gray-600">
-                {lang === "en" 
-                  ? "Smartphone integration for remote monitoring"
-                  : "ผสานรวมสมาร์ทโฟนสำหรับการตรวจสอบระยะไกล"
-                }
-              </p>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
-                {lang === "en" ? "IoT Integration" : "การเชื่อมต่อ IoT"}
-              </h4>
-              <p class="text-gray-600">
-                {lang === "en" 
-                  ? "Seamless connection with healthcare devices"
-                  : "เชื่อมต่อกับอุปกรณ์ทางการแพทย์อย่างราบรื่น"
-                }
-              </p>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-              </svg>
-            </div>
-            <div>
-              <h4 class="font-semibold text-gray-900 mb-2 text-lg">
-                {lang === "en" ? "Patient Care" : "การดูแลผู้ป่วย"}
-              </h4>
-              <p class="text-gray-600">
-                {lang === "en" 
-                  ? "Enhanced support for caregivers and patients"
-                  : "การสนับสนุนที่ดียิ่งขึ้นสำหรับผู้ดูแลและผู้ป่วย"
-                }
-              </p>
-            </div>
-          </div>
-        </div>
+
+        <!-- keep empty on the right so image shows fully while text stays left -->
+        <div class="hidden lg:block"></div>
       </div>
     </div>
-    
-    <!-- Debug Info (Development only) -->
-    {import.meta.env.DEV && (
-      <div class="mt-12 p-6 bg-white/80 backdrop-blur-sm text-gray-800 text-sm rounded-2xl shadow-lg border border-gray-200">
-        <p><strong>🛏️ Smart Bed Debug ({lang}):</strong></p>
-        <p>Found Data: {foundSmartbedData ? "✅ Yes" : "❌ No"}</p>
-        <p>Method: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{debugInfo.successMethod || "fallback"}</span></p>
-        <p>Title: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{smartbedTitle || "None"}</span></p>
-        <p>Subtitle: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{smartbedSub ? `${smartbedSub.substring(0, 50)}...` : "None"}</span></p>
-        <p>Image: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{smartbedImageUrl || "None"}</span></p>
-        <p>Language Filter: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{languageFilter}</span></p>
-        {debugInfo.successPage && (
-          <p>Success Page: <span class="font-mono bg-green-100 px-2 py-1 rounded text-green-800">{debugInfo.successPage.title} ({debugInfo.successPage.language})</span></p>
-        )}
-        {debugInfo.successUri && (
-          <p>Success URI: <span class="font-mono bg-green-100 px-2 py-1 rounded text-green-800">{debugInfo.successUri}</span></p>
-        )}
-        {debugInfo.usingFallback && (
-          <p class="text-orange-600">⚠️ Using fallback data - WordPress not connected</p>
-        )}
-        {(debugInfo.languageError || debugInfo.uriErrors) && (
-          <details class="mt-2">
-            <summary class="cursor-pointer text-red-600">❌ Errors</summary>
-            {debugInfo.languageError && (
-              <p class="text-xs mt-1 bg-red-50 p-2 rounded">Language Query: {debugInfo.languageError}</p>
-            )}
-            {debugInfo.uriErrors && (
-              <pre class="text-xs mt-1 bg-red-50 p-2 rounded overflow-auto">{JSON.stringify(debugInfo.uriErrors, null, 2)}</pre>
-            )}
-          </details>
-        )}
-      </div>
-    )}
   </div>
 </section>
 
 <style>
-  /* Enhanced animations */
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-8px);
-    }
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  /* Gradient text */
-  .text-gradient-primary {
-    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Enhanced hover effects */
-  .group:hover .group-hover-translate {
-    transform: translateX(4px);
-  }
-
-  .group:hover .group-hover-scale {
-    transform: scale(1.05);
-  }
-
-  /* Smooth transitions */
-  * {
-    transition-property: transform, box-shadow, background-color, color;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 300ms;
-  }
-
-  /* Responsive typography */
-  @media (max-width: 640px) {
-    .prose p {
-      font-size: 1rem;
-      line-height: 1.7;
-    }
+  /* Match Hero width exactly */
+  .container-primary{
+    max-width: 1236px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
   }
 </style>

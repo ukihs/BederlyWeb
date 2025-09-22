@@ -199,137 +199,51 @@ if (!foundData) {
     { lang: "en", url: "/en" },
   ]}
 >
-  <!-- Hero Section -->
-  <section class="relative overflow-hidden min-h-screen flex items-center">
-    <div class="absolute inset-0 -z-10">
-      {
-        heroImgUrl ? (
-          <>
+  <!-- Hero Section - Simple Image Frame Only -->
+<section class="relative min-h-[200px] md:min-h-[200px] lg:min-h-[200px] flex items-center">
+
+  <!-- Main Container with padding -->
+  <div class="container-primary relative w-full">
+    <div class="relative max-w-7xl mx-auto">
+      
+      <!-- Image Container with Rounded Corners - NO OVERLAY, NO TEXT -->
+      <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl">
+        {
+          heroImgUrl ? (
             <img
               src={heroImgUrl}
               alt=""
-              class="w-full h-full object-cover object-center"
+              class="w-full h-[500px] md:h-[600px] lg:h-[700px] object-cover"
               loading="eager"
             />
-            <div class="absolute inset-0 bg-black/40" />
-          </>
-        ) : (
-          <>
-            <div class="w-full h-full bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400" />
-            <div class="absolute inset-0 opacity-20">
-              <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-white rounded-full blur-3xl animate-pulse" />
-              <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-200 rounded-full blur-3xl animate-float" />
-            </div>
-          </>
-        )
-      }
-    </div>
-
-    <div class="container-primary relative z-10">
-      <div class="max-w-4xl">
-        <h1
-          class="text-white text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 whitespace-pre-line drop-shadow-lg"
-        >
-          {heroTitle}
-        </h1>
-
-        {
-          heroSubtitle && (
-            <p class="text-white/90 text-xl md:text-2xl font-light mb-8 max-w-2xl leading-relaxed drop-shadow-md">
-              {heroSubtitle}
-            </p>
+          ) : (
+            <!-- Fallback gradient if no image -->
+            <div class="w-full h-[500px] md:h-[600px] lg:h-[700px] bg-gradient-to-br from-sky-400 via-cyan-400 to-cyan-300" />
           )
         }
-
-        <div class="flex flex-col sm:flex-row gap-4">
-          <a href="#smartbed" class="btn-primary group">
-            <span>{lang === "en" ? "View Smart Bed" : "ดูสมาร์ทเบด"}</span>
-            <svg
-              class="w-5 h-5 transition-transform group-hover-translate"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-            </svg>
-          </a>
-          <a href="#contact" class="btn-secondary group">
-            <span>{lang === "en" ? "Contact Us" : "ติดต่อเรา"}</span>
-            <svg
-              class="w-5 h-5 transition-transform group-hover-scale"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-              ></path>
-            </svg>
-          </a>
-        </div>
       </div>
+      
     </div>
-
-    <div
-      class="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/70 animate-bounce"
-    >
-      <svg
-        class="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-      </svg>
-    </div>
-  </section>
+  </div>
+</section>
 
   <!-- Smart Bed -->
-  <section id="smartbed">
+  <section id="smartbed" class="pb-0 md:pb-6 lg:pb-8">  
     <SmartBedSection lang={lang} />
   </section>
 
   <!-- Product Gallery -->
-  <section
-    id="gallery"
-    class="section-padding bg-gradient-to-br from-blue-50 to-cyan-50/30"
-  >
-    <div class="container-primary">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          {lang === "en" ? "Product Gallery" : "แกลเลอรี่ผลิตภัณฑ์"}
-        </h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-          {
-            lang === "en"
-              ? "Explore our smart bed features and capabilities in action"
-              : "สำรวจฟีเจอร์และความสามารถของเตียงอัจฉริยะของเราในการใช้งานจริง"
-          }
-        </p>
-      </div>
+<section id="gallery" class="pt-4 pb-6 bg-white -mt-6 md:-mt-8 lg:-mt-10">
 
-      <div class="max-w-5xl mx-auto">
-        <HeroCategoryImages
-          lang={lang}
-          categorySlug="Hero"
-          limit={9}
-          class="rounded-3xl overflow-hidden shadow-2xl"
-          separateByLanguage={false}
-        />
-      </div>
+    <div class="max-w-5xl mx-auto">
+      <HeroCategoryImages
+        lang={lang}
+        categorySlug="Hero"
+        limit={9}
+      />
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- Functions -->
   <section id="functions" class="section-padding bg-white">
@@ -373,6 +287,7 @@ if (!foundData) {
       pageUriTH="/"
       pageUriEN="/en/welcome/"
       class="shadow-2xl"
+      size="lg"
     />
   </section>
 
@@ -439,3 +354,25 @@ if (!foundData) {
   <Footer lang={lang} />
 
 </Layout>
+
+<style>
+  /* Container styling to match reference */
+  .container-primary {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .container-primary {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container-primary {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
+  }
+</style>

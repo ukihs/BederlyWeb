@@ -137,12 +137,7 @@ const fallbackCards = [
       })}
     </div>
 
-    {import.meta.env.DEV && (
-      <div class="mt-4 text-xs text-gray-600">
-        <strong>MoreInfo Debug:</strong> Using category:
-        <span class="font-mono ml-1">{usedCategory || "fallback"}</span> • Count: {posts.length || fallbackCards.length}
-      </div>
-    )}
+  
   </div>
 </section>
 

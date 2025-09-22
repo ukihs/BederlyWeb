@@ -118,6 +118,27 @@
   .section-padding-lg {
     @apply py-20 lg:py-32;
   }
+  /* === Card & Section System (global) === */
+  /* กรอบการ์ดมาตรฐานทั้งหน้า */
+  .card-frame {
+    @apply relative overflow-hidden rounded-3xl bg-white shadow-lg hover:shadow-xl transition-all;
+  }
+
+  /* การ์ดพื้นหลังรูป (ใช้กับ hero / banner) */
+  .card-bg {
+    @apply card-frame;
+  }
+
+  /* ระยะห่างแนวตั้งของแต่ละ section ให้เท่ากันทั้งหน้า */
+  .section-stack {
+    @apply space-y-8 md:space-y-10 lg:space-y-12;
+  }
+
+  /* padding ด้านในการ์ดให้เท่ากัน */
+  .card-pad {
+    @apply p-6 md:p-8 lg:p-10;
+  }
+
 }
 
 /* ============== Utility Classes ============== */
@@ -211,6 +232,14 @@
   .hover-glow {
     @apply hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300;
   }
+   .h-hero-sm { @apply h-[260px] md:h-[320px] lg:h-[380px]; }
+  .h-hero-md { @apply h-[340px] md:h-[420px] lg:h-[480px]; }
+  .h-hero-lg { @apply h-[420px] md:h-[520px] lg:h-[620px]; }
+
+  /* overlay มาตรฐานสำหรับการ์ดพื้นหลังภาพ */
+  .overlay-dark { @apply absolute inset-0 bg-black/40; }
+  .overlay-fade-b { @apply absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35; }
+
 }
 
 /* ============== Custom Group Effects (แทน @apply group) ============== */
