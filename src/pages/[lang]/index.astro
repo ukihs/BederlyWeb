@@ -199,33 +199,33 @@ if (!foundData) {
     { lang: "en", url: "/en" },
   ]}
 >
-  <!-- Hero Section - Simple Image Frame Only -->
-<section class="relative min-h-[200px] md:min-h-[200px] lg:min-h-[200px] flex items-center">
+  <!-- Hero Section - Full expanded with taller images -->
+  <section class="relative min-h-[200px] md:min-h-[200px] lg:min-h-[200px] flex items-center">
 
-  <!-- Main Container with padding -->
-  <div class="container-primary relative w-full">
-    <div class="relative max-w-7xl mx-auto">
-      
-      <!-- Image Container with Rounded Corners - NO OVERLAY, NO TEXT -->
-      <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl">
-        {
-          heroImgUrl ? (
-            <img
-              src={heroImgUrl}
-              alt=""
-              class="w-full h-[500px] md:h-[600px] lg:h-[700px] object-cover"
-              loading="eager"
-            />
-          ) : (
-            <!-- Fallback gradient if no image -->
-            <div class="w-full h-[500px] md:h-[600px] lg:h-[700px] bg-gradient-to-br from-sky-400 via-cyan-400 to-cyan-300" />
-          )
-        }
+    <!-- Use standard expanded container -->
+    <div class="container-primary relative w-full">
+      <div class="relative">
+        
+        <!-- Image Container with increased height -->
+        <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl">
+          {
+            heroImgUrl ? (
+              <img
+                src={heroImgUrl}
+                alt=""
+                class="w-full h-[600px] md:h-[700px] lg:h-[800px] object-contain bg-gradient-to-br from-sky-400 via-cyan-400 to-cyan-300"
+                loading="eager"
+              />
+            ) : (
+              <!-- Fallback gradient with increased height -->
+              <div class="w-full h-[600px] md:h-[700px] lg:h-[800px] bg-gradient-to-br from-sky-400 via-cyan-400 to-cyan-300" />
+            )
+          }
+        </div>
+        
       </div>
-      
     </div>
-  </div>
-</section>
+  </section>
 
   <!-- Smart Bed -->
   <section id="smartbed" class="pb-0 md:pb-6 lg:pb-8">  
@@ -233,17 +233,15 @@ if (!foundData) {
   </section>
 
   <!-- Product Gallery -->
-<section id="gallery" class="pt-4 pb-6 bg-white -mt-6 md:-mt-8 lg:-mt-10">
-
-    <div class="max-w-5xl mx-auto">
+  <section id="gallery" class="pt-4 pb-6 bg-white -mt-6 md:-mt-8 lg:-mt-10">
+    <div class="container-primary">
       <HeroCategoryImages
         lang={lang}
         categorySlug="Hero"
         limit={9}
       />
     </div>
-  </div>
-</section>
+  </section>
 
   <!-- Functions -->
   <section id="functions" class="section-padding bg-white">
@@ -261,15 +259,12 @@ if (!foundData) {
   <!-- Innovations -->
   <section
     id="innovations"
-    class="section-padding bg-gradient-to-b from-white to-gray-50"
+    class="section-padding bg-white"
   >
     <div class="container-primary">
-      <InnovationSection lang={lang} limit={6} class="mx-auto" />
+      <InnovationSection lang={lang} limit={6} />
     </div>
   </section>
-
-  <!-- Services (placeholder) -->
-  <ServicesSection lang={lang} class="bg-white" />
 
   <!-- More Info -->
   <section id="moreinfo">
@@ -286,7 +281,6 @@ if (!foundData) {
       lang={lang}
       pageUriTH="/"
       pageUriEN="/en/welcome/"
-      class="shadow-2xl"
       size="lg"
     />
   </section>
@@ -357,24 +351,4 @@ if (!foundData) {
 
 </Layout>
 
-<style>
-  /* Container styling to match reference */
-  .container-primary {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  @media (min-width: 768px) {
-    .container-primary {
-      padding-left: 2rem;
-      padding-right: 2rem;
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .container-primary {
-      padding-left: 3rem;
-      padding-right: 3rem;
-    }
-  }
-</style>
+<!-- ใช้ global .container-primary มาตรฐาน ไม่ต้อง override -->

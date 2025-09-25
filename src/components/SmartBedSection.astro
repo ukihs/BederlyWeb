@@ -222,12 +222,12 @@ if (!foundSmartbedData) {
 console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smartbedSub, smartbedImageUrl });
 ---
 
-<!-- Smart Bed Section — background image card, same width as Hero -->
+<!-- Smart Bed Section — expanded size -->
 <section class="pt-12 md:pt-14 lg:pt-16 pb-2 md:pb-3 lg:pb-4 bg-white">
 
   <div class="container-primary">
-    <!-- Card -->
-    <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl min-h-[520px]">
+    <!-- Card with increased height -->
+    <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl min-h-[600px] md:min-h-[680px] lg:min-h-[760px]">
 
       <!-- BG image covers the whole card -->
       {smartbedImageUrl ? (
@@ -243,21 +243,21 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
 
    
 
-      <!-- Content on top of image -->
-      <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-8 md:p-12 lg:p-16">
+      <!-- Content on top of image with increased padding -->
+      <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-10 md:p-16 lg:p-20">
         <div class="max-w-xl lg:max-w-2xl text-white">
-          <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
           </h2>
 
-          <h3 class="text-lg md:text-xl lg:text-2xl font-medium mb-6">
+          <h3 class="text-xl md:text-2xl lg:text-3xl font-medium mb-8">
             {smartbedTitle ||
               (lang === "en"
                 ? "Innovative Care for the Ones Your loved ones"
                 : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก")}
           </h3>
 
-          <p class="text-sm md:text-base/7 mb-8 opacity-95">
+          <p class="text-base md:text-lg/8 lg:text-xl/9 mb-10 opacity-95">
             {smartbedSub ||
               (lang === "en"
                 ? "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients. With IoT integration, it can be controlled remotely via smartphone. Embedded technology enhances its intelligence, enabling seamless connection and interaction with other devices."
@@ -266,11 +266,11 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
 
           <a
             href="#footer"
-            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-6 py-3 rounded-full font-semibold
+            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-8 py-4 rounded-full font-semibold text-lg
                    hover:bg-gray-50 transition shadow-lg"
           >
             {lang === "en" ? "Contact Us " : "ติดต่อเรา"}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </a>
@@ -283,11 +283,4 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
   </div>
 </section>
 
-<style>
-  /* Match Hero width exactly */
-  .container-primary{
-    max-width: 1236px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-  }
-</style>
+<!-- ใช้ global .container-primary ที่กำหนดไว้แล้ว ไม่ต้อง override -->

@@ -26,6 +26,25 @@
 
 /* ============== Component Styles ============== */
 @layer components {
+  /* === EXPANDED CONTAINER SYSTEM === */
+  /* ขยายความกว้างและลด padding ทุก section */
+  .container-primary {
+    @apply mx-auto px-2 sm:px-4 lg:px-6;
+    max-width: 1400px; /* ขยายจาก 1236px เป็น 1400px */
+  }
+
+  /* Container สำหรับเนื้อหาที่ต้องการแคบกว่า */
+  .container-narrow {
+    @apply mx-auto px-2 sm:px-4 lg:px-6;
+    max-width: 1200px;
+  }
+
+  /* Container สำหรับเนื้อหาที่ต้องการกว้างมาก */
+  .container-wide {
+    @apply mx-auto px-2 sm:px-4 lg:px-6;
+    max-width: 1600px;
+  }
+
   /* Gradient text utilities */
   .text-gradient-primary {
     @apply bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent;
@@ -93,19 +112,6 @@
     @apply scale-x-100;
   }
 
-  /* Container utilities */
-  .container-primary {
-    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
-  }
-
-  .container-narrow {
-    @apply mx-auto max-w-4xl px-4 sm:px-6 lg:px-8;
-  }
-
-  .container-wide {
-    @apply mx-auto max-w-[1440px] px-6;
-  }
-
   /* Section spacing */
   .section-padding {
     @apply py-16 lg:py-20;
@@ -118,6 +124,7 @@
   .section-padding-lg {
     @apply py-20 lg:py-32;
   }
+
   /* === Card & Section System (global) === */
   /* กรอบการ์ดมาตรฐานทั้งหน้า */
   .card-frame {
@@ -232,7 +239,8 @@
   .hover-glow {
     @apply hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300;
   }
-   .h-hero-sm { @apply h-[260px] md:h-[320px] lg:h-[380px]; }
+
+  .h-hero-sm { @apply h-[260px] md:h-[320px] lg:h-[380px]; }
   .h-hero-md { @apply h-[340px] md:h-[420px] lg:h-[480px]; }
   .h-hero-lg { @apply h-[420px] md:h-[520px] lg:h-[620px]; }
 

@@ -8,7 +8,7 @@ export interface Props {
   pageUriTH?: string;
   pageUriEN?: string;
   class?: string;
-  /** ปรับความสูงการ์ด: 'sm' | 'md' | 'lg' (default: 'sm') */
+  /** ปรับความสูงการ์ด: 'sm' | 'md' | 'lg' (default: 'lg') */
   size?: "sm" | "md" | "lg";
 }
 
@@ -17,7 +17,7 @@ const {
   pageUriTH = "/",
   pageUriEN = "/en/welcome/",
   class: klass = "",
-  size = "sm",
+  size = "lg",
 } = Astro.props;
 
 const uri = lang === "en" ? pageUriEN : pageUriTH;
@@ -63,39 +63,30 @@ try {
   bgUrl = pickImageUrl(eco?.ecoimage) || "";
 } catch {}
 
-/* ====== sizes ====== */
-const HEIGHT =
-  size === "lg"
-    ? "h-[460px] md:h-[520px]"
-    : size === "md"
-    ? "h-[340px] md:h-[400px]"
-    : /* sm */ "h-[240px] md:h-[300px]";
-
-const TITLE =
-  size === "lg"
-    ? "text-4xl md:text-6xl"
-    : size === "md"
-    ? "text-3xl md:text-5xl"
-    : /* sm */ "text-2xl md:text-4xl";
+/* ====== expanded size ====== */
+const HEIGHT = "h-[600px] md:h-[680px] lg:h-[760px]"; // ขยายให้เท่ากับ Smart Bed
+const TITLE = "text-4xl md:text-5xl lg:text-6xl";      // ขยายฟอนต์ให้ใหญ่ขึ้น
 ---
 
-<section class={`container-primary ${klass}`}>
-  <div class={`relative overflow-hidden rounded-3xl card-bg ${HEIGHT}`}>
-    {bgUrl ? (
-      <>
-        <div class="absolute inset-0 bg-cover bg-center" style={`background-image:url('${bgUrl}')`}></div>
-        <div class="absolute inset-0 bg-black/40"></div>
-        <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35"></div>
-      </>
-    ) : (
-      <div class="absolute inset-0 bg-gray-200" />
-    )}
+<section class={`${klass}`}>
+  <div class="container-primary">
+    <div class={`relative overflow-hidden rounded-[32px] md:rounded-[40px] ${HEIGHT}`}>
+      {bgUrl ? (
+        <>
+          <div class="absolute inset-0 bg-contain bg-center bg-no-repeat" style={`background-image:url('${bgUrl}')`}></div>
+          <div class="absolute inset-0 bg-black/40"></div>
+          <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35"></div>
+        </>
+      ) : (
+        <div class="absolute inset-0 bg-gray-200" />
+      )}
 
-    <div class="relative h-full flex items-center">
-      <div class="container-primary">
-        {title && (
-          <h3 class={`font-extrabold leading-tight text-white max-w-4xl drop-shadow ${TITLE}`} set:html={title} />
-        )}
+      <div class="relative h-full flex items-center">
+        <div class="container-primary">
+          {title && (
+            <h3 class={`font-extrabold leading-tight text-white max-w-5xl drop-shadow-lg ${TITLE}`} set:html={title} />
+          )}
+        </div>
       </div>
     </div>
   </div>

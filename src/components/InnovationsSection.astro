@@ -82,65 +82,62 @@ try {
 }
 ---
 
-<section class={`py-16 md:py-24 ${klass}`}>
-  <div class="container-primary mb-10 md:mb-14">
-    <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900">
-      {lang === "en" ? <>Our Other <br /> Innovations</> : <>นวัตกรรมอื่น ๆ <br /> ของเรา</>}
-    </h2>
-    <p class="mt-3 text-gray-600 max-w-2xl">
-      {lang === "en"
-        ? <>Bederly is an Integrated Platform Offering <br /> Interconnected Proprietary Products​</>
-        : <>เป็นแพลตฟอร์มที่เชื่อมต่อผลิตภัณฑ์ต่างๆ <br /> เข้าด้วยกันอย่างครบวงจร​</>}
-    </p>
-  </div>
+<!-- ใช้โครงสร้างเดียวกับ Functions section -->
+<div class="mb-10 md:mb-14">
+  <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900">
+    {lang === "en" ? <>Our Other <br /> Innovations</> : <>นวัตกรรมอื่น ๆ <br /> ของเรา</>}
+  </h2>
+  <p class="mt-3 text-gray-600">
+    {lang === "en"
+      ? <>Bederly is an Integrated Platform Offering <br /> Interconnected Proprietary Products​</>
+      : <>เป็นแพลตฟอร์มที่เชื่อมต่อผลิตภัณฑ์ต่างๆ <br /> เข้าด้วยกันอย่างครบวงจร​</>}
+  </p>
+</div>
 
-  <div class="container-primary">
-    {posts.length > 0 ? (
-      <div class="grid gap-6 md:gap-8 lg:grid-cols-2">
-        {posts.map((p) => {
-          const img = p.featuredImage?.node;
-          const src = pickImageUrl(img);
+{posts.length > 0 ? (
+  <div class="grid gap-6 md:gap-8 lg:grid-cols-2">
+    {posts.map((p) => {
+      const img = p.featuredImage?.node;
+      const src = pickImageUrl(img);
 
-          return (
-            <article
-              class="group relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/5
-                     shadow-xl transform-gpu transition-transform duration-300
-                     hover:scale-[1.02] hover:shadow-2xl hover:ring-sky-200/70"
-            >
-              <div class="relative z-10 flex flex-col items-center text-center p-6 md:p-10">
-                <h3 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-3" set:html={p.title}></h3>
-                {p.excerpt && (
-                  <div class="prose prose-slate max-w-2xl md:max-w-3xl mx-auto text-gray-700 prose-p:my-0" set:html={p.excerpt}></div>
-                )}
+      return (
+        <article
+          class="group relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/5
+                 shadow-xl transform-gpu transition-transform duration-300
+                 hover:scale-[1.02] hover:shadow-2xl hover:ring-sky-200/70"
+        >
+          <div class="relative z-10 flex flex-col items-center text-center p-6 md:p-10">
+            <h3 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-3" set:html={p.title}></h3>
+            {p.excerpt && (
+              <div class="prose prose-slate mx-auto text-gray-700 prose-p:my-0" set:html={p.excerpt}></div>
+            )}
+          </div>
+
+          {src && (
+            <div class="relative z-0 px-6 md:px-10 pb-6">
+              <div class="mx-auto w-full aspect-[4/3] overflow-hidden rounded-xl">
+                <img
+                  src={src}
+                  alt={img?.altText || p.title}
+                  class="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
+            </div>
+          )}
 
-              {src && (
-                <div class="relative z-0 px-6 md:px-10 pb-6">
-                  <div class="mx-auto w-full max-w-[500px] aspect-[4/3] overflow-hidden rounded-xl">
-                    <img
-                      src={src}
-                      alt={img?.altText || p.title}
-                      class="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                </div>
-              )}
+          <div class="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-transparent group-hover:ring-sky-200/70 transition-colors duration-500"></div>
 
-              <div class="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-transparent group-hover:ring-sky-200/70 transition-colors duration-500"></div>
-
-              <a href={p.uri || `/${lang}/${p.slug}`} class="absolute inset-0" aria-label="Open innovation"></a>
-            </article>
-          );
-        })}
-      </div>
-    ) : (
-      <div class="rounded-2xl bg-white/60 p-8 text-center text-gray-500 shadow">
-        {errorMsg
-          ? (lang === "en" ? "Cannot fetch innovation posts." : "ไม่สามารถดึงโพสต์นวัตกรรมได้") + ` (${errorMsg})`
-          : (lang === "en" ? "No innovation posts found." : "ไม่พบนวัตกรรม")}
-      </div>
-    )}
+          <a href={p.uri || `/${lang}/${p.slug}`} class="absolute inset-0" aria-label="Open innovation"></a>
+        </article>
+      );
+    })}
   </div>
-</section>
+) : (
+  <div class="rounded-2xl bg-white/60 p-8 text-center text-gray-500 shadow">
+    {errorMsg
+      ? (lang === "en" ? "Cannot fetch innovation posts." : "ไม่สามารถดึงโพสต์นวัตกรรมได้") + ` (${errorMsg})`
+      : (lang === "en" ? "No innovation posts found." : "ไม่พบนวัตกรรม")}
+  </div>
+)}
