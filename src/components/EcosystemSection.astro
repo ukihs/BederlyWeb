@@ -63,9 +63,23 @@ try {
   bgUrl = pickImageUrl(eco?.ecoimage) || "";
 } catch {}
 
+/* ทำให้ตัดบรรทัด “ตามที่ตั้งใจ”:
+   - รองรับ \n (Enter) และเครื่องหมาย | เป็นตัวแบ่ง
+   - แปลงเป็น <br/> เพื่อคุมบรรทัดแน่นอนทุกเบราว์เซอร์
+*/
+let displayTitle = (title || "")
+  .replace(/\r\n|\r|\n/g, "<br/>")
+  .replace(/\s*\|\s*/g, "<br/>");
+
 /* ====== expanded size ====== */
-const HEIGHT = "h-[600px] md:h-[680px] lg:h-[760px]"; // ขยายให้เท่ากับ Smart Bed
-const TITLE = "text-2xl md:text-3xl lg:text-4xl";      // ขยายฟอนต์ให้ใหญ่ขึ้น
+const HEIGHT =
+  size === "sm"
+    ? "h-[440px] md:h-[520px] lg:h-[580px]"
+    : size === "md"
+    ? "h-[520px] md:h-[600px] lg:h-[680px]"
+    : "h-[600px] md:h-[680px] lg:h-[760px]"; // 'lg' (default)
+
+const TITLE = "text-2xl md:text-3xl lg:text-4xl";
 ---
 
 <section class={`${klass}`}>
@@ -73,7 +87,6 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";      // ขยายฟอน�
     <div class={`relative overflow-hidden rounded-[32px] md:rounded-[40px] ${HEIGHT}`}>
       {bgUrl ? (
         <>
-          <!-- ใช้ object-fill: รูปเต็มกรอบแต่ไม่ถูก crop -->
           <img
             src={bgUrl}
             alt=""
@@ -91,11 +104,24 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";      // ขยายฟอน�
 
       <div class="relative h-full flex items-center">
         <div class="container-primary">
-          {title && (
-            <h3 class={`font-extrabold leading-tight text-white max-w-5xl drop-shadow-lg ${TITLE}`} set:html={title} />
+          {displayTitle && (
+            <h3
+              class={`eco-title font-extrabold leading-tight text-white drop-shadow-lg text-center ${TITLE}
+                       mx-auto max-w-4xl md:max-w-5xl`}
+              set:html={displayTitle}
+            />
           )}
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  /* ทำให้การขึ้นบรรทัดสวยขึ้นเมื่อเบราว์เซอร์รองรับ */
+  @supports (text-wrap: balance) {
+    .eco-title { text-wrap: balance; }
+  }
+  /* กันคำยาว ๆ ไม่ล้นกรอบ */
+  .eco-title { word-break: break-word; }
+</style>

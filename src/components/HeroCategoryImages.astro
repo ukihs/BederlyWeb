@@ -38,7 +38,7 @@ function bestUrl(img?: any): string | undefined {
 /* ---------- เลือก slug ของหมวด Hero ตามภาษา ---------- */
 const heroSlug = lang === "en" ? "hero-en" : "hero-th";
 
-/* ---------- ดึงโพสต์เฉพาะ hero โดยใช้ categoryName (slug) ---------- */
+/* ---------- ดึงโพสต์เฉพาะ hero ---------- */
 const POSTS_BY_HERO_SLUG = /* GraphQL */ `
   query PostsByHeroSlug($first:Int!,$slug:String!){
     posts(
@@ -76,13 +76,11 @@ try {
   debug = e?.message ?? "WPGraphQL fetch failed";
 }
 
-/* ---------- Fallback (ถ้า hero ยังว่าง) ---------- */
+/* ---------- Fallback ---------- */
 const fallbackImg = `data:image/svg+xml;utf8,${encodeURIComponent(`
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'>
-  <defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='#dbeafe'/><stop offset='1' stop-color='#cffafe'/></linearGradient></defs>
-  <rect width='800' height='600' fill='url(#g)'/>
-  <rect x='180' y='140' width='440' height='320' rx='22' fill='#60a5fa' opacity='.35'/>
-</svg>`)}`
+  <rect width='800' height='600' fill='none'/>
+</svg>`)}`; // โปร่งใสจริง ๆ
 const fallback = [
   { title: lang==='en'?'Left-right tilt':'ปรับเอียงซ้าย-ขวา', image: fallbackImg },
   { title: lang==='en'?'Height adjustment':'ปรับความสูง', image: fallbackImg },
@@ -103,27 +101,37 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 ---
 
 {grouped.length>0 && (
-  <section data-slider class={`relative ${klass}`}>
-    <div class="relative pb-10">
-      <div id="hero-slider" class="overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div id="slides-container" class="flex transition-transform duration-500 ease-in-out" style="transform: translateX(0%)">
-          {grouped.map((g,gi)=>(
-            <div class="w-full flex-shrink-0">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch">
+  <!-- โปร่งใสทั้ง section -->
+  <section data-slider class={`relative ${klass} bg-transparent`}>
+    <div class="relative pb-10 bg-transparent">
+      <!-- wrapper โปร่งใส + ตัดเงา -->
+      <div id="hero-slider" class="overflow-hidden rounded-2xl shadow-none bg-transparent">
+        <!-- container โปร่งใส -->
+        <div id="slides-container" class="flex transition-transform duration-500 ease-in-out bg-transparent" style="transform: translateX(0%)">
+          {grouped.map((g,gi)=>( 
+            <div class="w-full flex-shrink-0 bg-transparent">
+              <!-- grid โปร่งใส -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch bg-transparent">
                 {g.map((it,ii)=>{
                   const img = (it as any).featuredImage?.node;
                   if (img) {
                     const src = bestUrl(img); const srcset = toSrcSet(img.mediaDetails?.sizes);
                     return (
-                      <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden">
-                        <div class="relative aspect-[4/3]">
-                          <img src={src} srcset={srcset} sizes="(max-width:768px) 100vw, 33vw"
-                               alt={img.altText || (it as any).title}
-                               loading={gi===0&&ii<3?"eager":"lazy"} decoding="async"
-                               class="absolute inset-0 w-full h-full object-cover"/>
+                      <!-- card โปร่งใส + ตัดเงา -->
+                      <div class="relative rounded-2xl shadow-none overflow-hidden bg-transparent">
+                        <div class="relative aspect-[4/3] bg-transparent">
+                          <img
+                            src={src}
+                            srcset={srcset}
+                            sizes="(max-width:768px) 100vw, 33vw"
+                            alt={img.altText || (it as any).title}
+                            loading={gi===0&&ii<3?"eager":"lazy"}
+                            decoding="async"
+                            class="absolute inset-0 w-full h-full object-cover"
+                          />
                         </div>
                         <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
-                          <span class="pointer-events-auto inline-block rounded-full bg-sky-500 text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md whitespace-nowrap">
+                          <span class="pointer-events-auto inline-block rounded-full bg-[#40B4ED] text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md whitespace-nowrap">
                             <span set:html={(it as any).title}/>
                           </span>
                         </div>
@@ -131,12 +139,12 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
                     );
                   }
                   return (
-                    <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden">
-                      <div class="relative aspect-[4/3]">
+                    <div class="relative rounded-2xl shadow-none overflow-hidden bg-transparent">
+                      <div class="relative aspect-[4/3] bg-transparent">
                         <img src={(it as any).image} alt={(it as any).title} class="absolute inset-0 w-full h-full object-cover"/>
                       </div>
                       <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
-                        <span class="pointer-events-auto inline-block rounded-full bg-sky-500 text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
+                        <span class="pointer-events-auto inline-block rounded-full bg-[#40B4ED] text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
                           {(it as any).title}
                         </span>
                       </div>
@@ -151,6 +159,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 
       {grouped.length>1 && (
         <>
+          <!-- ปุ่ม: ไม่แตะ -->
           <button id="prev-slide" aria-label="Previous"
             class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center">
             <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -164,17 +173,15 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 
       {grouped.length>1 && (
         <div id="dots-container" class="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-2">
-          {grouped.map((_,i)=>(
-            <button class={`w-2.5 h-2.5 rounded-full ${i===0?"bg-sky-500":"bg-gray-300 hover:bg-gray-400"} transition-all`} data-slide={i}/>
-          ))}
+          {grouped.map((_,i)=>(<button class={`w-2.5 h-2.5 rounded-full ${i===0?"bg-[#40B4ED]":"bg-gray-300 hover:bg-gray-400"} transition-all`} data-slide={i}/>))}
         </div>
       )}
     </div>
-
   </section>
 )}
 
 <script>
+/* ไม่ยุ่ง logic ปุ่ม/สไลด์เดิม */
 document.addEventListener('DOMContentLoaded', () => {
   const slidesContainer = document.getElementById('slides-container');
   const prevButton = document.getElementById('prev-slide');
@@ -190,11 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dotsContainer) return;
     dotsContainer.querySelectorAll('button').forEach((d, i) => {
       d.className = i===current
-        ? 'w-2.5 h-2.5 rounded-full bg-sky-500 transition-all'
+        ? 'w-2.5 h-2.5 rounded-full bg-[#40B4ED] transition-all'
         : 'w-2.5 h-2.5 rounded-full bg-gray-300 hover:bg-gray-400 transition-all';
     });
   };
-  const go = (i:number) => { current = (i+totalSlides)%totalSlides; slidesContainer.style.transform = `translateX(${-current*100}%)`; setDots(); };
+  const go = (i) => { current = (i+totalSlides)%totalSlides; slidesContainer.style.transform = `translateX(${-current*100}%)`; setDots(); };
   const next = () => go(current+1);
   const prev = () => go(current-1);
   const start = () => { if (totalSlides>1) timer = setInterval(next, delay); };
@@ -228,5 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
 <style>
 [data-slider]{ position:relative; }
 #slides-container{ transition: transform .5s cubic-bezier(.4,0,.2,1); }
-button:focus-visible{ outline:2px solid #3b82f6; outline-offset:2px; }
+/* focus ring เดิม */
+button:focus-visible{ outline:2px solid #40B4ED; outline-offset:2px; }
 </style>
