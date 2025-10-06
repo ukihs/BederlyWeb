@@ -389,3 +389,116 @@
   }
 }
 
+/* ============== Mobile-Only Fixes ============== */
+@media (max-width: 767.98px) {
+  /* กัน body และ html ไม่ให้เลื่อนซ้าย-ขวา */
+  html {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    position: relative;
+  }
+
+  /* กันทุก section ไม่ให้ล้น */
+  section {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* กัน container ทั้งหมด */
+  .container-primary,
+  .container-narrow,
+  .container-wide {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* กันรูปภาพทั้งหมดไม่ให้กว้างเกินจอ */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  /* Hero Section - กันรูปไม่ให้ล้น */
+  section.relative > .container-primary > .relative.overflow-hidden img {
+    width: 100% !important;
+    max-width: 100vw !important;
+    object-fit: cover !important;
+  }
+
+  /* SmartBed Section - ปรับรูป background */
+  #smartbed img {
+    max-width: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Ecosystem Section - กันรูป background */
+  .eco-title {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Download Section - ปรับรูป */
+  #download img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  /* กัน gradient backgrounds ไม่ให้ล้น */
+  div[class*="bg-gradient"] {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* ปรับ padding ของ mobile ให้พอดี */
+  .px-responsive {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Card ต่างๆ ไม่ให้ล้น */
+  .card-frame,
+  .card-bg,
+  .card-primary,
+  .card-feature,
+  .card-hero {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Innovation cards */
+  #innovations article {
+    overflow: hidden !important;
+  }
+
+  #innovations img {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Progress Slider */
+  #progress-track {
+    max-width: 100vw !important;
+    overflow-x: auto !important;
+  }
+
+  /* Team Section */
+  #team img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Partners logos */
+  section[id*="partners"] img,
+  #testimonials img {
+    max-width: 100% !important;
+    object-fit: contain !important;
+  }
+}

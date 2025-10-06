@@ -116,20 +116,56 @@ const defaultDescription = lang === "en"
 </html>
 
 <style>
+  /* กันโดนแถบบังหัวเวลาเจาะไปยัง #id */
+  :where(section[id]) { scroll-margin-top: 88px; }
+  @media (min-width: 1024px) {
+    :where(section[id]) { scroll-margin-top: 96px; }
+  }
+
   /* MOBILE SAFE-GUARD — ไม่มีผลกับ desktop layout */
   @media (max-width: 767.98px) {
-    html, body { overflow-x: hidden; }
+    html, body { 
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+      position: relative !important;
+    }
 
     /* กัน element ภายในดันกว้างเกินจอ */
-    body > * { max-width: 100svw; }
+    body > * { 
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
 
     /* ภาพ/สื่อทุกชนิดไม่ให้กว้างเกินพ่อแม่ */
-    img, video, svg, canvas { max-width: 100%; height: auto; }
+    img, video, svg, canvas { 
+      max-width: 100% !important;
+      height: auto !important;
+    }
 
     /* utility ภายในโปรเจกต์ที่ใช้ใน hero */
-    .px-responsive { padding-left: 16px; padding-right: 16px; }
+    .px-responsive { 
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
 
     /* เผื่อ container ที่กำหนด max-w สูง ๆ อยู่แล้ว */
-    .container-primary { max-width: 100%; overflow-x: clip; }
+    .container-primary { 
+      max-width: 100% !important;
+      overflow-x: clip !important;
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+
+    /* กัน main content */
+    main {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+
+    /* กันทุก section */
+    section {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
   }
 </style>
