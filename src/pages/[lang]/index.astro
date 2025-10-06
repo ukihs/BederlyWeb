@@ -1,7 +1,7 @@
 ---
-/* src/pages/[lang]/index.astro */
+// src/pages/[lang]/index.astro
 import Layout from "../../layouts/Layout.astro";
-import InnovationSection from "../../components/InnovationsSection.astro";
+import InnovationsSection from "../../components/InnovationsSection.astro";
 import SmartBedSection from "../../components/SmartBedSection.astro";
 import HeroCategoryImages from "../../components/HeroCategoryImages.astro";
 import FunctionSection from "../../components/FunctionSection.astro";
@@ -15,35 +15,34 @@ import ProgressSlider from "../../components/ProgressSlider.astro";
 import DownloadSection from "../../components/DownloadSection.astro";
 import MoreInfoSection from "../../components/MoreInfoSection.astro";
 import Medip from "../../components/Medip.astro";
+import PartnersGroup from "../../components/PartnersGroup.astro";
 import HOME_QUERY from "../../queries/home";
 import { wpQuery } from "../../lib/wp";
 import { rewriteWpUrl } from "../../lib/wpUrl";
-import PartnersGroup from "../../components/PartnersGroup.astro";
 
 export async function getStaticPaths() {
-  return [{ params: { lang: "th" } }, { params: { lang: "en" } }];
+  return [
+    { params: { lang: "th" } },
+    { params: { lang: "en" } }
+  ];
 }
 
 const { lang } = Astro.params as { lang: "th" | "en" };
 const languageFilter = lang.toUpperCase() as "TH" | "EN";
-const progressSlug = lang === "en" ? "progress-en" : "progress-th";
-const teamSlug = lang === "en" ? "team-en" : "team-th";
-const testimonialsSlug = lang === "en" ? "testimonials-en" : "testimonials-th";
+
+// Category slugs
 const slug = (th: string, en: string) => (lang === "en" ? en : th);
-const publicSlug = lang === "en" ? "public-en" : "public-th";
-const foundationSlug = lang === "en" ? "foundation-en" : "foundation-th";
-const companySlug = lang === "en" ? "company-en" : "company-th";
-const eduSlug = lang === "en" ? "edu-en" : "edu-th";
-const hospitalSlug = lang === "en" ? "hospital-en" : "hospital-th";
-const medipSlug = lang === "en" ? "medip-en" : "medip-th";
-const downloadSlug = lang === "en" ? "download-en" : "download-th";
+const progressSlug = slug("progress-th", "progress-en");
+const teamSlug = slug("team-th", "team-en");
+const testimonialsSlug = slug("testimonials-th", "testimonials-en");
+const medipSlug = slug("medip-th", "medip-en");
 
-// URIs ที่จะลองใช้หา hero (fallback)
-const uriCandidates =
-  lang === "en"
-    ? ["/", "/home/", "/home", "/en/", "/en"]
-    : ["/", "/th/", "/th", "/หน้าแรก/", "/หน้าแรก"];
+// URIs สำหรับ hero fallback
+const uriCandidates = lang === "en"
+  ? ["/", "/home/", "/home", "/en/", "/en"]
+  : ["/", "/th/", "/th", "/หน้าแรก/", "/หน้าแรก"];
 
+// Helper functions
 type Size = { name: string; sourceUrl?: string };
 type Img = {
   altText?: string;
@@ -67,7 +66,7 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-// ดึง hero ตามภาษา
+// Language-specific query for hero
 const LANGUAGE_SPECIFIC_QUERY = /* GraphQL */ `
   query PageByLanguage($language: LanguageCodeFilterEnum!) {
     pages(first: 10, where: { language: $language, status: PUBLISH }) {
@@ -77,10 +76,7 @@ const LANGUAGE_SPECIFIC_QUERY = /* GraphQL */ `
         uri
         slug
         isFrontPage
-        language {
-          code
-          name
-        }
+        language { code name }
         hero {
           heroTitle
           heroSubtitle
@@ -92,12 +88,7 @@ const LANGUAGE_SPECIFIC_QUERY = /* GraphQL */ `
               mediaDetails {
                 width
                 height
-                sizes {
-                  name
-                  width
-                  height
-                  sourceUrl
-                }
+                sizes { name width height sourceUrl }
               }
             }
           }
@@ -107,41 +98,23 @@ const LANGUAGE_SPECIFIC_QUERY = /* GraphQL */ `
   }
 `;
 
+// Fetch hero data
 let heroTitle = "";
 let heroSubtitle = "";
 let heroImgUrl = "";
 let foundData = false;
-let debugInfo: any = {};
 
-// 1) หา hero จากภาษา
 try {
   const languageData = await wpQuery<any>(LANGUAGE_SPECIFIC_QUERY, {
     language: languageFilter,
   });
 
   const pages = languageData?.pages?.nodes || [];
-  debugInfo.allPages = pages.map((p: any) => ({
-    title: p.title,
-    uri: p.uri,
-    slug: p.slug,
-    isFrontPage: p.isFrontPage,
-    language: p.language?.code,
-    hasHero: !!p.hero,
-    heroTitle: p.hero?.heroTitle,
-  }));
-
-  let targetPage =
-    pages.find((p: any) => p.isFrontPage) ||
+  let targetPage = pages.find((p: any) => p.isFrontPage) ||
     pages.find((p: any) => p.hero && (p.hero.heroTitle || p.hero.heroImage)) ||
     pages[0];
 
   if (targetPage) {
-    debugInfo.selectedPage = {
-      title: targetPage.title,
-      uri: targetPage.uri,
-      language: targetPage.language?.code,
-    };
-
     const hero = targetPage.hero;
     if (hero) {
       heroTitle = hero.heroTitle || heroTitle;
@@ -151,10 +124,10 @@ try {
     }
   }
 } catch (e: any) {
-  debugInfo.error = e.message;
+  console.error("Hero fetch error:", e.message);
 }
 
-// 2) fallback ด้วย URI ถ้ายังไม่เจอ
+// Fallback with URI
 if (!foundData) {
   for (const uri of uriCandidates) {
     try {
@@ -168,16 +141,11 @@ if (!foundData) {
 
       if (heroTitle || heroSubtitle || heroImgUrl) {
         foundData = true;
-        debugInfo.fallbackUri = uri;
         break;
       }
-    } catch {
-      // try next
-    }
+    } catch {}
   }
 }
-
-
 ---
 
 <Layout
@@ -188,112 +156,105 @@ if (!foundData) {
     { lang: "en", url: "/en" },
   ]}
 >
-  <!-- Hero Section - Text overlay on image -->
-  <section class="relative min-h-[200px] md:min-h-[200px] lg:min-h-[200px] flex items-center">
-    <div class="container-primary relative w-full">
-      <div class="relative">
-        <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl">
-          {heroImgUrl ? (
-            <>
-              <img
-                src={heroImgUrl}
-                alt=""
-                class="w-full h-auto"
-                loading="eager"
-              />
-              
-              <div class="absolute inset-0 flex items-end">
-                <div class="w-full px-8 md:px-12 lg:px-16 pb-12 md:pb-16 lg:pb-20">
-                  <div class="max-w-3xl">
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-4">
-                      {heroTitle.split('\n').map((line, i) => (
-                        <>
-                          {line}
-                          {i < heroTitle.split('\n').length - 1 && <br />}
-                        </>
-                      ))}
-                    </h1>
-                    {heroSubtitle && (
-                      <p class="text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed max-w-2xl">
-                        {heroSubtitle}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div class="relative h-[600px] md:h-[700px] lg:h-[800px] bg-gradient-to-br from-cyan-500 to-blue-600">
-              <div class="absolute inset-0 flex items-end">
-                <div class="w-full px-8 md:px-12 lg:px-16 pb-12 md:pb-16 lg:pb-20">
-                  <div class="max-w-3xl">
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-4">
-                      {heroTitle.split('\n').map((line, i) => (
-                        <>
-                          {line}
-                          {i < heroTitle.split('\n').length - 1 && <br />}
-                        </>
-                      ))}
-                    </h1>
-                    {heroSubtitle && (
-                      <p class="text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed max-w-2xl">
-                        {heroSubtitle}
-                      </p>
-                    )}
-                  </div>
+  <!-- Hero Section with Consistent Spacing -->
+  <section class="relative">
+    <div class="container-primary">
+      <div class="relative overflow-hidden overflow-x-clip shadow-2xl">
+        {heroImgUrl ? (
+          <div class="relative">
+            <img
+              src={heroImgUrl}
+              alt=""
+              class="block w-full h-auto"
+              loading="eager"
+              decoding="async"
+            />
+            
+            <!-- Text Overlay -->
+            <div class="absolute inset-0 flex items-end">
+              <div class="w-full px-responsive pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+                <div class="max-w-3xl">
+                  <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 
+                             font-bold text-white leading-tight mb-3 sm:mb-4 text-shadow-lg">
+                    {heroTitle.split('\n').map((line, i) => (
+                      <Fragment>
+                        {line}
+                        {i < heroTitle.split('\n').length - 1 && <br />}
+                      </Fragment>
+                    ))}
+                  </h1>
+                  {heroSubtitle && (
+                    <p class="text-base sm:text-lg md:text-xl lg:text-2xl 
+                              text-white/90 leading-relaxed max-w-2xl text-shadow-md">
+                      {heroSubtitle}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div class="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] 
+                      bg-gradient-to-br from-cyan-500 to-blue-600">
+            <div class="absolute inset-0 flex items-end">
+              <div class="w-full px-responsive pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+                <div class="max-w-3xl">
+                  <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 
+                             font-bold text-white leading-tight mb-3 sm:mb-4">
+                    {lang === "en" ? "Smart Bed Innovation" : "นวัตกรรมเตียงอัจฉริยะ"}
+                  </h1>
+                  <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed">
+                    {lang === "en" 
+                      ? "Advanced care solutions for better health" 
+                      : "โซลูชันการดูแลขั้นสูงเพื่อสุขภาพที่ดีขึ้น"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   </section>
 
-  <!-- Smart Bed -->
-  <section id="smartbed" class="pb-0 md:pb-6 lg:pb-8">  
+  <!-- Smart Bed Section -->
+  <section id="smartbed" class="section-padding">
     <SmartBedSection lang={lang} />
   </section>
 
   <!-- Product Gallery -->
-  <section id="gallery" class="pt-4 pb-6 bg-white -mt-6 md:-mt-8 lg:-mt-10">
+  <section id="gallery" class="section-padding-sm">
     <div class="container-primary">
-      <HeroCategoryImages
-        lang={lang}
-        limit={9}
-      />
+      <HeroCategoryImages lang={lang} limit={9} />
     </div>
   </section>
 
   <!-- Functions -->
-  <section id="functions" class="section-padding bg-white">
+  <section id="functions" class="section-padding">
     <div class="container-primary">
-      <FunctionSection
-        lang={lang}
-        limit={10}
-        class="mt-2"
-      />
+      <FunctionSection lang={lang} limit={10} />
     </div>
   </section>
 
   <!-- Innovations -->
-  <section id="innovations" class="section-padding bg-white">
+  <section id="innovations" class="section-padding">
     <div class="container-primary">
-      <InnovationSection lang={lang} limit={6} />
+      <InnovationsSection lang={lang} limit={6} />
     </div>
   </section>
 
   <!-- More Info -->
-  <section id="moreinfo">
+  <section id="moreinfo" class="section-padding-sm">
     <MoreInfoSection lang={lang} limit={2} />
   </section>
 
   <!-- About Bederly -->
-  <section id="about" class="bg-white">
+  <section id="about" class="section-padding">
     <AboutBederly lang={lang} pageUriTH="/" pageUriEN="/en/welcome/" />
   </section>
 
-  <section id="ecosystem" class="section-padding bg-white">
+  <!-- Ecosystem -->
+  <section id="ecosystem" class="section-padding">
     <EcosystemSection
       lang={lang}
       pageUriTH="/"
@@ -302,82 +263,85 @@ if (!foundData) {
     />
   </section>
 
-  <section id="progress" class="bg-white">
+  <!-- Progress -->
+  <section id="progress" class="section-padding">
     <ProgressSlider lang={lang} categorySlug={progressSlug} limit={6} />
   </section>
 
-  <section id="team" class="bg-white">
+  <!-- Team -->
+  <section id="team" class="section-padding">
     <TeamSection lang={lang} categorySlug={teamSlug} />
   </section>
 
-  <section id="testimonials" class="bg-white">
+  <!-- Testimonials -->
+  <section id="testimonials" class="section-padding">
     <Testimonials lang={lang} categorySlug={testimonialsSlug} />
   </section>
 
-  <section class="section-padding container-primary">
-    <!-- Partners and Customers -->
-    <PartnersGroup
-      lang={lang}
-      showHeading={true}
-      sectionLabel={lang === "en" ? "Public Organizations" : "องค์กรภาครัฐ"}
-      categorySlug={slug("public-th", "public-en")}
-      class="mb-10"
-    />
+  <!-- Partners -->
+  <section class="section-padding">
+    <div class="container-primary section-stack">
+      <PartnersGroup
+        lang={lang}
+        showHeading={true}
+        sectionLabel={lang === "en" ? "Public Organizations" : "องค์กรภาครัฐ"}
+        categorySlug={slug("public-th", "public-en")}
+      />
 
-    <PartnersGroup
-      lang={lang}
-      sectionLabel={lang === "en" ? "Foundations" : "มูลนิธิ"}
-      categorySlug={slug("foundations-th", "foundations-en")}
-      class="mb-10"
-    />
+      <PartnersGroup
+        lang={lang}
+        sectionLabel={lang === "en" ? "Foundations" : "มูลนิธิ"}
+        categorySlug={slug("foundations-th", "foundations-en")}
+      />
 
-    <PartnersGroup
-      lang={lang}
-      sectionLabel={lang === "en" ? "Companies" : "องค์กร"}
-      categorySlug={slug("companie-th", "companie-en")}
-      class="mb-10"
-    />
+      <PartnersGroup
+        lang={lang}
+        sectionLabel={lang === "en" ? "Companies" : "องค์กร"}
+        categorySlug={slug("companie-th", "companie-en")}
+      />
 
-    <PartnersGroup
-      lang={lang}
-      sectionLabel={lang === "en" ? "Educational Institutions" : "สถาบันการศึกษา"}
-      categorySlug={slug("education-th", "education-en")}
-      class="mb-10"
-    />
+      <PartnersGroup
+        lang={lang}
+        sectionLabel={lang === "en" ? "Educational Institutions" : "สถาบันการศึกษา"}
+        categorySlug={slug("education-th", "education-en")}
+      />
 
-    <PartnersGroup
-      lang={lang}
-      sectionLabel={lang === "en" ? "Hospital" : "โรงพยาบาล"}
-      categorySlug={slug("hospital-th", "hospital-en")}
-    />
+      <PartnersGroup
+        lang={lang}
+        sectionLabel={lang === "en" ? "Hospital" : "โรงพยาบาล"}
+        categorySlug={slug("hospital-th", "hospital-en")}
+      />
+    </div>
   </section>
-  
-  <section id="medip" class="bg-white">
+
+  <!-- Medical IP -->
+  <section id="medip" class="section-padding">
     <Medip lang={lang} categorySlug={medipSlug} />
   </section>
 
-  <section id="download" class="bg-white">
+  <!-- Download -->
+  <section id="download" class="section-padding-sm">
     <DownloadSection lang={lang} />
   </section>
 
+  <!-- Footer -->
   <section id="footer">
     <Footer lang={lang} />
   </section>
 </Layout>
 
 <style>
-  /* Text shadow for better readability on image */
+  /* Enhanced text shadows for hero */
   h1 {
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+    text-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      0 4px 16px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.2);
   }
   
   p {
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  /* Ensure container maintains proper spacing */
-  .container-primary {
-    @apply mx-auto px-2 sm:px-4 lg:px-6;
-    max-width: 1400px;
+    text-shadow: 
+      0 1px 4px rgba(0, 0, 0, 0.3),
+      0 2px 8px rgba(0, 0, 0, 0.2);
   }
 </style>

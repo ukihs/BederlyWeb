@@ -118,7 +118,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
                     const src = bestUrl(img); const srcset = toSrcSet(img.mediaDetails?.sizes);
                     return (
                       <!-- card โปร่งใส + ตัดเงา -->
-                      <div class="relative rounded-2xl shadow-none overflow-hidden bg-transparent">
+                      <div class="relative shadow-none overflow-hidden bg-transparent">
                         <div class="relative aspect-[4/3] bg-transparent">
                           <img
                             src={src}
@@ -139,7 +139,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
                     );
                   }
                   return (
-                    <div class="relative rounded-2xl shadow-none overflow-hidden bg-transparent">
+                    <div class="relative shadow-none overflow-hidden bg-transparent">
                       <div class="relative aspect-[4/3] bg-transparent">
                         <img src={(it as any).image} alt={(it as any).title} class="absolute inset-0 w-full h-full object-cover"/>
                       </div>

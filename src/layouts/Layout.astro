@@ -13,40 +13,123 @@ const {
   alternates = [] as Alt[],
   showNavLinks = true,
   showNav = true,
+  title,
+  description,
 } = Astro.props as {
   lang?: "th" | "en";
   alternates?: Alt[];
   showNavLinks?: boolean;
   showNav?: boolean;
+  title?: string;
+  description?: string;
 };
+
+const defaultTitle = lang === "en" 
+  ? "Smart Bed - Innovative Hospital Care Solutions"
+  : "Smart Bed - นวัตกรรมการดูแลผู้ป่วย";
+
+const defaultDescription = lang === "en"
+  ? "Smart Bed provides innovative hospital bed solutions with advanced adjustment features for better patient care."
+  : "Smart Bed นำเสนอนวัตกรรมเตียงผู้ป่วยอัจฉริยะ พร้อมฟีเจอร์ปรับท่าอัตโนมัติเพื่อการดูแลผู้ป่วยที่ดีขึ้น";
 ---
 
 <!DOCTYPE html>
-<html lang={lang}>
+<html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Smart Bed - Innovative Hospital Care Solutions</title>
-    <meta name="description" content="Smart Bed provides innovative hospital bed solutions with advanced adjustment features for better patient care." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    
+    <!-- Title & Description -->
+    <title>{title || defaultTitle}</title>
+    <meta name="description" content={description || defaultDescription} />
     
     <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
-    <!-- Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Fonts - Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link 
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700;800&display=swap" 
+      rel="stylesheet" 
+    />
 
+    <!-- Alternate Languages -->
     {alternates.map((alt) => (
-      <link rel="alternate" hrefLang={alt.lang} href={alt.url} />
+      <link rel="alternate" hreflang={alt.lang} href={alt.url} />
     ))}
+
+    <!-- PWA Meta Tags (Optional) -->
+    <meta name="theme-color" content="#0891b2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
-  <body class="font-['Inter'] bg-white text-gray-800 antialiased">
-    {showNav && <Navbar lang={lang} showLinks={showNavLinks} alternates={alternates} />}
-    <main>
+  
+  <body class="font-noto bg-white text-gray-800 antialiased min-h-screen overflow-x-hidden">
+    <!-- Navigation -->
+    {showNav && (
+      <Navbar 
+        lang={lang} 
+        showLinks={showNavLinks} 
+        alternates={alternates} 
+      />
+    )}
+    
+    <!-- Main Content -->
+    <main class="relative overflow-x-clip max-w-[100svw]">
       <slot />
     </main>
     
-    
+    <!-- Scroll to Top Button (Optional) -->
+    <button
+      id="scroll-to-top"
+      class="fixed bottom-6 right-6 z-40 hidden
+             w-12 h-12 rounded-full bg-cyan-600 text-white
+             shadow-lg hover:shadow-xl hover:bg-cyan-700
+             transition-all duration-300 hover:scale-110
+             focus-ring"
+      aria-label="Scroll to top"
+    >
+      <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+      </svg>
+    </button>
+
+    <!-- Scroll to Top Script -->
+    <script>
+      const scrollBtn = document.getElementById('scroll-to-top');
+      
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 400) {
+          scrollBtn?.classList.remove('hidden');
+        } else {
+          scrollBtn?.classList.add('hidden');
+        }
+      });
+      
+      scrollBtn?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    </script>
   </body>
 </html>
+
+<style>
+  /* MOBILE SAFE-GUARD — ไม่มีผลกับ desktop layout */
+  @media (max-width: 767.98px) {
+    html, body { overflow-x: hidden; }
+
+    /* กัน element ภายในดันกว้างเกินจอ */
+    body > * { max-width: 100svw; }
+
+    /* ภาพ/สื่อทุกชนิดไม่ให้กว้างเกินพ่อแม่ */
+    img, video, svg, canvas { max-width: 100%; height: auto; }
+
+    /* utility ภายในโปรเจกต์ที่ใช้ใน hero */
+    .px-responsive { padding-left: 16px; padding-right: 16px; }
+
+    /* เผื่อ container ที่กำหนด max-w สูง ๆ อยู่แล้ว */
+    .container-primary { max-width: 100%; overflow-x: clip; }
+  }
+</style>

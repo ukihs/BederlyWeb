@@ -1,5 +1,5 @@
 ---
-export const prerender = true; // หน้า static 100%
+export const prerender = true;
 const FALLBACK = "/th";
 ---
 
@@ -12,21 +12,18 @@ const FALLBACK = "/th";
     <meta name="robots" content="noindex" />
   </head>
   <body>
-    <!-- redirect ฝั่ง client ตามภาษาเครื่อง -->
+    <!-- redirect ไปภาษาไทยเสมอ -->
     <script is:inline>
       (function () {
         try {
-          var raw = (navigator.language || navigator.userLanguage || "").toLowerCase();
-          var to = raw.includes("en") ? "/en" : "/th";
-          location.replace(to);
+          location.replace("/th");
         } catch (e) {
-          location.replace("{{FALLBACK}}".replace("{{FALLBACK}}", "{{FALLBACK}}"));
+          location.replace("/th");
         }
       })();
     </script>
 
     <noscript>
-      <!-- ปิด JS: รีไดเรกต์ไป Fallback อัตโนมัติ + ลิงก์เผื่อเลือกเอง -->
       <meta http-equiv="refresh" content="0;url=/th" />
       <p>เลือกภาษา: <a href="/th">ไทย</a> | <a href="/en">English</a></p>
     </noscript>

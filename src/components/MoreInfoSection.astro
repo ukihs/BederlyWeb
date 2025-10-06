@@ -4,20 +4,17 @@ import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
-  limit?: number;            // จำนวนโพสต์สูงสุด
-  class?: string;            // class เสริมให้ section
+  limit?: number;
+  class?: string;
 }
 
 const { lang = "th", limit = 2, class: klass = "" } = Astro.props;
-const languageCode = lang.toUpperCase() as "TH" | "EN";
 
-// ชื่อ/slug หมวดที่พยายามค้นหา (เผื่อสะกดต่างกัน)
 const categoryCandidates =
   lang === "en"
     ? ["moreinfo-en", "moreinfo", "more-info", "Moreinfo"]
     : ["moreinfo-th", "moreinfo", "more-info", "Moreinfo"];
 
-/* GraphQL */
 const POSTS_BY_CATEGORY = /* GraphQL */ `
   query PostsByCategory($first: Int!, $category: String!) {
     posts(
@@ -54,9 +51,7 @@ function pickImageUrl(node?: any) {
   return node.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
 }
 
-/* ดึงโพสต์ */
 let posts: any[] = [];
-let usedCategory = "";
 
 for (const cat of categoryCandidates) {
   try {
@@ -64,27 +59,23 @@ for (const cat of categoryCandidates) {
     const found = res?.posts?.nodes ?? [];
     if (found.length) {
       posts = found;
-      usedCategory = cat;
       break;
     }
   } catch {}
 }
 
-/* Fallback hardcode ถ้าไม่พบโพสต์ */
 const fallbackCards = [
   {
     title: lang === "en" ? "For Individuals" : "สำหรับบุคคลทั่วไป",
     subtitle: lang === "en" ? "Mock text" : "ข้อความตัวอย่าง",
     href: "#",
-    image:
-      "https://images.unsplash.com/photo-1516617442634-75371039cb3c?q=80&w=1600&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1516617442634-75371039cb3c?q=80&w=1600&auto=format&fit=crop"
   },
   {
     title: lang === "en" ? "For Businesses" : "สำหรับองค์กร",
     subtitle: "Mock text",
     href: "#",
-    image:
-      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop"
   }
 ];
 ---
@@ -109,7 +100,7 @@ const fallbackCards = [
         const img = imgNode ? pickImageUrl(imgNode) : item.image;
 
         return (
-          <a href={href} class="group relative overflow-hidden rounded-3xl shadow-xl">
+          <a href={href} class="group relative overflow-hidden shadow-xl block">
             <div class="relative aspect-[16/9]">
               <img
                 src={img}
