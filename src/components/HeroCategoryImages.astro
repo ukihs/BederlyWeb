@@ -66,13 +66,13 @@ const POSTS_BY_HERO_SLUG = /* GraphQL */ `
   }
 `;
 
-let posts:any[] = [];
-let debug:string|undefined;
+let posts: any[] = [];
+let debug: string | undefined;
 
 try {
   const res = await wpQuery<any>(POSTS_BY_HERO_SLUG, { first: limit, slug: heroSlug });
-  posts = (res?.posts?.nodes ?? []).filter((p:any)=>p?.featuredImage?.node?.sourceUrl);
-} catch(e:any) {
+  posts = (res?.posts?.nodes ?? []).filter((p: any) => p?.featuredImage?.node?.sourceUrl);
+} catch (e: any) {
   debug = e?.message ?? "WPGraphQL fetch failed";
 }
 
@@ -80,68 +80,77 @@ try {
 const fallbackImg = `data:image/svg+xml;utf8,${encodeURIComponent(`
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'>
   <rect width='800' height='600' fill='none'/>
-</svg>`)}`; // โปร่งใสจริง ๆ
+</svg>`)}`;
+
 const fallback = [
-  { title: lang==='en'?'Left-right tilt':'ปรับเอียงซ้าย-ขวา', image: fallbackImg },
-  { title: lang==='en'?'Height adjustment':'ปรับความสูง', image: fallbackImg },
-  { title: lang==='en'?'Leg section up/down':'ปรับส่วนขาขึ้น-ลง', image: fallbackImg },
-  { title: lang==='en'?'Safety side rails':'ราวป้องกันด้านข้าง', image: fallbackImg },
-  { title: lang==='en'?'Electric remote control':'รีโมทคอนโทรลไฟฟ้า', image: fallbackImg },
-  { title: lang==='en'?'Durable caster wheels':'ล้อเลื่อนทนทาน', image: fallbackImg },
+  { title: lang === 'en' ? 'Left-right tilt' : 'ปรับเอียงซ้าย-ขวา', image: fallbackImg },
+  { title: lang === 'en' ? 'Height adjustment' : 'ปรับความสูง', image: fallbackImg },
+  { title: lang === 'en' ? 'Leg section up/down' : 'ปรับส่วนขาขึ้น-ลง', image: fallbackImg },
+  { title: lang === 'en' ? 'Safety side rails' : 'ราวป้องกันด้านข้าง', image: fallbackImg },
+  { title: lang === 'en' ? 'Electric remote control' : 'รีโมทคอนโทรลไฟฟ้า', image: fallbackImg },
+  { title: lang === 'en' ? 'Durable caster wheels' : 'ล้อเลื่อนทนทาน', image: fallbackImg },
 ];
 
 const display = posts.length ? posts : fallback;
+const originalCount = display.length; // เก็บจำนวนรูปจริง (7 รูป)
 
-/* ทำให้หาร 3 ลงตัวเสมอ */
+/* ทำให้หาร 3 ลงตัวเสมอ (สำหรับ desktop) */
 const rem = display.length % 3;
 const pad = rem === 0 ? 0 : 3 - rem;
 const padded = pad ? display.concat(display.slice(0, pad)) : display;
-const grouped:any[] = [];
+const grouped: any[] = [];
 for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 ---
 
-{grouped.length>0 && (
-  <!-- โปร่งใสทั้ง section -->
+{grouped.length > 0 && (
   <section data-slider class={`relative ${klass} bg-transparent`}>
     <div class="relative pb-10 bg-transparent">
-      <!-- wrapper โปร่งใส + ตัดเงา -->
       <div id="hero-slider" class="overflow-hidden rounded-2xl shadow-none bg-transparent">
-        <!-- container โปร่งใส -->
         <div id="slides-container" class="flex transition-transform duration-500 ease-in-out bg-transparent" style="transform: translateX(0%)">
-          {grouped.map((g,gi)=>( 
-            <div class="w-full flex-shrink-0 bg-transparent">
-              <!-- grid โปร่งใส -->
+          {grouped.map((g, gi) => (
+            <div class="slide-group w-full flex-shrink-0 bg-transparent">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch bg-transparent">
-                {g.map((it,ii)=>{
+                {g.map((it, ii) => {
+                  const globalIndex = gi * 3 + ii;
+                  const isOriginal = globalIndex < originalCount;
                   const img = (it as any).featuredImage?.node;
+                  
                   if (img) {
-                    const src = bestUrl(img); const srcset = toSrcSet(img.mediaDetails?.sizes);
+                    const src = bestUrl(img);
+                    const srcset = toSrcSet(img.mediaDetails?.sizes);
                     return (
-                      <!-- card โปร่งใส + ตัดเงา -->
-                      <div class="relative shadow-none overflow-hidden bg-transparent">
-                        <div class="relative aspect-[4/3] bg-transparent">
+                      <div 
+                        class="hero-card relative shadow-none overflow-hidden bg-transparent" 
+                        data-original={isOriginal ? "true" : "false"}
+                        data-index={globalIndex}
+                      >
+                        <div class="aspect-box relative aspect-[4/3] bg-transparent overflow-hidden rounded-xl">
                           <img
                             src={src}
                             srcset={srcset}
                             sizes="(max-width:768px) 100vw, 33vw"
                             alt={img.altText || (it as any).title}
-                            loading={gi===0&&ii<3?"eager":"lazy"}
+                            loading={gi === 0 && ii < 3 ? "eager" : "lazy"}
                             decoding="async"
                             class="absolute inset-0 w-full h-full object-cover"
                           />
                         </div>
                         <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
                           <span class="pointer-events-auto inline-block rounded-full bg-[#40B4ED] text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md whitespace-nowrap">
-                            <span set:html={(it as any).title}/>
+                            <span set:html={(it as any).title} />
                           </span>
                         </div>
                       </div>
                     );
                   }
                   return (
-                    <div class="relative shadow-none overflow-hidden bg-transparent">
-                      <div class="relative aspect-[4/3] bg-transparent">
-                        <img src={(it as any).image} alt={(it as any).title} class="absolute inset-0 w-full h-full object-cover"/>
+                    <div 
+                      class="hero-card relative shadow-none overflow-hidden bg-transparent" 
+                      data-original={isOriginal ? "true" : "false"}
+                      data-index={globalIndex}
+                    >
+                      <div class="aspect-box relative aspect-[4/3] bg-transparent overflow-hidden rounded-xl">
+                        <img src={(it as any).image} alt={(it as any).title} class="absolute inset-0 w-full h-full object-cover" />
                       </div>
                       <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
                         <span class="pointer-events-auto inline-block rounded-full bg-[#40B4ED] text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
@@ -157,31 +166,31 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
         </div>
       </div>
 
-      {grouped.length>1 && (
+      {grouped.length > 1 && (
         <>
-          <!-- ปุ่ม: ไม่แตะ -->
           <button id="prev-slide" aria-label="Previous"
-            class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center">
-            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center z-20">
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
           <button id="next-slide" aria-label="Next"
-            class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center">
-            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center z-20">
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </>
       )}
 
-      {grouped.length>1 && (
-        <div id="dots-container" class="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-2">
-          {grouped.map((_,i)=>(<button class={`w-2.5 h-2.5 rounded-full ${i===0?"bg-[#40B4ED]":"bg-gray-300 hover:bg-gray-400"} transition-all`} data-slide={i}/>))}
-        </div>
+      {grouped.length > 1 && (
+        <div id="dots-container" class="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-2 z-10"></div>
       )}
     </div>
   </section>
 )}
 
-<script>
-/* ไม่ยุ่ง logic ปุ่ม/สไลด์เดิม */
+<script define:vars={{ originalCount }}>
 document.addEventListener('DOMContentLoaded', () => {
   const slidesContainer = document.getElementById('slides-container');
   const prevButton = document.getElementById('prev-slide');
@@ -189,52 +198,190 @@ document.addEventListener('DOMContentLoaded', () => {
   const dotsContainer = document.getElementById('dots-container');
   if (!slidesContainer) return;
 
-  const slides = slidesContainer.children;
-  const totalSlides = slides.length;
-  let current = 0, timer; const delay = 6000;
+  const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+
+  const slideGroups = Array.from(slidesContainer.querySelectorAll('.slide-group'));
+  const allCards = Array.from(slidesContainer.querySelectorAll('.hero-card'));
+  
+  // Mobile: ใช้เฉพาะรูปจริง (data-original="true")
+  const originalCards = allCards.filter(card => 
+    card.getAttribute('data-original') === 'true'
+  );
+
+  const totalSlides = isMobile ? originalCards.length : slideGroups.length;
+  let current = 0;
+  let timer;
+  const delay = 6000;
+
+  console.log('Total slides:', totalSlides, 'isMobile:', isMobile);
+
+  // สร้าง dots
+  if (dotsContainer) {
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-300 transition-all';
+      dot.addEventListener('click', () => { go(i); stop(); start(); });
+      dotsContainer.appendChild(dot);
+    }
+  }
 
   const setDots = () => {
     if (!dotsContainer) return;
-    dotsContainer.querySelectorAll('button').forEach((d, i) => {
-      d.className = i===current
+    const dots = dotsContainer.querySelectorAll('button');
+    dots.forEach((d, i) => {
+      d.className = i === current
         ? 'w-2.5 h-2.5 rounded-full bg-[#40B4ED] transition-all'
         : 'w-2.5 h-2.5 rounded-full bg-gray-300 hover:bg-gray-400 transition-all';
     });
   };
-  const go = (i) => { current = (i+totalSlides)%totalSlides; slidesContainer.style.transform = `translateX(${-current*100}%)`; setDots(); };
-  const next = () => go(current+1);
-  const prev = () => go(current-1);
-  const start = () => { if (totalSlides>1) timer = setInterval(next, delay); };
+
+  const go = (i) => {
+    current = (i + totalSlides) % totalSlides;
+    slidesContainer.style.transform = `translateX(-${current * 100}%)`;
+    setDots();
+  };
+
+  const next = () => go(current + 1);
+  const prev = () => go(current - 1);
+  const start = () => { if (totalSlides > 1) timer = setInterval(next, delay); };
   const stop = () => clearInterval(timer);
 
-  nextButton?.addEventListener('click', () => { next(); stop(); start(); });
   prevButton?.addEventListener('click', () => { prev(); stop(); start(); });
-  dotsContainer?.querySelectorAll('button').forEach((d,i)=> d.addEventListener('click',()=>{ go(i); stop(); start(); }));
+  nextButton?.addEventListener('click', () => { next(); stop(); start(); });
 
-  // touch
-  let sx=0, dragging=false;
-  slidesContainer.addEventListener('touchstart', e => { sx=e.touches[0].clientX; dragging=true; stop(); });
-  slidesContainer.addEventListener('touchmove', e => { if(!dragging) return; e.preventDefault(); });
-  slidesContainer.addEventListener('touchend', e => {
-    if(!dragging) return;
-    const dx = sx - e.changedTouches[0].clientX;
-    if (Math.abs(dx) > 50) (dx>0?next():prev());
-    dragging=false; start();
+  // Touch
+  let startX = 0;
+  let dragging = false;
+  slidesContainer.addEventListener('touchstart', (e) => { 
+    startX = e.touches[0].clientX; 
+    dragging = true; 
+    stop(); 
+  }, { passive: true });
+  
+  slidesContainer.addEventListener('touchend', (e) => {
+    if (!dragging) return;
+    const endX = e.changedTouches[0].clientX;
+    const diff = startX - endX;
+    if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
+    dragging = false; 
+    start();
   });
 
-  // keyboard
-  document.addEventListener('keydown', e => {
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') { prev(); stop(); start(); }
     else if (e.key === 'ArrowRight') { next(); stop(); start(); }
   });
 
-  start(); setDots();
+  start();
+  setDots();
 });
 </script>
 
 <style>
-[data-slider]{ position:relative; }
-#slides-container{ transition: transform .5s cubic-bezier(.4,0,.2,1); }
-/* focus ring เดิม */
-button:focus-visible{ outline:2px solid #40B4ED; outline-offset:2px; }
+[data-slider] { 
+  position: relative; 
+}
+
+#slides-container { 
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+
+button:focus-visible { 
+  outline: 2px solid #40B4ED; 
+  outline-offset: 2px; 
+}
+
+/* Desktop: กำหนดขนาดรูป */
+.hero-card .aspect-box {
+  aspect-ratio: 4/3;
+  background-color: #f9fafb;
+}
+
+.hero-card .aspect-box > img {
+  object-fit: contain;
+}
+
+/* ปุ่มให้อยู่กลางรูป - ทั้ง desktop และ mobile */
+#prev-slide,
+#next-slide {
+  top: 40% !important; /* ปรับจาก 50% เป็น 40% เพื่อให้อยู่กลางรูป */
+}
+
+/* ------------ MOBILE ONLY ------------ */
+@media (max-width: 767.98px) {
+  /* เพิ่ม padding section */
+  [data-slider] > div {
+    padding-top: 2rem !important;
+    padding-bottom: 6rem !important;
+  }
+  
+  /* ทำลายโครง group ให้การ์ดเรียงยาวทีละใบ */
+  .slide-group { 
+    display: contents !important; 
+  }
+  
+  .slide-group > div { 
+    display: contents !important; 
+  }
+
+  .hero-card {
+    min-width: 100% !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    padding: 0 0.5rem !important;
+    margin-bottom: 4rem !important;
+  }
+
+  /* ขยายความสูงของรูปให้ใหญ่ขึ้น */
+  .hero-card .aspect-box {
+    width: 100% !important;
+    height: 75vw !important;
+    aspect-ratio: auto !important;
+    border-radius: 14px;
+    background-color: #f9fafb;
+  }
+
+  /* รูปต้องเติมเต็มกรอบแบบ contain */
+  .hero-card .aspect-box > img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  /* ย้าย text ลงมาใต้รูป */
+  .hero-card > div:last-child {
+    position: static !important;
+    transform: none !important;
+    margin-top: 1.5rem !important;
+    text-align: center !important;
+    pointer-events: auto !important;
+  }
+
+  .hero-card > div:last-child span {
+    display: inline-block !important;
+    font-size: 1rem !important;
+    padding: 0.625rem 2rem !important;
+  }
+
+  /* ปุ่มบน mobile ให้อยู่กลางรูปพอดี */
+  #prev-slide,
+  #next-slide {
+    top: 35% !important; /* ปรับให้เหมาะกับ mobile */
+  }
+
+  /* กันขอบขาวเวลาเลื่อน */
+  #slides-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
+  }
+  
+  /* dots ให้อยู่ต่ำลง */
+  #dots-container {
+    bottom: 1.5rem !important;
+  }
+}
 </style>

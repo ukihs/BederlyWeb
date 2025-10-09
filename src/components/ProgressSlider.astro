@@ -116,13 +116,13 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
             return (
               <article class="snap-start shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
                 <div class="group block">
-                  {/* card ที่เราจะ sync ความสูง */}
+                  {/* card */}
                   <div class="pcard rounded-[22px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white">
                     <div class="pcard-grid grid md:grid-cols-[1.05fr,1fr] items-stretch h-full">
-                      {/* ซ้าย: รูป ยืดเต็มความสูงการ์ด */}
-                      <figure class="relative h-full overflow-hidden">
+                      {/* ซ้าย: รูป — mobile ให้ชิดขอบ ไม่มีขาว */}
+                      <figure class="media relative h-full overflow-hidden m-0">
                         {imgUrl ? (
-                          <img src={imgUrl} alt={alt} class="w-full h-full object-cover" loading="lazy" />
+                          <img src={imgUrl} alt={alt} class="block w-full h-full object-cover" loading="lazy" />
                         ) : (<div class="w-full h-full bg-gray-100" />)}
                       </figure>
 
@@ -138,7 +138,6 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
                           </div>
                         )}
 
-                        {/* โลโก้พาร์ทเนอร์ (กลับมาแล้ว) */}
                         {logos.length > 0 && (
                           <div class="mt-4 md:mt-5 flex flex-wrap items-center gap-4 md:gap-5">
                             {logos.map((lg, i) => (
@@ -180,10 +179,33 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
   /* ให้กริดยืดเต็มการ์ดเสมอ (เพื่อ h-full ของรูป/คอนเทนต์ทำงาน) */
   .pcard { height: auto; }
   .pcard-grid { height: 100%; }
+
+  /* ===== MOBILE ONLY: ทำให้รูปชิดขอบการ์ด ไม่มีขอบขาว ===== */
+  @media (max-width: 767.98px) {
+    /* กันรั่ว + โค้งขอบแน่น */
+    .pcard { overflow: hidden; border-radius: 22px; }
+
+    /* ลบ margin เริ่มต้นของ figure (บางเบราว์เซอร์ยังมี) */
+    .pcard .media { margin: 0 !important; }
+
+    /* รูปเต็มกรอบ ไม่เหลือช่องว่าง */
+    .pcard .media > img {
+      display: block;               /* ตัดช่องว่าง baseline */
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important; /* ครอบกรอบแบบไม่บี้ */
+    }
+
+    /* ป้องกันการ์ดโดน padding ภายในอื่น ๆ ทำให้เห็นขอบขาว */
+    .pcard .pcard-grid { gap: 0 !important; }
+    /* ถ้าอยากบังคับอัตราส่วนภาพให้สูงขึ้นบนจอเล็ก: เปิดบรรทัดด้านล่างได้
+       .pcard .media { aspect-ratio: 16 / 9; }
+    */
+  }
 </style>
 
 <script>
-  // ====== สไลด์ & ดอท (เดิม) ======
+  // ====== สไลด์ & ดอท ======
   const track = document.getElementById("progress-track");
   if (track) {
     const prev = document.getElementById("progress-prev");

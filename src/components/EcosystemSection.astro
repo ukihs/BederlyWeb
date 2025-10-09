@@ -8,7 +8,6 @@ export interface Props {
   pageUriTH?: string;
   pageUriEN?: string;
   class?: string;
-  /** ปรับความสูงการ์ด: 'sm' | 'md' | 'lg' (default: 'lg') */
   size?: "sm" | "md" | "lg";
 }
 
@@ -22,7 +21,6 @@ const {
 
 const uri = lang === "en" ? pageUriEN : pageUriTH;
 
-/* ====== GQL ====== */
 const QUERY = /* GraphQL */ `
   query EcosystemByUri($uri: String!) {
     nodeByUri(uri: $uri) {
@@ -45,15 +43,14 @@ function pickImageUrl(img: any): string | undefined {
   const node = img?.node ?? img;
   if (!node) return;
   const sizes = node.mediaDetails?.sizes ?? [];
-  const prefer = ["2048x2048", "large", "1536x1536", "medium_large", "medium"];
+  const prefer = ["full","2048x2048","large","1536x1536","medium_large","medium"];
   for (const k of prefer) {
-    const hit = sizes.find((s: any) => s?.name === k && s?.sourceUrl);
+    const hit = sizes.find((s:any)=>s?.name===k && s?.sourceUrl);
     if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
   }
   return node.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
 }
 
-/* ====== data ====== */
 let title = "";
 let bgUrl = "";
 try {
@@ -63,44 +60,49 @@ try {
   bgUrl = pickImageUrl(eco?.ecoimage) || "";
 } catch {}
 
-/* ทำให้ตัดบรรทัด “ตามที่ตั้งใจ”:
-   - รองรับ \n (Enter) และเครื่องหมาย | เป็นตัวแบ่ง
-   - แปลงเป็น <br/> เพื่อคุมบรรทัดแน่นอนทุกเบราว์เซอร์
-*/
 let displayTitle = (title || "")
   .replace(/\r\n|\r|\n/g, "<br/>")
   .replace(/\s*\|\s*/g, "<br/>");
 
-/* ====== expanded size ====== */
 const HEIGHT =
   size === "sm"
     ? "h-[440px] md:h-[520px] lg:h-[580px]"
     : size === "md"
     ? "h-[520px] md:h-[600px] lg:h-[680px]"
-    : "h-[600px] md:h-[680px] lg:h-[760px]"; // 'lg' (default)
+    : "h-[600px] md:h-[680px] lg:h-[760px]";
 
 const TITLE = "text-2xl md:text-3xl lg:text-4xl";
 ---
 
 <section class={`${klass}`}>
   <div class="container-primary">
-    <div class={`relative overflow-hidden rounded-[32px] md:rounded-[40px] ${HEIGHT}`}>
-      {bgUrl ? (
-        <>
-          <img
-            src={bgUrl}
-            alt=""
-            class="absolute inset-0 w-full h-full object-fill"
-            loading="eager"
-            decoding="async"
-          />
-          <!-- Overlay -->
-          <div class="absolute inset-0 bg-black/40"></div>
-          <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35"></div>
-        </>
-      ) : (
-        <div class="absolute inset-0" />
-      )}
+    <div class={`card relative overflow-hidden rounded-[32px] md:rounded-[40px] ${HEIGHT}`}>
+      {/* === รูป + Overlay ทั้งหมดอยู่ใน .clipper เพื่อกันล้นบนมือถือ === */}
+      <div class="clipper absolute inset-0">
+        {bgUrl ? (
+          <>
+            {/* มือถือ: BG cover (กันล้น) */}
+            <div
+              aria-hidden="true"
+              style={`background-image:url('${bgUrl}');`}
+              class="mobile-bg absolute inset-0 md:hidden"
+            />
+            {/* เดสก์ท็อป/แท็บเล็ต: คง <img> เดิม */}
+            <img
+              src={bgUrl}
+              alt=""
+              class="absolute inset-0 w-full h-full object-fill hidden md:block"
+              loading="eager"
+              decoding="async"
+            />
+            {/* Overlays */}
+            <div class="absolute inset-0 bg-black/40"></div>
+            <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35"></div>
+          </>
+        ) : (
+          <div class="absolute inset-0" />
+        )}
+      </div>
 
       <div class="relative h-full flex items-center">
         <div class="container-primary">
@@ -118,10 +120,49 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";
 </section>
 
 <style>
-  /* ทำให้การขึ้นบรรทัดสวยขึ้นเมื่อเบราว์เซอร์รองรับ */
-  @supports (text-wrap: balance) {
-    .eco-title { text-wrap: balance; }
-  }
-  /* กันคำยาว ๆ ไม่ล้นกรอบ */
+  @supports (text-wrap: balance) { .eco-title { text-wrap: balance; } }
   .eco-title { word-break: break-word; }
+
+  /* ===== MOBILE ONLY ===== */
+  @media (max-width: 767.98px) {
+    /* กันหน้าเพจเลื่อนไปด้านข้าง */
+    section, :global(body) { overflow-x: hidden !important; }
+
+    /* ตัวการ์ดไม่ให้รั่วเกินมุมโค้ง (iOS-safe) */
+    .card {
+      border-radius: 32px;
+      contain: layout paint;          /* กัน re-paint ล้นออกขอบ */
+      overflow: hidden;               /* fallback */
+    }
+    .clipper {
+      border-radius: inherit;         /* รับมุมจาก .card */
+      overflow: clip;                 /* ตัดจริงสมัยใหม่ */
+      /* iOS fix: บังคับ clip ตามมุมโค้ง */
+      -webkit-mask-image: linear-gradient(#000, #000);
+      clip-path: inset(0 round 32px);
+    }
+
+    /* ความสูงบนมือถือ (ปรับได้ตามส่วนสูงที่ต้องการ) */
+    section .h-\[440px\] { height: 300px !important; }
+    section .h-\[520px\] { height: 340px !important; }
+    section .h-\[600px\] { height: 380px !important; }
+
+    /* รูปแบบ BG มือถือ (เต็มกรอบ, ไม่บี้, เลื่อนเฟรมขึ้นเล็กน้อยได้) */
+    .mobile-bg {
+      background-size: cover !important;
+      background-position: center 24% !important; /* ถ้าเห็นหัวเยอะไป เปลี่ยนเป็น 30%/35% */
+      background-repeat: no-repeat !important;
+    }
+
+    /* ปิด object-fill เดิมไม่ให้กระทบตอนแปลงเป็น BG บนมือถือ */
+    .object-fill { object-fit: cover !important; }
+
+    /* ตัวหนังสือให้อ่านง่าย */
+    .eco-title {
+      font-size: 1rem !important;
+      line-height: 1.35 !important;
+      padding: 0 1.25rem;
+      max-width: 85% !important;
+    }
+  }
 </style>

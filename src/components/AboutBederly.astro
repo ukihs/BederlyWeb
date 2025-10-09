@@ -3,9 +3,8 @@ import { wpQuery } from "../lib/wp";
 
 export interface Props {
   lang: "th" | "en";
-  /** หน้า WP ที่เก็บ ACF group: about */
-  pageUriTH?: string;   // ex. "/"
-  pageUriEN?: string;   // ex. "/en/welcome/"
+  pageUriTH?: string;
+  pageUriEN?: string;
 }
 
 const {
@@ -14,7 +13,6 @@ const {
   pageUriEN = "/en/welcome/",
 } = Astro.props;
 
-// ใช้ nodeByUri + inline fragment บน Page (เพราะ ACF group about ถูกแนบที่ post type: page)
 const ABOUT_BY_URI = /* GraphQL */ `
   query AboutByUri($uri: String!) {
     nodeByUri(uri: $uri) {
@@ -33,7 +31,6 @@ const ABOUT_BY_URI = /* GraphQL */ `
   }
 `;
 
-// เลือก URI ตามภาษา
 const uri = lang === "en" ? pageUriEN : pageUriTH;
 
 let title = "";
@@ -59,7 +56,6 @@ try {
   gqlError = e?.message || "WPGraphQL fetch failed";
 }
 
-/** ดึง YouTube videoId จาก URL รูปแบบต่าง ๆ */
 function extractYouTubeId(url: string): string | null {
   if (!url) return null;
   const rules = [
@@ -81,23 +77,23 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
 
 <section class="section-padding bg-white">
   <div class="container-primary">
-    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
       {lang === "en" ? "About Bederly" : "เกี่ยวกับ Bederly"}
     </h2>
 
-    <div class="grid md:grid-cols-2 gap-6">
-      <!-- ข้อความ -->
-      <div class="bg-[#40B4E4] text-white p-6 rounded-2xl shadow-lg">
-
+    <!-- Desktop: 2 columns | Mobile: single cyan card -->
+    <div class="about-container">
+      <!-- Text Box -->
+      <div class="about-text-box">
         {hasData ? (
           <>
             {title && (
-              <h3 class="text-xl md:text-2xl font-semibold leading-snug mb-4">
+              <h3 class="about-title">
                 {title}
               </h3>
             )}
             {body && (
-              <p class="text-white/95 leading-relaxed whitespace-pre-line">
+              <p class="about-body">
                 {body}
               </p>
             )}
@@ -113,14 +109,14 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
         )}
       </div>
 
-      <!-- วิดีโอ -->
-      <div class="rounded-2xl bg-gray-100 shadow-inner p-2 flex items-center justify-center">
+      <!-- Video Box -->
+      <div class="about-video-box">
         {embedSrc ? (
-          <div class="w-full aspect-video rounded-xl overflow-hidden shadow">
+          <div class="about-video-wrapper">
             <iframe
               class="w-full h-full"
               src={embedSrc}
-              title="Bederly video"
+              title="Bederly CEO Talk"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               referrerpolicy="strict-origin-when-cross-origin"
@@ -136,3 +132,99 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
     </div>
   </div>
 </section>
+
+<style>
+  /* ============================================
+     DESKTOP (md and up): 2 separate columns
+     ============================================ */
+  .about-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .about-text-box {
+    background: #40B4E4;
+    color: white;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .about-video-box {
+    border-radius: 1rem;
+    background: #f3f4f6;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .about-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+
+  .about-body {
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.75;
+    white-space: pre-line;
+  }
+
+  .about-video-wrapper {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (min-width: 768px) {
+    .about-title {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* ============================================
+     MOBILE ONLY: Single cyan card with video inside
+     ============================================ */
+  @media (max-width: 767.98px) {
+    /* Change to single column */
+    .about-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: #40B4E4;
+      border-radius: 1.5rem;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Remove separate styling - everything is inside cyan card */
+    .about-text-box {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .about-video-box {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .about-title {
+      font-size: 1.125rem;
+    }
+
+    .about-video-wrapper {
+      border-radius: 1rem;
+    }
+  }
+</style>
