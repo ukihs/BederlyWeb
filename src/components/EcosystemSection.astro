@@ -1,5 +1,5 @@
 ---
-// src/components/EcosystemSection.astro
+// src/components/EcosystemSection.astro - Sharp Corners Version
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -76,7 +76,8 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";
 
 <section class={`${klass}`}>
   <div class="container-primary">
-    <div class={`card relative overflow-hidden rounded-[32px] md:rounded-[40px] ${HEIGHT}`}>
+    <!-- Card with sharp corners -->
+    <div class={`card relative overflow-hidden ${HEIGHT}`}>
       {/* === รูป + Overlay ทั้งหมดอยู่ใน .clipper เพื่อกันล้นบนมือถือ === */}
       <div class="clipper absolute inset-0">
         {bgUrl ? (
@@ -123,38 +124,42 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";
   @supports (text-wrap: balance) { .eco-title { text-wrap: balance; } }
   .eco-title { word-break: break-word; }
 
+  /* ขอบเหลี่ยม - ลบ border-radius ออกหมด */
+  .card {
+    border-radius: 0 !important;
+  }
+
   /* ===== MOBILE ONLY ===== */
   @media (max-width: 767.98px) {
     /* กันหน้าเพจเลื่อนไปด้านข้าง */
     section, :global(body) { overflow-x: hidden !important; }
 
-    /* ตัวการ์ดไม่ให้รั่วเกินมุมโค้ง (iOS-safe) */
+    /* ตัวการ์ดไม่ให้รั่วเกินมุมโค้ง (iOS-safe) - เปลี่ยนเป็นขอบเหลี่ยม */
     .card {
-      border-radius: 32px;
-      contain: layout paint;          /* กัน re-paint ล้นออกขอบ */
-      overflow: hidden;               /* fallback */
+      border-radius: 0 !important;
+      contain: layout paint;
+      overflow: hidden;
     }
     .clipper {
-      border-radius: inherit;         /* รับมุมจาก .card */
-      overflow: clip;                 /* ตัดจริงสมัยใหม่ */
-      /* iOS fix: บังคับ clip ตามมุมโค้ง */
-      -webkit-mask-image: linear-gradient(#000, #000);
-      clip-path: inset(0 round 32px);
+      border-radius: 0 !important;
+      overflow: clip;
+      -webkit-mask-image: none; /* ไม่ต้อง mask เพราะเป็นขอบเหลี่ยม */
+      clip-path: none;
     }
 
-    /* ความสูงบนมือถือ (ปรับได้ตามส่วนสูงที่ต้องการ) */
+    /* ความสูงบนมือถือ */
     section .h-\[440px\] { height: 300px !important; }
     section .h-\[520px\] { height: 340px !important; }
     section .h-\[600px\] { height: 380px !important; }
 
-    /* รูปแบบ BG มือถือ (เต็มกรอบ, ไม่บี้, เลื่อนเฟรมขึ้นเล็กน้อยได้) */
+    /* รูปแบบ BG มือถือ */
     .mobile-bg {
       background-size: cover !important;
-      background-position: center 24% !important; /* ถ้าเห็นหัวเยอะไป เปลี่ยนเป็น 30%/35% */
+      background-position: center 24% !important;
       background-repeat: no-repeat !important;
     }
 
-    /* ปิด object-fill เดิมไม่ให้กระทบตอนแปลงเป็น BG บนมือถือ */
+    /* ปิด object-fill เดิม */
     .object-fill { object-fit: cover !important; }
 
     /* ตัวหนังสือให้อ่านง่าย */

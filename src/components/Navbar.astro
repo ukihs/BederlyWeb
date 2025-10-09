@@ -20,9 +20,9 @@ function altUrl(target: "th" | "en") {
 const T = (en:string, th:string) => (lang === "en" ? en : th);
 ---
 
-<!-- เอา px-4 ออก และคงระยะห่างล่างไว้ไม่ให้เกย Hero -->
-<nav class="sticky top-4 z-50 mb-4 md:mb-6 lg:mb-8">
-  <!-- ทำความกว้างให้ตรงกับ Hero: 1400px + padding เดียวกัน -->
+<!-- เพิ่ม margin-bottom มากขึ้น -->
+<nav class="sticky top-4 z-50 mb-8 md:mb-12 lg:mb-16">
+  <!-- ทำความกว้างให้ตรงกับ Hero: 1800px + padding เดียวกัน -->
   <div class="mx-auto w-full max-w-full lg:max-w-[1800px] px-1 sm:px-2 lg:px-3">
     <div class="rounded-full bg-white/95 shadow-[0_10px_35px_-10px_rgba(0,0,0,.25)]
                 ring-1 ring-black/5 backdrop-blur px-5 sm:px-8
@@ -132,8 +132,8 @@ const T = (en:string, th:string) => (lang === "en" ? en : th);
 
 <style>
   /* กันโดนแถบบังหัวเวลาเจาะไปยัง #id */
-  :where(section[id]) { scroll-margin-top: 88px; }
+  :where(section[id]) { scroll-margin-top: 120px; }
   @media (min-width: 1024px) {
-    :where(section[id]) { scroll-margin-top: 96px; }
+    :where(section[id]) { scroll-margin-top: 140px; }
   }
 </style>

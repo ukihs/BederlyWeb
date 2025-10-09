@@ -73,17 +73,19 @@ const googlePlay = "https://play.google.com/store/apps/details?id=com.bederly.ph
 const appStore   = "https://apps.apple.com/th/app/id0000000000";
 ---
 
-<section class={`relative isolate py-14 md:py-16 lg:py-20 ${sectionClass}`.trim()}>
+<section class={`relative isolate py-14 md:py-16 lg:py-20 mobile-section ${sectionClass}`.trim()}>
   <!-- แถบพื้นหลังฟ้าไล่เฉด: สี่เหลี่ยมคม (ไม่โค้ง) และสูงขึ้น -->
   <div
     class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-0
            h-[300px] sm:h-[340px] lg:h-[380px]
-           bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-400">
+           bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-400
+           mobile-blue-bg">
   </div>
 
-  <div class="container-primary relative z-10">
+  <!-- Desktop Layout - ไม่แก้ไขโค้ด Win -->
+  <div class="container-primary relative z-10 hidden md:block">
     <div class="grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
-      <!-- ซ้าย: รูป (ขยายสูงขึ้น) -->
+      <!-- ซ้าย: รูปจาก WordPress (ไม่แก้ไข) -->
       <div class="order-1 md:order-none">
         {imgUrl ? (
           <div class="inline-block p-3">
@@ -101,7 +103,7 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
         )}
       </div>
 
-      <!-- ขวา: ข้อความ + ปุ่ม (จัด center, ขยายฟอนต์, ขยับปุ่มลง) -->
+      <!-- ขวา: ข้อความ + ปุ่ม (Desktop - ไม่แก้ไข) -->
       <div class="text-white text-center">
         <h2 class="font-extrabold leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
           {titleText}
@@ -115,7 +117,7 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
         )}
 
         <div class="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-5">
-          <!-- Google Play - แค่ icon กับชื่อ -->
+          <!-- Google Play - Desktop -->
           <a
             href={googlePlay}
             target="_blank" rel="noopener"
@@ -127,10 +129,9 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
               alt="Google Play" 
               class="h-8 sm:h-9 w-auto mr-3" 
             />
-      
           </a>
 
-          <!-- App Store - แค่ icon กับชื่อ -->
+          <!-- App Store - Desktop -->
           <a
             href={appStore}
             target="_blank" rel="noopener"
@@ -147,10 +148,152 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
       </div>
     </div>
   </div>
+
+  <!-- Mobile Layout - แก้ไขเฉพาะส่วนนี้ -->
+  <div class="md:hidden mobile-wrapper">
+    <!-- รูปอยู่ตรงกลางแถบสีฟ้า - ขยายใหญ่และล้นออกจากกรอบ -->
+    <div class="relative z-10 flex items-center justify-center mobile-image-container">
+      {imgUrl ? (
+        <img
+          src={imgUrl}
+          alt={imgAlt}
+          class="mobile-full-image"
+          loading="lazy"
+        />
+      ) : (
+        <div class="h-[300px] grid place-content-center text-white/80 px-4">
+          {lang === "en" ? "Add a featured image to the Download post" : "เพิ่มรูป Featured Image ในโพสต์ Download"}
+        </div>
+      )}
+      
+      <!-- ปุ่มอยู่ในแถบสีฟ้า มุมบนขวา -->
+      <div class="absolute top-4 right-4 z-30 flex flex-col gap-3 mobile-buttons-overlay">
+        <!-- Google Play -->
+        <a
+          href={googlePlay}
+          target="_blank" rel="noopener"
+          class="store-badge w-full max-w-[120px]"
+          aria-label="Get it on Google Play"
+        >
+          <img 
+            src="/blackgoogleplay.png" 
+            alt="Google Play" 
+            class="w-full h-auto" 
+          />
+        </a>
+
+        <!-- App Store -->
+        <a
+          href={appStore}
+          target="_blank" rel="noopener"
+          class="store-badge w-full max-w-[120px]"
+          aria-label="Download on the App Store"
+        >
+          <img 
+            src="/apple.png" 
+            alt="App Store" 
+            class="w-full h-auto" 
+          />
+        </a>
+      </div>
+    </div>
+  </div>
 </section>
 
 <style>
   .prose :where(p){ margin: .45rem 0; }
   .store-badge { will-change: transform, box-shadow; }
   .store-badge:hover { transform: translateY(-1.5px); }
+
+  /* Mobile-specific styles - รูปล้นออกจากกรอบสีฟ้า */
+  @media (max-width: 767.98px) {
+    /* เอา padding ของ section ออกบน mobile */
+    .mobile-section {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      overflow: visible !important;
+    }
+
+    /* ปรับแถบสีฟ้า - ให้รูปล้นออกได้ */
+    .mobile-blue-bg {
+      height: 420px !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      transform: none !important;
+      width: 100vw !important;
+      margin-left: calc(-50vw + 50%) !important;
+      overflow: visible !important;
+    }
+
+    /* Container ของรูปให้เต็มความกว้าง */
+    .mobile-wrapper {
+      width: 100% !important;
+      overflow: visible !important;
+      position: relative !important;
+    }
+
+    /* รูปอยู่ตรงกลางและล้นออกจากกรอบสีฟ้า */
+    .mobile-image-container {
+      min-height: 420px;
+      padding: 0 !important;
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: visible !important;
+      position: relative !important;
+      z-index: 10 !important;
+    }
+
+    /* รูปให้ใหญ่และล้นออกจากกรอบ */
+    .mobile-full-image {
+      width: 100% !important;
+      max-width: none !important;
+      height: auto !important;
+      object-fit: contain !important;
+      transform: scale(1.6) !important;
+      transform-origin: center !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* ปุ่มอยู่ในแถบสีฟ้า มุมบนขวา */
+    .mobile-buttons-overlay {
+      position: absolute !important;
+      top: 1rem !important;
+      right: 1rem !important;
+      z-index: 30 !important;
+    }
+
+    .mobile-buttons-overlay .store-badge {
+      display: block !important;
+      background: white !important;
+      border-radius: 12px !important;
+      padding: 0.5rem !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .mobile-buttons-overlay .store-badge:active {
+      transform: scale(0.95) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .mobile-buttons-overlay .store-badge img {
+      display: block !important;
+      width: 100% !important;
+      height: auto !important;
+    }
+
+    /* ปรับ store badge บน mobile */
+    .store-badge {
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    .store-badge:active {
+      transform: scale(0.98);
+    }
+  }
 </style>

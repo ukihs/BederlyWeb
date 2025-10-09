@@ -1,5 +1,5 @@
 ---
-// src/components/SmartBedSection.astro - Full Background Version
+// src/components/SmartBedSection.astro - Sharp Corners Version
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -36,7 +36,7 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-// ใช้ language-specific query เหมือน Hero section แทน URI-based
+// Language-specific query
 const SMARTBED_LANGUAGE_QUERY = /* GraphQL */ `
   query SmartBedByLanguage($language: LanguageCodeFilterEnum!) {
     pages(
@@ -82,7 +82,7 @@ const SMARTBED_LANGUAGE_QUERY = /* GraphQL */ `
   }
 `;
 
-// Fallback URI-based query (สำหรับกรณีที่ language-specific ไม่ได้ผล)
+// Fallback URI-based query
 const SMARTBED_URI_QUERY = /* GraphQL */ `
   query SmartBedByUri($uri: String!) {
     nodeByUri(uri: $uri) {
@@ -119,47 +119,18 @@ let smartbedTitle = "";
 let smartbedSub = "";
 let smartbedImageUrl = "";
 let foundSmartbedData = false;
-let debugInfo: any = {};
 
-console.log(`[SMARTBED] Looking for Smart Bed data in language: ${languageFilter}`);
-
-// 1. ลอง language-specific query ก่อน (วิธีหลัก)
+// 1. Language-specific query
 try {
-  console.log(`[SMARTBED] Trying language-specific query for: ${languageFilter}`);
   const languageData = await wpQuery<any>(SMARTBED_LANGUAGE_QUERY, { 
     language: languageFilter 
   });
   
   const pages = languageData?.pages?.nodes || [];
-  console.log(`[SMARTBED] Found ${pages.length} pages for language ${languageFilter}`);
-  
-  // หา page ที่มี smartbed data
-  let targetPage = null;
-  
-  // 1. หา Front Page ก่อน
-  targetPage = pages.find((p: any) => p.isFrontPage && p.smartbed);
-  
-  // 2. หา page ที่ชื่อ "Home" หรือ "หน้าแรก"
-  if (!targetPage) {
-    const homeNames = lang === "en" ? ["Home", "home"] : ["หน้าแรก", "หน้าหลัก"];
-    targetPage = pages.find((p: any) => 
-      p.smartbed && homeNames.some(name => 
-        p.title?.toLowerCase().includes(name.toLowerCase()) ||
-        p.slug?.toLowerCase().includes(name.toLowerCase())
-      )
-    );
-  }
-  
-  // 3. หา page ใดๆ ที่มี smartbed data
-  if (!targetPage) {
-    targetPage = pages.find((p: any) => p.smartbed && 
-      (p.smartbed.smartbedtitle || p.smartbed.smartbedimage)
-    );
-  }
+  let targetPage = pages.find((p: any) => p.isFrontPage && p.smartbed) ||
+    pages.find((p: any) => p.smartbed && (p.smartbed.smartbedtitle || p.smartbed.smartbedimage));
   
   if (targetPage?.smartbed) {
-    console.log(`[SMARTBED] Found smartbed data in page: ${targetPage.title} (${targetPage.language?.code})`);
-    
     const smartbed = targetPage.smartbed;
     smartbedTitle = smartbed?.smartbedtitle || smartbedTitle;
     smartbedSub = smartbed?.smartbedsub || smartbedSub;
@@ -167,37 +138,20 @@ try {
     
     if (smartbedTitle || smartbedSub || smartbedImageUrl) {
       foundSmartbedData = true;
-      debugInfo.successMethod = "language-specific";
-      debugInfo.successPage = {
-        title: targetPage.title,
-        uri: targetPage.uri,
-        language: targetPage.language?.code
-      };
-      debugInfo.foundData = { smartbedTitle, smartbedSub, smartbedImageUrl };
-      console.log(`[SMARTBED] Success with language-specific query!`);
     }
   }
 } catch (e) {
   console.warn(`[SMARTBED] Language-specific query failed:`, e);
-  debugInfo.languageError = e.message;
 }
 
-// 2. ถ้ายังไม่ได้ผล ลอง URI-based query (fallback)
+// 2. Fallback URI-based query
 if (!foundSmartbedData) {
-  console.log(`[SMARTBED] Trying fallback URI-based queries...`);
-  
   for (const uri of uriCandidates) {
     try {
-      console.log(`[SMARTBED] Trying URI: ${uri}`);
       const data = await wpQuery<any>(SMARTBED_URI_QUERY, { uri });
       const smartbed = data?.nodeByUri?.smartbed;
       
-      if (!smartbed) {
-        console.log(`[SMARTBED] No smartbed data found for URI: ${uri}`);
-        continue;
-      }
-
-      console.log(`[SMARTBED] Found smartbed data for URI: ${uri}`, smartbed);
+      if (!smartbed) continue;
 
       smartbedTitle = smartbed?.smartbedtitle || smartbedTitle;
       smartbedSub = smartbed?.smartbedsub || smartbedSub;
@@ -205,29 +159,20 @@ if (!foundSmartbedData) {
 
       if (smartbedTitle || smartbedSub || smartbedImageUrl) {
         foundSmartbedData = true;
-        debugInfo.successMethod = "uri-based";
-        debugInfo.successUri = uri;
-        debugInfo.foundData = { smartbedTitle, smartbedSub, smartbedImageUrl };
-        console.log(`[SMARTBED] Success with URI-based query: ${uri}`);
         break;
       }
     } catch (e) {
       console.warn(`[SMARTBED] URI query failed for ${uri}:`, e);
-      debugInfo.uriErrors = debugInfo.uriErrors || [];
-      debugInfo.uriErrors.push({ uri, error: e.message });
     }
   }
 }
-
-console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smartbedSub, smartbedImageUrl });
 ---
 
-<!-- Smart Bed Section — expanded size -->
+<!-- Smart Bed Section — ขอบเหลี่ยม -->
 <section class="pt-12 md:pt-14 lg:pt-16 pb-2 md:pb-3 lg:pb-4 bg-white overflow-x-clip">
-
   <div class="container-primary smartbed-container">
-    <!-- Card with increased height -->
-    <div class="relative rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl md:min-h-[680px] lg:min-h-[760px]">
+    <!-- Card with sharp corners (เปลี่ยนจาก rounded เป็น ไม่มีมุมโค้ง) -->
+    <div class="relative overflow-hidden shadow-2xl md:min-h-[680px] lg:min-h-[760px]">
 
       <!-- BG image covers the whole card -->
       {smartbedImageUrl ? (
@@ -241,7 +186,7 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
         <div class="absolute inset-0 bg-blue-200" />
       )}
 
-      <!-- Content on top of image with increased padding -->
+      <!-- Content on top of image -->
       <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-10 md:p-16 lg:p-20">
         <div class="max-w-xl lg:max-w-2xl text-white">
           <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
@@ -263,7 +208,7 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
           </p>
           <a
             href="#footer"
-            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition shadow-lg"
+            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-8 py-4 font-semibold text-lg hover:bg-gray-50 transition shadow-lg"
           >
             {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -272,7 +217,6 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
           </a>
         </div>
 
-        <!-- keep empty on the right so image shows fully while text stays left -->
         <div class="hidden lg:block"></div>
       </div>
     </div>
@@ -290,10 +234,10 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
       padding: 0 !important;
     }
     
-    /* การ์ดสีฟ้าโค้งมน */
+    /* การ์ดสีฟ้าขอบเหลี่ยม */
     .smartbed-container > div {
       background: #40B4E4 !important;
-      border-radius: 2rem !important;
+      border-radius: 0 !important; /* เปลี่ยนเป็นขอบเหลี่ยม */
       min-height: auto !important;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
       position: relative !important;
@@ -322,23 +266,23 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
     /* Text content - บนสุด - ลดขนาดมากขึ้น */
     .smartbed-text-content {
       background: transparent !important;
-      padding: 1.5rem 1rem 0.75rem !important; /* ลด padding ล่าง */
+      padding: 1.5rem 1rem 0.75rem !important;
       max-width: 100% !important;
       width: 100% !important;
     }
     
     .smartbed-text-content h2 {
-      font-size: 1.5rem !important; /* ลดจาก 1.625rem เป็น 1.5rem (24px) */
+      font-size: 1.5rem !important;
       line-height: 1.2 !important;
-      margin-bottom: 0.5rem !important; /* ลด margin */
+      margin-bottom: 0.5rem !important;
       color: white !important;
       text-shadow: none !important;
     }
     
     .smartbed-text-content h3 {
-      font-size: 0.9375rem !important; /* ลดจาก 1rem เป็น 0.9375rem (15px) */
+      font-size: 0.9375rem !important;
       line-height: 1.4 !important;
-      margin-bottom: 0.5rem !important; /* ลด margin */
+      margin-bottom: 0.5rem !important;
       color: white !important;
       text-shadow: none !important;
     }
@@ -349,14 +293,14 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
       display: none !important;
     }
     
-    /* แสดงรูปเตียงจาก mobile-image - ลดขนาดลง */
+    /* แสดงรูปเตียงจาก mobile-image */
     .smartbed-mobile-image {
       display: block !important;
       width: 100% !important;
       position: relative !important;
       padding: 0 !important;
       margin: 0 !important;
-      max-height: 200px !important; /* จำกัดความสูงของรูป */
+      max-height: 200px !important;
       overflow: hidden !important;
     }
     
@@ -365,22 +309,22 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
       height: auto !important;
       display: block !important;
       max-width: 100% !important;
-      max-height: 200px !important; /* จำกัดความสูง */
+      max-height: 200px !important;
       object-fit: contain !important;
     }
     
-    /* Mobile bottom section - description + CTA */
+    /* Mobile bottom section */
     .smartbed-mobile-bottom {
       display: flex !important;
       flex-direction: column !important;
       padding: 0 !important;
     }
     
-    /* Mobile description - ลดขนาดมากขึ้น */
+    /* Mobile description */
     .smartbed-mobile-description {
-      font-size: 0.75rem !important; /* ลดจาก 0.8125rem เป็น 0.75rem (12px) */
+      font-size: 0.75rem !important;
       line-height: 1.6 !important;
-      padding: 0.75rem 1rem !important; /* ลด padding */
+      padding: 0.75rem 1rem !important;
       color: white !important;
       margin: 0 !important;
     }
@@ -389,15 +333,15 @@ console.log(`[SMARTBED] Final result:`, { foundSmartbedData, smartbedTitle, smar
     .smartbed-mobile-cta {
       display: flex !important;
       justify-content: center !important;
-      padding: 0.5rem 1rem 1.5rem !important; /* ลด padding */
+      padding: 0.5rem 1rem 1.5rem !important;
     }
     
     .smartbed-mobile-cta a {
-      padding: 0.75rem 2rem !important; /* ลดขนาดปุ่ม */
-      font-size: 0.9375rem !important; /* ลดขนาดฟอนต์ปุ่ม */
+      padding: 0.75rem 2rem !important;
+      font-size: 0.9375rem !important;
       background: white !important;
       color: #40B4E4 !important;
-      border-radius: 9999px !important;
+      border-radius: 0 !important; /* ปุ่มก็ขอบเหลี่ยม */
       display: inline-flex !important;
       align-items: center !important;
       gap: 0.5rem !important;
