@@ -1,5 +1,5 @@
 ---
-// src/components/SmartBedSection.astro - Sharp Corners Version
+// src/components/SmartBedSection.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -8,11 +8,8 @@ export interface Props {
 }
 
 const { lang = "th" } = Astro.props;
-
-// แปลง lang เป็น GraphQL enum
 const languageFilter = lang.toUpperCase() as "TH" | "EN";
 
-// ใช้ URI candidates เหมือน Hero section
 const uriCandidates = lang === "en" 
   ? ["/", "/home/", "/home", "/en/", "/en"]
   : ["/", "/th/", "/th", "/หน้าแรก/", "/หน้าแรก"];
@@ -36,7 +33,6 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-// Language-specific query
 const SMARTBED_LANGUAGE_QUERY = /* GraphQL */ `
   query SmartBedByLanguage($language: LanguageCodeFilterEnum!) {
     pages(
@@ -49,13 +45,6 @@ const SMARTBED_LANGUAGE_QUERY = /* GraphQL */ `
       nodes {
         id
         title
-        uri
-        slug
-        isFrontPage
-        language {
-          code
-          name
-        }
         smartbed {
           smartbedtitle
           smartbedsub
@@ -82,7 +71,6 @@ const SMARTBED_LANGUAGE_QUERY = /* GraphQL */ `
   }
 `;
 
-// Fallback URI-based query
 const SMARTBED_URI_QUERY = /* GraphQL */ `
   query SmartBedByUri($uri: String!) {
     nodeByUri(uri: $uri) {
@@ -120,15 +108,13 @@ let smartbedSub = "";
 let smartbedImageUrl = "";
 let foundSmartbedData = false;
 
-// 1. Language-specific query
 try {
   const languageData = await wpQuery<any>(SMARTBED_LANGUAGE_QUERY, { 
     language: languageFilter 
   });
   
   const pages = languageData?.pages?.nodes || [];
-  let targetPage = pages.find((p: any) => p.isFrontPage && p.smartbed) ||
-    pages.find((p: any) => p.smartbed && (p.smartbed.smartbedtitle || p.smartbed.smartbedimage));
+  let targetPage = pages.find((p: any) => p.smartbed && (p.smartbed.smartbedtitle || p.smartbed.smartbedimage));
   
   if (targetPage?.smartbed) {
     const smartbed = targetPage.smartbed;
@@ -141,10 +127,9 @@ try {
     }
   }
 } catch (e) {
-  console.warn(`[SMARTBED] Language-specific query failed:`, e);
+  console.warn(`[SMARTBED] Language query failed:`, e);
 }
 
-// 2. Fallback URI-based query
 if (!foundSmartbedData) {
   for (const uri of uriCandidates) {
     try {
@@ -161,33 +146,30 @@ if (!foundSmartbedData) {
         foundSmartbedData = true;
         break;
       }
-    } catch (e) {
-      console.warn(`[SMARTBED] URI query failed for ${uri}:`, e);
-    }
+    } catch {}
   }
 }
 ---
 
-<!-- Smart Bed Section — ขอบเหลี่ยม -->
-<section class="pt-12 md:pt-14 lg:pt-16 pb-2 md:pb-3 lg:pb-4 bg-white overflow-x-clip">
+<!-- Smart Bed Section -->
+<section class="pt-12 md:pt-14 lg:pt-16 pb-2 md:pb-3 lg:pb-4 bg-white overflow-x-clip smartbed-section">
   <div class="container-primary smartbed-container">
-    <!-- Card with sharp corners (เปลี่ยนจาก rounded เป็น ไม่มีมุมโค้ง) -->
-    <div class="relative overflow-hidden shadow-2xl md:min-h-[680px] lg:min-h-[760px]">
+    <div class="relative overflow-hidden shadow-2xl md:min-h-[680px] lg:min-h-[760px] smartbed-card">
 
-      <!-- BG image covers the whole card -->
+      <!-- Desktop: Background Image -->
       {smartbedImageUrl ? (
         <img
           src={smartbedImageUrl}
           alt={lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
-          class="absolute inset-0 w-full h-full object-cover"
+          class="absolute inset-0 w-full h-full object-cover desktop-only"
           loading="lazy"
         />
       ) : (
-        <div class="absolute inset-0 bg-blue-200" />
+        <div class="absolute inset-0 bg-blue-200 desktop-only" />
       )}
 
-      <!-- Content on top of image -->
-      <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-10 md:p-16 lg:p-20">
+      <!-- Desktop Content -->
+      <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-10 md:p-16 lg:p-20 desktop-only">
         <div class="max-w-xl lg:max-w-2xl text-white">
           <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
@@ -206,9 +188,9 @@ if (!foundSmartbedData) {
                 ? "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients. With IoT integration, it can be controlled remotely via smartphone. Embedded technology enhances its intelligence, enabling seamless connection and interaction with other devices."
                 : "เตียงอัจฉริยะเป็นเตียงไฟฟ้าที่กระจายแรงกดและสนับสนุนผู้ดูแลในการจัดท่าผู้ป่วย ด้วยการผสาน IOT สามารถควบคุมระยะไกลผ่านสมาร์ทโฟน เทคโนโลยีฝังตัวช่วยเพิ่มความอัจฉริยะ ทำให้เชื่อมต่อและโต้ตอบกับอุปกรณ์อื่นได้อย่างราบรื่น")}
           </p>
-          <a
+          
             href="#footer"
-            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-8 py-4 font-semibold text-lg hover:bg-gray-50 transition shadow-lg"
+            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-8 py-4 font-semibold text-lg hover:bg-gray-50 transition shadow-lg rounded-full"
           >
             {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -219,139 +201,183 @@ if (!foundSmartbedData) {
 
         <div class="hidden lg:block"></div>
       </div>
+
+      <!-- Mobile Content -->
+      <div class="mobile-only mobile-wrapper">
+        <!-- หัวข้อ -->
+        <div class="mobile-header">
+          <h2 class="mobile-title">
+            {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
+          </h2>
+          <h3 class="mobile-subtitle">
+            {smartbedTitle ||
+              (lang === "en"
+                ? "Innovative Care for the Ones Your loved ones"
+                : "นวัตกรรมดูแลสุขภาพของคนที่คุณรัก")}
+          </h3>
+        </div>
+
+        <!-- รูปเตียง -->
+        {smartbedImageUrl && (
+          <div class="mobile-image-box">
+            <img
+              src={smartbedImageUrl}
+              alt={lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
+              class="mobile-image"
+              loading="lazy"
+            />
+          </div>
+        )}
+
+        <!-- คำอธิบาย -->
+        <div class="mobile-text">
+          <p>
+            {smartbedSub ||
+              (lang === "en"
+                ? "The smart bed is an electric bed that distributes pressure and supports caregivers in repositioning patients."
+                : "เตียงอัจฉริยะเป็นเตียงไฟฟ้าที่กระจายแรงกดและสนับสนุนผู้ดูแลในการจัดท่าผู้ป่วย ด้วยการผสาน IOT สามารถควบคุมระยะไกลผ่านสมาร์ทโฟน")}
+          </p>
+        </div>
+
+        <!-- ปุ่ม -->
+        <div class="mobile-button-box">
+          <a href="#footer" class="mobile-btn">
+            {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
 
 <style>
-  /* Mobile Only - แบบรูปตัวอย่างซ้าย กรอบฟ้าโค้งมน */
-  @media (max-width: 767.98px) {
-    section {
-      padding: 1rem !important;
-    }
-    
-    .smartbed-container {
-      padding: 0 !important;
-    }
-    
-    /* การ์ดสีฟ้าขอบเหลี่ยม */
-    .smartbed-container > div {
-      background: #40B4E4 !important;
-      border-radius: 0 !important; /* เปลี่ยนเป็นขอบเหลี่ยม */
-      min-height: auto !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
-      position: relative !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
-      padding: 0 !important;
-    }
-    
-    /* ซ่อนรูป background แบบเดิม */
-    .smartbed-bg-image {
-      display: none !important;
-    }
-    
-    /* Content wrapper */
-    .smartbed-content-wrapper {
-      position: relative !important;
-      z-index: 10 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      padding: 0 !important;
-      background: transparent !important;
-      gap: 0 !important;
-    }
-    
-    /* Text content - บนสุด - ลดขนาดมากขึ้น */
-    .smartbed-text-content {
-      background: transparent !important;
-      padding: 1.5rem 1rem 0.75rem !important;
-      max-width: 100% !important;
-      width: 100% !important;
-    }
-    
-    .smartbed-text-content h2 {
-      font-size: 1.5rem !important;
-      line-height: 1.2 !important;
-      margin-bottom: 0.5rem !important;
-      color: white !important;
-      text-shadow: none !important;
-    }
-    
-    .smartbed-text-content h3 {
-      font-size: 0.9375rem !important;
-      line-height: 1.4 !important;
-      margin-bottom: 0.5rem !important;
-      color: white !important;
-      text-shadow: none !important;
-    }
-    
-    /* ซ่อน desktop description และ CTA */
-    .smartbed-text-content .smartbed-description,
-    .smartbed-desktop-cta {
-      display: none !important;
-    }
-    
-    /* แสดงรูปเตียงจาก mobile-image */
-    .smartbed-mobile-image {
-      display: block !important;
-      width: 100% !important;
-      position: relative !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      max-height: 200px !important;
-      overflow: hidden !important;
-    }
-    
-    .smartbed-mobile-image img {
-      width: 100% !important;
-      height: auto !important;
-      display: block !important;
-      max-width: 100% !important;
-      max-height: 200px !important;
-      object-fit: contain !important;
-    }
-    
-    /* Mobile bottom section */
-    .smartbed-mobile-bottom {
-      display: flex !important;
-      flex-direction: column !important;
-      padding: 0 !important;
-    }
-    
-    /* Mobile description */
-    .smartbed-mobile-description {
-      font-size: 0.75rem !important;
-      line-height: 1.6 !important;
-      padding: 0.75rem 1rem !important;
-      color: white !important;
-      margin: 0 !important;
-    }
-    
-    /* ปุ่มอยู่ล่างสุด */
-    .smartbed-mobile-cta {
-      display: flex !important;
-      justify-content: center !important;
-      padding: 0.5rem 1rem 1.5rem !important;
-    }
-    
-    .smartbed-mobile-cta a {
-      padding: 0.75rem 2rem !important;
-      font-size: 0.9375rem !important;
-      background: white !important;
-      color: #40B4E4 !important;
-      border-radius: 0 !important; /* ปุ่มก็ขอบเหลี่ยม */
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 0.5rem !important;
-      font-weight: 600 !important;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    /* ซ่อน empty div ที่ใช้บน desktop */
-    .smartbed-content-wrapper > div:last-child:empty {
-      display: none !important;
-    }
+  /* Desktop default */
+  .mobile-only {
+    display: none;
   }
+
+  /* ===== MOBILE ONLY ===== */
+@media (max-width: 767.98px) {
+  /* Section - ไม่มี padding เลย */
+  .smartbed-section {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  /* Container - padding 0.5rem เท่ากับ hero */
+  .smartbed-container {
+    padding: 0 0.5rem !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Card - กว้างเต็มที่ภายใน container */
+  .smartbed-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #40B4E4 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    min-height: auto !important;
+    overflow: hidden !important;
+  }
+
+  /* ซ่อน Desktop Content */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* แสดง Mobile Content */
+  .mobile-only {
+    display: block !important;
+  }
+
+  .mobile-wrapper {
+    width: 100% !important;
+  }
+
+  /* Mobile Header */
+  .mobile-header {
+    padding: 1.5rem 1rem 0.75rem !important;
+  }
+
+  .mobile-title {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    color: white !important;
+    margin: 0 0 0.5rem 0 !important;
+  }
+
+  .mobile-subtitle {
+    font-size: 0.9375rem !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    color: white !important;
+    margin: 0 !important;
+  }
+
+  /* Mobile Image */
+  .mobile-image-box {
+    width: 100% !important;
+    height: 200px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .mobile-image {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 200px !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+
+  /* Mobile Text */
+  .mobile-text {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .mobile-text p {
+    font-size: 0.75rem !important;
+    line-height: 1.6 !important;
+    color: white !important;
+    margin: 0 !important;
+  }
+
+  /* Mobile Button */
+  .mobile-button-box {
+    padding: 0.5rem 1rem 1.5rem !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .mobile-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 2rem !important;
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+    color: #40B4E4 !important;
+    background: white !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+  }
+
+  .mobile-btn:active {
+    transform: scale(0.98) !important;
+  }
+}
+  
 </style>
