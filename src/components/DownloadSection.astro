@@ -205,31 +205,33 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
   .store-badge { will-change: transform, box-shadow; }
   .store-badge:hover { transform: translateY(-1.5px); }
 
-  /* Mobile-specific styles - รูปล้นออกจากกรอบสีฟ้า */
+/* Mobile-specific styles - รูปล้นออกจากกรอบสีฟ้า */
   @media (max-width: 767.98px) {
     /* เอา padding ของ section ออกบน mobile */
     .mobile-section {
       padding-top: 0 !important;
       padding-bottom: 0 !important;
-      overflow: visible !important;
+      overflow-x: hidden !important; /* เปลี่ยนจาก visible เป็น hidden */
+      max-width: 100vw !important;
     }
 
-    /* ปรับแถบสีฟ้า - ให้รูปล้นออกได้ */
+    /* ปรับแถบสีฟ้า - ให้รูปล้นออกได้แต่ไม่ล้นจอ */
     .mobile-blue-bg {
       height: 420px !important;
       top: 0 !important;
       left: 0 !important;
       right: 0 !important;
       transform: none !important;
-      width: 100vw !important;
-      margin-left: calc(-50vw + 50%) !important;
-      overflow: visible !important;
+      width: 100% !important; /* เปลี่ยนจาก 100vw เป็น 100% */
+      margin-left: 0 !important; /* เอา calc ออก */
+      overflow: hidden !important; /* เปลี่ยนเป็น hidden */
     }
 
     /* Container ของรูปให้เต็มความกว้าง */
     .mobile-wrapper {
       width: 100% !important;
-      overflow: visible !important;
+      max-width: 100% !important;
+      overflow: hidden !important; /* เปลี่ยนเป็น hidden */
       position: relative !important;
     }
 
@@ -238,35 +240,28 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
       min-height: 420px;
       padding: 0 !important;
       width: 100% !important;
+      max-width: 100% !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      overflow: visible !important;
+      overflow: hidden !important; /* เปลี่ยนเป็น hidden */
       position: relative !important;
       z-index: 10 !important;
+      contain: layout paint !important; /* เพิ่ม containment */
     }
 
-    /* รูปให้ใหญ่และล้นออกจากกรอบ */
+    /* รูปให้ใหญ่และล้นออกจากกรอบ - ลด scale */
     .mobile-full-image {
       width: 100% !important;
-      max-width: none !important;
+      max-width: 100% !important;
       height: auto !important;
       object-fit: contain !important;
-      transform: scale(1.6) !important;
+      transform: scale(1.4) !important; /* ลดจาก 1.6 เป็น 1.4 */
       transform-origin: center !important;
       padding: 0 !important;
       margin: 0 !important;
     }
-
-    /* ปุ่มอยู่ในแถบสีฟ้า มุมบนขวา */
-    .mobile-buttons-overlay {
-      position: absolute !important;
-      top: 1rem !important;
-      right: 1rem !important;
-      z-index: 30 !important;
-    }
-
-    .mobile-buttons-overlay .store-badge {
+        .mobile-buttons-overlay .store-badge {
       display: block !important;
       background: white !important;
       border-radius: 12px !important;
@@ -284,16 +279,6 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
       display: block !important;
       width: 100% !important;
       height: auto !important;
-    }
-
-    /* ปรับ store badge บน mobile */
-    .store-badge {
-      display: block;
-      transition: transform 0.2s ease;
-    }
-
-    .store-badge:active {
-      transform: scale(0.98);
     }
   }
 </style>
