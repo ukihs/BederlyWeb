@@ -503,6 +503,7 @@
   }
 }
 
+
 /* ============== Mobile-Only Fixes ============== */
 @media (max-width: 767.98px) {
   /* ... โค้ดเดิมทั้งหมด ... */
@@ -519,6 +520,41 @@
     padding-right: 0.5rem !important; /* 8px - เท่ากับ hero */
     max-width: 100vw !important;
     overflow-x: hidden !important;
+  }
+
+    /* ========================================
+     🎯 REMOVE GAPS: ลบช่องว่างระหว่าง Hero, SmartBed, Gallery
+     ======================================== */
+  
+  /* ลบ margin/padding ทั้งหมดของ 3 sections แรก */
+  section#smartbed,
+  section#gallery {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* ลบช่องว่างใน smartbed section */
+  .smartbed-section {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+  }
+
+  .smartbed-container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .smartbed-card {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* ลบช่องว่างของ hero gallery */
+  .hero-gallery-section {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
   }
 
   /* กำหนด max-width สำหรับ section ที่ไม่มี container */

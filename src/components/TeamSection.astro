@@ -68,8 +68,8 @@ try {
 const heading = lang === "en" ? "Meet Our Team" : "รู้จักทีมของเรา";
 const subtext =
   lang === "en"
-    ? "Our teams specializes in the development of medical innovations with expertise in various fields to ensure highest quality of our products and services​"
-    : "ทีมงานของเรามีความเชี่ยวชาญในการพัฒนานวัตกรรมทางการแพทย์ พร้อมความรู้ความสามารถในหลายสาขา เพื่อให้มั่นใจในคุณภาพสูงสุดของผลิตภัณฑ์และบริการของเรา";
+    ? "Our teams specializes in the development of medical innovations with expertise in<br />various fields to ensure highest quality of our products and services​"
+    : "ทีมงานของเรามีความเชี่ยวชาญในการพัฒนานวัตกรรมทางการแพทย์<br />พร้อมความรู้ความสามารถในหลายสาขา เพื่อให้มั่นใจในคุณภาพสูงสุดของผลิตภัณฑ์และบริการของเรา";
 
 /* ฟังก์ชันล้าง HTML สั้น ๆ ใช้กับ excerpt */
 function cleanHtml(html?: string) {
@@ -77,12 +77,12 @@ function cleanHtml(html?: string) {
 }
 ---
 
-<section class={`section-padding ${sectionClass}`.trim()}>
+<section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
     <!-- Hardcode heading -->
-    <div class="max-w-3xl mb-8">
+    <div class="max-w-3xl mb-4 md:mb-6">
       <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{heading}</h2>
-      <p class="mt-3 text-gray-600">{subtext}</p>
+      <p class="mt-2 md:mt-3 text-gray-600 leading-relaxed" set:html={subtext}></p>
     </div>
 
     {people.length === 0 ? (
@@ -102,7 +102,7 @@ function cleanHtml(html?: string) {
           return (
             <article class="flex flex-col items-center text-center">
               {/* รูป / Placeholder */}
-              <div class="w-full aspect-square rounded-2xl overflow-hidden bg-gray-200/80 shadow-sm">
+              <div class="w-full aspect-square rounded-2xl overflow-hidden shadow-sm">
                 {imgUrl ? (
                   <img
                     src={imgUrl}

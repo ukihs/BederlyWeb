@@ -52,9 +52,8 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
 
 const languageFilter = (lang.toUpperCase() as "TH" | "EN");
 
-function normalize(img?: any) {
-  return img?.node ? img.node : img;
-}
+/* helpers */
+function normalize(img?: any) { return img?.node ? img.node : img; }
 function pickImageUrl(img?: any): string | undefined {
   const n = normalize(img);
   if (!n) return undefined;
@@ -82,9 +81,9 @@ try {
 }
 ---
 
-<section class={klass}>
-  <!-- Header Section -->
-  <div class="mb-10 md:mb-14">
+<section class={`innov-section ${klass}`}>
+  <!-- Header -->
+  <div class="mb-6 md:mb-8">
     <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900">
       {lang === "en" ? <>Our Other Innovations</> : <>นวัตกรรมอื่นๆ ของเรา</>}
     </h2>
@@ -96,49 +95,36 @@ try {
   </div>
 
   {posts.length > 0 ? (
-    <div class="grid gap-6 md:gap-8 lg:grid-cols-2">
+    <div class="innov-grid grid gap-6 md:gap-8 lg:grid-cols-2">
       {posts.map((p) => {
         const img = p.featuredImage?.node;
         const src = pickImageUrl(img);
 
         return (
-          <article
-            class="group relative overflow-hidden bg-gradient-to-b from-cyan-50/60 via-white/95 to-blue-50/40
-                   shadow-xl transform-gpu transition-all duration-300
-                   hover:scale-[1.01] hover:shadow-2xl border border-cyan-100/30"
-          >
-            {/* Header section with title */}
-            <div class="relative z-10 text-center p-6 md:p-8">
-              <h3 class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight" set:html={p.title}></h3>
-              {p.excerpt && (
-                <div class="prose prose-slate mx-auto text-gray-600 mt-2 text-sm md:text-base prose-p:my-0" set:html={p.excerpt}></div>
+          <article class="innov-card group">
+            <div class="innov-inner">
+              {/* LEFT: Text */}
+              <div class="innov-copy">
+                <h3 class="innov-title" set:html={p.title} />
+                {p.excerpt && <div class="innov-desc prose prose-slate" set:html={p.excerpt} />}
+              </div>
+
+              {/* RIGHT: Image */}
+              {src && (
+                <div class="innov-media">
+                  <img
+                    src={src}
+                    alt={img?.altText || p.title}
+                    class="innov-img"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
               )}
             </div>
 
-            {/* Image section - seamless with background */}
-            {src && (
-              <div class="relative z-0 px-4 md:px-6 pb-6 md:pb-8">
-                <div class="mx-auto w-full">
-                  {/* Direct image without white container - blend with card background */}
-                  <div class="relative h-[280px] sm:h-[320px] md:h-[360px] lg:h-[400px] 
-                              flex items-center justify-center">
-                    <img
-                      src={src}
-                      alt={img?.altText || p.title}
-                      class="max-w-[85%] max-h-[85%] w-auto h-auto object-contain
-                             transition-all duration-500 ease-out group-hover:scale-[1.05]
-                             mix-blend-multiply opacity-95 group-hover:opacity-100"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div class="pointer-events-none absolute inset-0 ring-1 ring-transparent group-hover:ring-cyan-300/70 transition-colors duration-500"></div>
-
-            <a href={p.uri || `/${lang}/${p.slug}`} class="absolute inset-0" aria-label="Open innovation"></a>
+            {/* clickable whole card */}
+            <a href={p.uri || `/${lang}/${p.slug}`} class="innov-link" aria-label="Open innovation"></a>
           </article>
         );
       })}
@@ -153,105 +139,133 @@ try {
 </section>
 
 <style>
-  /* Clean card styling with seamless background */
-  article {
-    background: linear-gradient(
-      135deg,
-      rgba(236, 254, 255, 0.6),
-      rgba(255, 255, 255, 0.95),
-      rgba(219, 234, 254, 0.4)
-    );
-    position: relative;
-    isolation: isolate;
-  }
-
-  /* Smooth transitions for all interactive elements */
-  img, article {
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Mix blend mode for seamless integration */
-  .mix-blend-multiply {
-    mix-blend-mode: multiply;
-  }
-
-  /* Hover effects */
-  .group:hover img {
-    filter: brightness(1.02) saturate(1.1);
-  }
-
-  /* Text content styling */
-  .prose p {
+  /* เนื้อหาในย่อหน้า */
+  .prose :where(p){
+    margin: .45rem 0;
     line-height: 1.6;
     color: rgb(75 85 99);
   }
 
-  /* Card hover animation */
-  article:hover {
+  :root{
+    --innov-radius: 24px;
+    --innov-pad-x: 28px;
+    --innov-pad-y: 28px;
+    --innov-shadow: 0 10px 30px rgba(0,0,0,.08);
+    --innov-border: 1px solid rgba(0,0,0,.06);
+    --title-size: clamp(22px, 2.4vw, 32px);
+    --title-color: #111827;
+    --gap-x: clamp(20px, 3vw, 40px);
+    --img-max-w: clamp(260px, 36vw, 460px);
+    --img-max-h: clamp(200px, 34vw, 360px);
+    --ring-color: rgba(6, 182, 212, .45);
+  }
+
+  /* ===== Section spacing: ดันการ์ดให้ชิดข้อความด้านบนอย่างพอดี ===== */
+  .innov-section{ margin-top: 0 !important; padding-top: 0 !important; }
+  .innov-grid{ margin-top: 1.25rem !important; } /* ช่องไฟเล็กๆ ระหว่างข้อความกับการ์ด */
+
+  /* ===== Card (พื้นขาว มุมโค้ง เงานุ่ม) ===== */
+  .innov-card{
+    position: relative;
+    border-radius: var(--innov-radius);
+    background: #fff;
+    border: var(--innov-border);
+    box-shadow: var(--innov-shadow);
+    overflow: hidden;
+    transition: box-shadow .35s ease, transform .35s ease;
+  }
+
+  /* 2 คอลัมน์: ข้อความกว้างกว่ารูปเล็กน้อย */
+  .innov-inner{
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: var(--gap-x);
+    padding: var(--innov-pad-y) var(--innov-pad-x);
+    align-items: center;
+  }
+
+  /* ===== Text ===== */
+  .innov-copy{ text-align: left; }
+
+  .innov-title{
+    font-weight: 800;
+    font-size: var(--title-size);
+    line-height: 1.25;
+    color: var(--title-color);
+    margin: 0 0 10px 0;
+  }
+
+  /* ทำให้คำอธิบายเว้นบรรทัดตามที่พิมพ์ใน WP */
+  .innov-desc p{
+    white-space: pre-line;           /* เคารพ \n จาก WordPress */
+    line-height: 1.7;
+    color: #374151;
+    font-size: clamp(15px, 1.6vw, 17px);
+    margin-top: 6px;
+  }
+
+  /* ===== Image zone (ไม่มี overlay — ใช้ blend ให้ดูโปร่ง) ===== */
+  .innov-media{
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 160px;
+  }
+
+  .innov-img{
+    position: relative; z-index: 1;
+    max-width: var(--img-max-w); max-height: var(--img-max-h);
+    width: auto; height: auto; object-fit: contain;
+    transition: all .5s cubic-bezier(.4,0,.2,1);
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,.12));
+    border-radius: 14px;
+    mix-blend-mode: multiply;  /* ให้กลืนพื้น */
+    opacity: .97;
+  }
+
+  /* Hover (ซูม + ring + shadow) */
+  .innov-card::after{
+    content:''; position:absolute; inset:0; border-radius:inherit;
+    pointer-events:none; opacity:0; box-shadow:0 0 0 0 var(--ring-color);
+    transition: opacity .35s ease, box-shadow .35s ease;
+  }
+  .innov-card:hover{
     transform: translateY(-4px) scale(1.01);
-    box-shadow: 
-      0 30px 60px -15px rgb(0 0 0 / 0.15),
-      0 0 0 1px rgb(6 182 212 / 0.1);
+    box-shadow: 0 30px 60px -15px rgba(0,0,0,.15),
+                0 0 0 1px rgba(6,182,212,.10);
+  }
+  .innov-card:hover::after{
+    opacity:1; box-shadow: 0 0 0 3px var(--ring-color) inset;
+  }
+  .group:hover .innov-img{
+    transform: scale(1.05);
+    filter: brightness(1.02) saturate(1.1) drop-shadow(0 10px 24px rgba(0,0,0,.16));
+    opacity: 1;
   }
 
-  /* Ensure good text contrast */
-  h3 {
-    color: rgb(17 24 39);
-  }
-
-  /* Mobile responsive */
-  @media (max-width: 640px) {
-    article {
-      padding-bottom: 1.5rem;
+  /* ===== จัดข้อความให้อยู่ซ้ายบน ===== */
+  @media (min-width: 1024px){
+    .innov-inner{ align-items: start !important; }
+    .innov-copy{
+      align-self: start !important;
+      justify-self: start !important;
+      margin-top: 0 !important;
+      padding-top: 8px;
+      text-align: left;
+    }
+    .innov-media{
+      align-self: start !important;
+      justify-content: flex-end;     /* รูปชิดขวา */
+      min-height: 0;
     }
   }
 
-  /* Subtle animation on load */
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  /* ลิงก์ทั้งใบ */
+  .innov-link{ position:absolute; inset:0; }
 
-  article {
-    animation: fadeInUp 0.6s ease-out forwards;
-    animation-fill-mode: both;
-  }
-
-  article:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-
-  /* Subtle gradient overlay for depth */
-  article::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      circle at 50% 0%,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.3) 100%
-    );
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  /* Image area subtle gradient */
-  .relative.z-0::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      circle at center,
-      transparent 40%,
-      rgba(255, 255, 255, 0.4) 100%
-    );
-    pointer-events: none;
+  /* Responsive */
+  @media (max-width: 1023.98px){
+    .innov-inner{ grid-template-columns: 1fr; gap: 18px; }
+    .innov-media{ justify-content: flex-start; }
+    .innov-img{ max-width: min(92%, 520px); max-height: 320px; }
   }
 </style>

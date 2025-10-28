@@ -62,12 +62,14 @@ try {
 } catch {}
 ---
 
-<section class={`section-padding ${sectionClass}`.trim()}>
+<section class={`section-padding-sm pt-0 pb-0 md:-mt-8 ${sectionClass}`.trim()}>
   <div class="container-primary">
-    <!-- หัวข้อขยาย -->
-    <div class="text-center mb-12 md:mb-16">
-      <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4">
-        {lang === "en" ? "Med Devices Standards & IP" : "มาตรฐานเครื่องมือแพทย์ & ทรัพย์สินทางปัญญา"}
+    <!-- หัวข้อ -->
+    <div class="text-center mb-6 md:mb-8">
+      <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 md:mb-4">
+        {lang === "en"
+          ? "Med Devices Standards & IP"
+          : "มาตรฐานเครื่องมือแพทย์ & ทรัพย์สินทางปัญญา"}
       </h2>
       <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
         {lang === "en"
@@ -77,12 +79,13 @@ try {
     </div>
 
     {imageUrl ? (
-      /* รูปเป็นกรอบเอง ไม่มี container ซ้อน */
       <figure class="max-w-full mx-auto">
         <img
           src={imageUrl}
           alt={imageAlt}
-          class="w-full h-auto rounded-3xl md:rounded-[40px] shadow-2xl max-h-[600px] md:max-h-[700px] lg:max-h-[800px] object-contain bg-white"
+          class="block w-full h-auto rounded-3xl md:rounded-[40px] shadow-2xl
+                 max-h-[600px] md:max-h-[700px] lg:max-h-[800px]
+                 object-contain bg-white"
           loading="lazy"
           decoding="async"
         />

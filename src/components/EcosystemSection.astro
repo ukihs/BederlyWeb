@@ -74,10 +74,10 @@ const HEIGHT =
 const TITLE = "text-2xl md:text-3xl lg:text-4xl";
 ---
 
-<section class={`${klass}`}>
+<section class={`eco-section ${klass}`}>
   <div class="container-primary">
     <!-- Card with sharp corners -->
-    <div class={`card relative overflow-hidden ${HEIGHT}`}>
+    <div class={`card relative overflow-hidden ${HEIGHT} z-[2]`}>
       {/* === รูป + Overlay ทั้งหมดอยู่ใน .clipper เพื่อกันล้นบนมือถือ === */}
       <div class="clipper absolute inset-0">
         {bgUrl ? (
@@ -111,7 +111,7 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";
             <h3
               class={`eco-title font-extrabold leading-tight text-white drop-shadow-lg text-center ${TITLE}
                        mx-auto max-w-4xl md:max-w-5xl`}
-              set:html={displayTitle}
+              set:html={title}
             />
           )}
         </div>
@@ -121,53 +121,103 @@ const TITLE = "text-2xl md:text-3xl lg:text-4xl";
 </section>
 
 <style>
+  /* ============================
+     Title handling
+     ============================ */
   @supports (text-wrap: balance) { .eco-title { text-wrap: balance; } }
   .eco-title { word-break: break-word; }
 
-  /* ขอบเหลี่ยม - ลบ border-radius ออกหมด */
-  .card {
-    border-radius: 0 !important;
-  }
+  /* ขอบเหลี่ยม - ลบบุ้มมุมทั้งหมดของการ์ด */
+  .card { border-radius: 0 !important; }
 
-  /* ===== MOBILE ONLY ===== */
+  /* ============================
+     Tight spacing like SmartBed
+     (ต้องใช้ร่วมกับ <section class="eco-section">)
+     ============================ */
+  /* Mobile: ตัด padding / margin ของ section และ container ให้ชิดสุด */
   @media (max-width: 767.98px) {
-    /* กันหน้าเพจเลื่อนไปด้านข้าง */
+    /* กันเพจล้นด้านข้าง */
     section, :global(body) { overflow-x: hidden !important; }
 
-    /* ตัวการ์ดไม่ให้รั่วเกินมุมโค้ง (iOS-safe) - เปลี่ยนเป็นขอบเหลี่ยม */
-    .card {
+    /* ตัว section และ container */
+    .eco-section {
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow-x: clip !important;
+    }
+    .eco-section > .container-primary {
+      padding: 0 0.5rem !important;   /* เท่ากับ smartbed-container */
+      margin: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* การ์ด: คุมให้คมและไม่ใส่เงา/รัศมีเกิน */
+    .eco-section .card {
       border-radius: 0 !important;
+      box-shadow: none !important;
       contain: layout paint;
       overflow: hidden;
     }
+
+    /* คลิปชั้นรูป/โอเวอร์เลย์ให้ไม่รั่ว */
     .clipper {
       border-radius: 0 !important;
       overflow: clip;
-      -webkit-mask-image: none; /* ไม่ต้อง mask เพราะเป็นขอบเหลี่ยม */
+      -webkit-mask-image: none;
       clip-path: none;
     }
 
-    /* ความสูงบนมือถือ */
+    /* ความสูงบนมือถือ (ลดจากคลาสยูทิลิตี้) */
     section .h-\[440px\] { height: 300px !important; }
     section .h-\[520px\] { height: 340px !important; }
     section .h-\[600px\] { height: 380px !important; }
 
-    /* รูปแบบ BG มือถือ */
+    /* BG มือถือ: cover + ตำแหน่งกลาง */
     .mobile-bg {
       background-size: cover !important;
       background-position: center 24% !important;
       background-repeat: no-repeat !important;
     }
 
-    /* ปิด object-fill เดิม */
+    /* ปิด object-fill เดิมให้เป็น cover */
     .object-fill { object-fit: cover !important; }
 
-    /* ตัวหนังสือให้อ่านง่าย */
+    /* ขนาดตัวหนังสือบนมือถือ */
     .eco-title {
       font-size: 1rem !important;
       line-height: 1.35 !important;
       padding: 0 1.25rem;
       max-width: 85% !important;
     }
+  }
+
+  /* Tablet: ตัดหัว และดึงขึ้นเล็กน้อย */
+  @media (min-width: 768px) {
+    .eco-section {
+      padding-top: 0 !important;         /* ตัดหัว */
+      margin-top: -1.25rem !important;   /* ≈ -20px */
+    }
+    .eco-section > .container-primary {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+  }
+
+  /* Desktop: ชิดมากขึ้น */
+  @media (min-width: 1024px) {
+    .eco-section { margin-top: -2.5rem !important; } /* ≈ -40px */
+  }
+
+  /* XL+: ถ้ายังอยากชิดอีกนิด (ปรับตัวเลขได้) */
+  @media (min-width: 1280px) {
+    .eco-section { margin-top: -3rem !important; }   /* ≈ -48px */
+  }
+
+  /* เผื่อกรณีดึงขึ้นแล้วเงาถูกครอบ */
+  .eco-section .card { z-index: 2; }
+
+  /* ตัวเลือกเสริม: โหมดชิดจัด — ใส่คลาส eco-tight เพิ่มที่ section */
+  @media (min-width: 1024px) {
+    .eco-section.eco-tight { margin-top: -3.5rem !important; } /* ≈ -56px */
   }
 </style>

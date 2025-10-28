@@ -1,4 +1,5 @@
 ---
+// src/components/Testimonials.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -61,44 +62,53 @@ const heading = lang === "en" ? "Testimonials" : "การรับรอง";
 const sub =
   lang === "en"
     ? "Our innovations are being recognized by reputable domestic and international organizations"
-    : "นวัตกรรมของเราได้รับการยอมรับจากองค์กรชั้นนำทั้งในและต่างประเทศ";
+    : "นวัตกรรมของเราได้รับการยอมรับ<br />จากองค์กรชั้นนำทั้งในและต่างประเทศ";
 ---
 
-<section class={`section-padding ${sectionClass}`.trim()}>
+<section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
-    <!-- หัวข้อ hardcode -->
-    <div class="mb-6">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{heading}</h2>
-      <p class="text-gray-600 mt-2">{sub}</p>
-    </div>
+    <!-- แถวหลัก: หัวข้ออยู่บน โลโก้อยู่ล่าง -->
+    <div class="md:col-span-12">
+      <div class="md:w-3/12">
+        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">{heading}</h2>
+        <p class="text-gray-600 mt-2 md:mt-2.5 leading-relaxed" set:html={sub}></p>
+      </div>
 
-    {logos.length === 0 ? (
-      <div class="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-gray-500">
-        {lang === "en" ? "No logos yet." : "ยังไม่มีโลโก้"}
-      </div>
-    ) : (
-      <div
-        class="grid gap-5 sm:gap-6 lg:gap-7
-               grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {logos.map((l) => {
-          const imgUrl = pickImageUrl(l?.featuredImage);
-          const alt = normalize(l?.featuredImage)?.altText || l?.title || "logo";
-          return (
-            <div class="rounded-2xl bg-white shadow-md ring-1 ring-black/5 p-6 flex items-center justify-center">
-              {imgUrl ? (
-                <img
-                  src={imgUrl}
-                  alt={alt}
-                  class="max-h-14 sm:max-h-16 md:max-h-20 object-contain"
-                  loading="lazy"
-                />
-              ) : (
-                <div class="h-14 sm:h-16 md:h-20 w-full bg-gray-100 rounded-md" />
-              )}
+      <!-- โลโก้อยู่ทางขวา -->
+      <div class="mt-8 md:mt-10 flex justify-end">
+        <div class="w-full md:w-10/12">
+          {logos.length === 0 ? (
+            <div class="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-gray-500 text-center">
+              {lang === "en" ? "No logos yet." : "ยังไม่มีโลโก้"}
             </div>
-          );
-        })}
+          ) : (
+            <div
+              class="grid gap-5 sm:gap-6 lg:gap-7
+                     grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            >
+              {logos.map((l) => {
+                const imgUrl = pickImageUrl(l?.featuredImage);
+                const alt = normalize(l?.featuredImage)?.altText || l?.title || "logo";
+                return (
+                  <div class="rounded-2xl bg-white shadow-md ring-1 ring-black/5
+                              flex items-center justify-center h-28 sm:h-32 md:h-36 px-6">
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt={alt}
+                        class="block max-h-full max-w-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div class="h-12 sm:h-14 md:h-16 w-full bg-gray-100 rounded-md" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    )}
+    </div>
   </div>
 </section>

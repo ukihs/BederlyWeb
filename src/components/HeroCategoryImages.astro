@@ -102,6 +102,7 @@ const grouped: any[] = [];
 for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 ---
 
+
 {grouped.length > 0 && (
   <section data-slider class={`hero-gallery-section relative ${klass} bg-transparent`}>
     <div class="relative pb-10 bg-transparent">
@@ -275,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
+/* ========== BASE STYLES ========== */
 [data-slider] { 
   position: relative; 
 }
@@ -302,7 +304,8 @@ button:focus-visible {
   top: 40% !important;
 }
 
-/* ===== MOBILE ONLY ===== */
+
+/* ========== MOBILE ONLY ========== */
 @media (max-width: 767.98px) {
   /* Section - ขยายเต็มจอ */
   .hero-gallery-section {
@@ -312,6 +315,9 @@ button:focus-visible {
     margin-right: calc(-50vw + 50%) !important;
     padding: 0 0.5rem !important;
     overflow-x: hidden !important;
+
+    /* ระยะระหว่างสไลด์ */
+    --slide-gap: 20px;
   }
 
   /* Inner wrapper */
@@ -337,26 +343,26 @@ button:focus-visible {
   #slides-container {
     display: flex !important;
     flex-wrap: nowrap !important;
-    gap: 0 !important;
+    gap: var(--slide-gap) !important;
     padding: 0 !important;
+    padding-left: calc(var(--slide-gap) / 2) !important;
+    padding-right: calc(var(--slide-gap) / 2) !important;
     margin: 0 !important;
     max-width: 100% !important;
   }
-  
+
   /* ทำลายโครง group */
-  .slide-group { 
-    display: contents !important; 
-  }
-  
-  .slide-group > div { 
-    display: contents !important; 
+  .slide-group,
+  .slide-group > div {
+    display: contents !important;
   }
 
   /* Card */
   .hero-card {
     min-width: 100% !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    width: calc(100% - var(--slide-gap)) !important;
+    max-width: calc(100% - var(--slide-gap)) !important;
+    flex: 0 0 calc(100% - var(--slide-gap)) !important;
     flex-shrink: 0 !important;
     padding: 0 !important;
     margin: 0 0 1rem 0 !important;
@@ -374,17 +380,17 @@ button:focus-visible {
     margin: 0 !important;
     padding: 0 !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   /* รูป */
   .hero-card .aspect-box > img {
     width: 100% !important;
-    max-width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
   }
 
-  /* Text */
+  /* ข้อความ */
   .hero-card > div:last-child {
     position: static !important;
     transform: none !important;
@@ -398,19 +404,106 @@ button:focus-visible {
   }
 
   /* ปุ่ม */
-  #prev-slide {
-    left: 1rem !important;
-    top: 25% !important;
+  #prev-slide { left: 1rem !important; top: 25% !important; }
+  #next-slide { right: 1rem !important; top: 25% !important; }
+
+  /* จุดล่าง */
+  #dots-container { bottom: 0.25rem !important; }
+
+  /* === FIX: ดัน Gallery (#gallery) ให้ชิด SmartBed บนมือถือ === */
+  section#smartbed,
+  #smartbed {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
   }
-  
+
+  section#gallery,
+  #gallery {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  #gallery .container-primary,
+  #gallery .container,
+  #gallery > div {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  #gallery .container-primary > *:first-child,
+  #gallery > *:first-child {
+    margin-top: 0 !important;
+  }
+
+  /* ถ้ายังไม่ชิดพอ ดันขึ้นอีกหน่อย */
+  #gallery {
+    margin-top: -12px !important; /* ปรับ -8 ถึง -20 ได้ */
+  }
+}
+
+
+/* ========== DESKTOP ONLY ========== */
+@media (min-width: 768px) {
+  /* อนุญาตให้ล้นออกด้านบนได้ */
+  .hero-gallery-section {
+    overflow: visible !important;
+    padding-top: 0 !important;
+  }
+
+  /* ชั้น wrapper ภายใน ให้ล้นได้เช่นกัน */
+  .hero-gallery-section > .relative {
+    overflow: visible !important;
+    padding-top: 0 !important;
+  }
+
+  /* ตัวสไลเดอร์ไม่ต้องมีเงา/กรอบ และปล่อยให้ล้น */
+  #hero-slider {
+    box-shadow: none !important;
+    border: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* การ์ดและกล่องรูป: ตัดพื้นหลัง/มุมโค้ง/เงา ออก */
+  .hero-card {
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  .hero-card .aspect-box {
+    background: transparent !important;
+    border-radius: 0 !important;
+  }
+
+  /* ดันรูปให้ทับขอบบนเล็กน้อย */
+  .hero-card .aspect-box > img {
+    transform: translateY(-22px) !important;
+  }
+
+  /* ปุ่มเลื่อน */
+  #prev-slide,
   #next-slide {
-    right: 1rem !important;
-    top: 25% !important;
+    top: 36% !important;
   }
-  
-  /* Dots */
-  #dots-container {
-    bottom: 0.25rem !important;
+
+  /* เผื่อมีเงา/เส้นจากธีมอื่น ให้ล้นสะอาด ๆ */
+  .hero-gallery-section,
+  .hero-gallery-section > .relative,
+  #hero-slider,
+  .hero-card {
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
+
+
+/* ========== DESKTOP: ระยะระหว่างกลุ่มสไลด์ ========== */
+@media (min-width: 768px) {
+  #slides-container .slide-group {
+    box-sizing: border-box;
+  }
+  #slides-container .slide-group + .slide-group {
+    border-left: 24px solid transparent; /* ปรับ 16–32px ได้ */
   }
 }
 </style>

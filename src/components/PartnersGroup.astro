@@ -1,15 +1,15 @@
 ---
-/* src/components/PartnersGroup.astro */
+// src/components/PartnersGroup.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
-  categorySlug: string;        // เช่น public-th / public-en / foundation-th ...
-  limit?: number;              // จำนวนสูงสุดที่ดึง (ดีฟอลต์ 20)
-  class?: string;              // คลาสของ section ภายนอก
-  showHeading?: boolean;       // แสดงหัวข้อใหญ่ Our Partners and Customers (ครั้งเดียวพอ)
-  sectionLabel?: string;       // หัวข้อย่อยของกลุ่ม เช่น "Public Organizations"
+  categorySlug: string;
+  limit?: number;
+  class?: string;
+  showHeading?: boolean;
+  sectionLabel?: string;
 }
 
 const {
@@ -21,7 +21,6 @@ const {
   sectionLabel = "",
 } = Astro.props;
 
-/* Query: ดึงโพสต์จากหมวดที่กำหนด */
 const POSTS_BY_CATEGORY = /* GraphQL */ `
   query PostsByCategory($slug: String!, $limit: Int) {
     posts(
@@ -32,10 +31,7 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
         id
         title
         featuredImage {
-          node {
-            altText
-            sourceUrl
-          }
+          node { altText sourceUrl }
         }
       }
     }
@@ -60,54 +56,68 @@ const bigTitle =
 
 const bigSubtitle =
   lang === "en"
-    ? "Our trusted partners who walk with us on this journey"
-    : "พันธมิตรที่เชื่อถือได้และเดินเคียงข้างเราตลอดเส้นทางนี้";
+    ? "Our trusted partners who walk<br />with us on this journey"
+    : "พันธมิตรที่เชื่อถือได้และเดินเคียงข้าง<br />เราตลอดเส้นทางนี้";
 ---
 
-<section class={`section-padding ${sectionClass}`.trim()}>
+<section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
-    <!-- หัวข้อใหญ่: แสดงเฉพาะเมื่อ showHeading = true -->
-    {showHeading && (
-      <div class="mb-10">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{bigTitle}</h2>
-        <p class="text-gray-600 mt-2">{bigSubtitle}</p>
+    <div class="md:col-span-12">
+      <!-- ซ้าย: แสดงเฉพาะหัวข้อใหญ่ -->
+      <div class="md:w-3/12">
+        {showHeading && (
+          <>
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+              {bigTitle}
+            </h2>
+            <p class="text-gray-600 mt-2 md:mt-2.5 leading-relaxed"set:html={bigSubtitle}></p>
+          </>
+        )}
       </div>
-    )}
 
-    <!-- หัวข้อย่อยของกลุ่ม (ถ้ามี) -->
-    {sectionLabel && (
-      <h3 class="text-xl font-semibold mb-4 text-gray-900">{sectionLabel}</h3>
-    )}
+      <!-- ขวา: กริดโลโก้ (และหัวข้อรองถ้ามี) -->
+      <div class="mt-6 md:mt-8 flex justify-end">
+        <div class="w-full md:w-10/12">
+          {sectionLabel && (
+            <h3 class="text-xl md:text-2xl font-semibold text-gray-900 leading-tight mb-3 md:mb-4">
+              {sectionLabel}
+            </h3>
+          )}
 
-    {posts.length === 0 ? (
-      <div class="rounded-xl border border-gray-200 bg-gray-50 p-6 text-gray-600">
-        {lang === "en" ? "No logos yet." : "ยังไม่มีโลโก้ในหมวดนี้"}
-      </div>
-    ) : (
-      <div
-        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6"
-        aria-label={sectionLabel || bigTitle}
-      >
-        {posts.map((p) => {
-          const imgUrl = pickImageUrl(p?.featuredImage);
-          return (
-            <div
-              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-5 flex items-center justify-center hover:shadow-md transition"
-            >
-              {imgUrl ? (
-                <img
-                  src={imgUrl}
-                  alt={p?.featuredImage?.node?.altText || p?.title || ""}
-                  class="max-h-16 md:max-h-20 object-contain w-full"
-                  loading="lazy"
-                />
-              ) : (
-                <span class="text-gray-400 text-sm">{p?.title || "No image"}</span>
-              )}
+          {posts.length === 0 ? (
+            <div class="rounded-2xl border border-gray-200 bg-gray-50 p-8 text-gray-600 text-center">
+              {lang === "en" ? "No logos yet." : "ยังไม่มีโลโก้ในหมวดนี้"}
             </div>
-          );
-        })}
+          ) : (
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6 lg:gap-7"
+              aria-label={sectionLabel || bigTitle}
+            >
+              {posts.map((p) => {
+                const imgUrl = pickImageUrl(p?.featuredImage);
+                return (
+                  <div
+                    class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5
+                           flex items-center justify-center h-28 sm:h-32 md:h-36 px-6
+                           hover:shadow-md transition"
+                  >
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt={p?.featuredImage?.node?.altText || p?.title || ""}
+                        class="block max-h-full max-w-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span class="text-gray-400 text-sm">{p?.title || "No image"}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    )}
+    </div>
   </div>
 </section>

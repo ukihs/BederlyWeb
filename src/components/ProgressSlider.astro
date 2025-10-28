@@ -1,5 +1,4 @@
 ---
-// src/components/ProgressCarousel.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -52,7 +51,6 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-/** แปลงเป็นข้อความล้วน เพื่อตัดพื้นหลัง/เส้นใต้จากปลั๊กอินต่าง ๆ */
 function htmlToPlainText(html: string): string {
   let s = html || "";
   s = s.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, "");
@@ -94,7 +92,7 @@ try {
 const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคืบหน้าล่าสุดของเรา";
 ---
 
-<section class={`section-padding ${sectionClass}`.trim()}>
+<section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
     <div class="mb-6">
       <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{sectionTitle}</h2>
@@ -116,17 +114,14 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
             return (
               <article class="snap-start shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
                 <div class="group block">
-                  {/* card */}
                   <div class="pcard rounded-[22px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white">
                     <div class="pcard-grid grid md:grid-cols-[1.05fr,1fr] items-stretch h-full">
-                      {/* ซ้าย: รูป — mobile ให้ชิดขอบ ไม่มีขาว */}
                       <figure class="media relative h-full overflow-hidden m-0">
                         {imgUrl ? (
                           <img src={imgUrl} alt={alt} class="block w-full h-full object-cover" loading="lazy" />
                         ) : (<div class="w-full h-full bg-gray-100" />)}
                       </figure>
 
-                      {/* ขวา: เนื้อหา + โลโก้ */}
                       <div class="flex h-full flex-col bg-[#40B4ED] text-white p-5 md:p-6 lg:p-7">
                         <h3 class="text-[16px] md:text-[18px] font-semibold mb-2 leading-tight">
                           {p?.title || ""}
@@ -139,10 +134,10 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
                         )}
 
                         {logos.length > 0 && (
-                          <div class="mt-4 md:mt-5 flex flex-wrap items-center gap-4 md:gap-5">
+                          <div class="logos-wrap mt-auto pt-4 md:pt-5 flex flex-wrap items-center gap-4 md:gap-5">
                             {logos.map((lg, i) => (
                               <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/95 shadow-sm grid place-items-center overflow-hidden" aria-label={`partner-logo-${i + 1}`}>
-                                <img src={lg.src} alt={lg.alt} class="max-w-[70%] max-h-[70%] object-contain" loading="lazy" />
+                                <img src={lg.src} alt={lg.alt} class="max-w-[90%] max-h-[95%] object-contain" loading="lazy" />
                               </div>
                             ))}
                           </div>
@@ -156,7 +151,6 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
           })}
         </div>
 
-        {/* ปุ่มเลื่อน */}
         <button id="progress-prev" class="absolute -left-3 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:shadow-md border text-gray-600" aria-label="Previous" type="button">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
         </button>
@@ -164,7 +158,6 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
         </button>
 
-        {/* จุดบอกตำแหน่ง */}
         <div id="progress-dots" class="mt-4 flex items-center justify-center gap-2"></div>
       </div>
     )}
@@ -172,40 +165,44 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
 </section>
 
 <style>
-  /* ซ่อนสกอร์ลบาร์แนวนอนของแทร็ค */
   .hide-scrollbar { scrollbar-width: none; }
   .hide-scrollbar::-webkit-scrollbar { height: 0; }
 
-  /* ให้กริดยืดเต็มการ์ดเสมอ (เพื่อ h-full ของรูป/คอนเทนต์ทำงาน) */
   .pcard { height: auto; }
   .pcard-grid { height: 100%; }
 
-  /* ===== MOBILE ONLY: ทำให้รูปชิดขอบการ์ด ไม่มีขอบขาว ===== */
+  /* ===== MOBILE ONLY ===== */
   @media (max-width: 767.98px) {
-    /* กันรั่ว + โค้งขอบแน่น */
+    /* รูปชิดขอบการ์ด */
     .pcard { overflow: hidden; border-radius: 22px; }
-
-    /* ลบ margin เริ่มต้นของ figure (บางเบราว์เซอร์ยังมี) */
     .pcard .media { margin: 0 !important; }
-
-    /* รูปเต็มกรอบ ไม่เหลือช่องว่าง */
     .pcard .media > img {
-      display: block;               /* ตัดช่องว่าง baseline */
+      display: block;
       width: 100% !important;
       height: 100% !important;
-      object-fit: cover !important; /* ครอบกรอบแบบไม่บี้ */
+      object-fit: cover !important;
     }
-
-    /* ป้องกันการ์ดโดน padding ภายในอื่น ๆ ทำให้เห็นขอบขาว */
     .pcard .pcard-grid { gap: 0 !important; }
-    /* ถ้าอยากบังคับอัตราส่วนภาพให้สูงขึ้นบนจอเล็ก: เปิดบรรทัดด้านล่างได้
-       .pcard .media { aspect-ratio: 16 / 9; }
-    */
+
+    /* โลโก้ให้อยู่ 'บรรทัดเดียว' และเลื่อนซ้าย-ขวาได้หากล้น */
+    .logos-wrap {
+      flex-wrap: nowrap !important;          /* ไม่ตัดบรรทัด */
+      overflow-x: auto !important;           /* เลื่อนแนวนอน */
+      -webkit-overflow-scrolling: touch;     /* เลื่อนลื่นบน iOS */
+      scrollbar-width: none;                 /* ซ่อนสกอร์ลบาร์ (Firefox) */
+      gap: 0.75rem !important;               /* ระยะห่างสม่ำเสมอ */
+      justify-content: center !important;    /* ถ้าไม่ล้น ให้อยู่กลาง */
+      padding-bottom: 0.5rem !important;
+    }
+    .logos-wrap::-webkit-scrollbar { display: none; } /* ซ่อนสกอร์ลบาร์ (WebKit) */
+
+    .logos-wrap > div {
+      flex: 0 0 auto !important;             /* คงขนาดโลโก้ไม่ย่อ */
+    }
   }
 </style>
 
 <script>
-  // ====== สไลด์ & ดอท ======
   const track = document.getElementById("progress-track");
   if (track) {
     const prev = document.getElementById("progress-prev");
@@ -237,7 +234,7 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
       const x = track.scrollLeft + slideWidth() / 2;
       const idx = Math.max(0, Math.min(slides.length - 1, Math.round(x / (slideWidth() + gap))));
       setActiveDot(idx);
-      syncHeights(); // รีไซส์ซ้ำเมื่อสไลด์เปลี่ยนวิวพอร์ต
+      syncHeights();
     };
 
     setActiveDot(0);
@@ -247,21 +244,16 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
     next?.addEventListener("click", () => track.scrollBy({ left: +(slideWidth() + gap), behavior: "smooth" }));
   }
 
-  // ====== ทำให้การ์ดทุกใบ "สูงเท่ากัน" ======
   const cards = Array.from(document.querySelectorAll('.pcard'));
   function syncHeights() {
     if (!cards.length) return;
-    // รีเซ็ตก่อนวัด
     cards.forEach(c => c.style.height = 'auto');
-    // วัดความสูงที่มากสุด
     let maxH = 0;
     cards.forEach(c => { const h = c.getBoundingClientRect().height; if (h > maxH) maxH = h; });
-    // ตั้งความสูงเท่ากันทุกใบ
     const px = Math.ceil(maxH) + 'px';
     cards.forEach(c => c.style.height = px);
   }
 
-  // เรียกหลังโหลด/เปลี่ยนขนาด/โหลดรูป/ฟอนต์
   window.addEventListener('load', syncHeights);
   window.addEventListener('resize', () => { clearTimeout(window.__pc_sync); window.__pc_sync = setTimeout(syncHeights, 120); });
   document.querySelectorAll('.pcard img').forEach(img => {

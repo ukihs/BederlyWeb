@@ -151,8 +151,8 @@ if (!foundSmartbedData) {
 }
 ---
 
-<!-- Smart Bed Section -->
-<section class="pt-12 md:pt-14 lg:pt-16 pb-2 md:pb-3 lg:pb-4 bg-white overflow-x-clip smartbed-section">
+<!-- Smart Bed Section - ไม่มี padding -->
+<section class="bg-white overflow-x-clip smartbed-section">
   <div class="container-primary smartbed-container">
     <div class="relative overflow-hidden shadow-2xl md:min-h-[680px] lg:min-h-[760px] smartbed-card">
 
@@ -179,7 +179,7 @@ if (!foundSmartbedData) {
             {smartbedTitle ||
               (lang === "en"
                 ? "Innovative Care for the Ones Your loved ones"
-                : <>นวัตกรรมดูแลสุขภาพ<br /> ของคนที่คุณรัก</>)}
+                : <>นวัตกรรมดูแลสุขภาพ <br /><span class="font-light">ของคนที่คุณรัก</span></>)}
           </h3>
 
           <p class="text-base md:text-lg/8 lg:text-xl/9 mb-10 opacity-95">
@@ -190,10 +190,18 @@ if (!foundSmartbedData) {
           </p>
           <a
             href="#footer"
-            class="inline-flex items-center gap-2 bg-white text-cyan-700 px-8 py-4 font-semibold text-lg hover:bg-gray-50 transition shadow-lg rounded-full"
+            class="group inline-flex items-center gap-3 px-8 py-4 rounded-full
+                     border-2 border-[#00D2E6] bg-white text-[#00D2E6]
+                    font-semibold text-lg shadow-md
+                    transition-all duration-300
+                    hover:bg-[#00D2E6] hover:text-white hover:shadow-lg"
           >
             {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </a>
@@ -213,7 +221,7 @@ if (!foundSmartbedData) {
             {smartbedTitle ||
               (lang === "en"
                 ? "Innovative Care for the Ones Your loved ones"
-                : <>นวัตกรรมดูแลสุขภาพ<br />ของคนที่คุณรัก</>)}
+                : <>นวัตกรรมดูแลสุขภาพ<br /><span class="thin">ของคนที่คุณรัก</span></>)}  
           </h3>
         </div>
 
@@ -260,21 +268,20 @@ if (!foundSmartbedData) {
     display: none;
   }
 
-  /* ===== MOBILE ONLY ===== */
 @media (max-width: 767.98px) {
-  /* Section - ไม่มี padding เลย */
+  /* Section - เพิ่มระยะห่างด้านบน */
   .smartbed-section {
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 1rem 0 0 0 !important; /* ✅ เพิ่มระยะห่างด้านบน 1rem */
   }
-  
+
   /* Container - padding 0.5rem เท่ากับ hero */
   .smartbed-container {
     padding: 0 0.5rem !important;
     margin: 0 !important;
     max-width: 100% !important;
   }
-  
+
   /* Card - กว้างเต็มที่ภายใน container */
   .smartbed-card {
     width: 100% !important;
@@ -305,6 +312,7 @@ if (!foundSmartbedData) {
   /* Mobile Header */
   .mobile-header {
     padding: 1.5rem 1rem 0.75rem !important;
+    margin-bottom: 0.75rem !important; /* ✅ เพิ่ม gap ด้านล่างหัวข้อ */
   }
 
   .mobile-title {
@@ -331,6 +339,7 @@ if (!foundSmartbedData) {
     align-items: center !important;
     justify-content: center !important;
     overflow: hidden !important;
+    margin-bottom: 0.75rem !important; /* ✅ เพิ่มช่องว่างหลังรูป */
   }
 
   .mobile-image {
@@ -344,6 +353,7 @@ if (!foundSmartbedData) {
   /* Mobile Text */
   .mobile-text {
     padding: 0.75rem 1rem !important;
+    margin-bottom: 1rem !important; /* ✅ เพิ่มช่องว่างก่อนปุ่ม */
   }
 
   .mobile-text p {
@@ -379,5 +389,6 @@ if (!foundSmartbedData) {
     transform: scale(0.98) !important;
   }
 }
+
   
 </style>

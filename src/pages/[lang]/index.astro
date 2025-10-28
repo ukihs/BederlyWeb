@@ -156,7 +156,7 @@ if (!foundData) {
     { lang: "en", url: "/en" },
   ]}
 >
-  <!-- Hero Section with Consistent Spacing -->
+  <!-- Hero Section - ไม่มี padding เลย -->
   <section class="relative mobile-safe">
     <div class="container-primary mobile-container">
       <div class="relative overflow-hidden overflow-x-clip shadow-2xl mobile-hero-wrapper">
@@ -220,43 +220,43 @@ if (!foundData) {
   </section>
 
   <!-- Smart Bed Section -->
-  <section id="smartbed" class="section-padding">
+  <section id="smartbed" class="section-padding pb-0 md:pb-16 mb-0 md:mb-16">
     <SmartBedSection lang={lang} />
   </section>
 
   <!-- Product Gallery -->
-  <section id="gallery" class="section-padding-sm">
+  <section id="gallery" class="section-padding-sm pt-0 md:pt-0 mt-[-20px] md:mt-0">
     <div class="container-primary">
       <HeroCategoryImages lang={lang} limit={9} />
     </div>
   </section>
 
   <!-- Functions -->
-  <section id="functions" class="section-padding">
+  <section id="functions" class="section-padding-sm pt-0 md:pt-4">
     <div class="container-primary">
       <FunctionSection lang={lang} limit={10} />
     </div>
   </section>
 
   <!-- Innovations -->
-  <section id="innovations" class="section-padding">
+  <section id="functions" class="section-padding-sm pb-0 pt-0 md:pt-4">
     <div class="container-primary">
       <InnovationsSection lang={lang} limit={6} />
     </div>
   </section>
 
   <!-- More Info -->
-  <section id="moreinfo" class="section-padding-sm">
+  <section id="more-info" class="section-padding-sm pb-0 pt-0 md:pt-4">
     <MoreInfoSection lang={lang} limit={2} />
   </section>
 
   <!-- About Bederly -->
-  <section id="about" class="section-padding">
+  <section id="functions" class="section-padding-sm pt-0 md:pt-4">
     <AboutBederly lang={lang} pageUriTH="/" pageUriEN="/en/welcome/" />
   </section>
 
   <!-- Ecosystem -->
-  <section id="ecosystem" class="section-padding">
+  <section id="ecosystem" class="section-padding-sm pt-0 md:pt-2 md:-mt-12">
     <EcosystemSection
       lang={lang}
       pageUriTH="/"
@@ -266,55 +266,56 @@ if (!foundData) {
   </section>
 
   <!-- Progress -->
-  <section id="progress" class="section-padding">
+  <section id="progress" class="section-padding-sm pt-0 md:pt-4">
     <ProgressSlider lang={lang} categorySlug={progressSlug} limit={6} />
   </section>
 
   <!-- Team -->
-  <section id="team" class="section-padding">
+  <section id="team" class="section-padding-sm pt-0 md:pt-4">
     <TeamSection lang={lang} categorySlug={teamSlug} />
   </section>
 
   <!-- Testimonials -->
-  <section id="testimonials" class="section-padding">
+  <section id="testimonials" class="section-padding-sm pt-0 md:pt-4">
     <Testimonials lang={lang} categorySlug={testimonialsSlug} />
   </section>
 
-  <!-- Partners -->
-  <section class="section-padding">
-    <div class="container-primary section-stack">
-      <PartnersGroup
-        lang={lang}
-        showHeading={true}
-        sectionLabel={lang === "en" ? "Public Organizations" : "องค์กรภาครัฐ"}
-        categorySlug={slug("public-th", "public-en")}
-      />
+ <!-- Partners -->
+  <section class="section-padding-sm pt-0 md:pt-4">
+  <!-- ห้ามใส่ container-primary ซ้อนที่นี่ -->
+  <PartnersGroup
+    lang={lang}
+    showHeading={true}
+    sectionLabel={lang === "en" ? "Public Organizations" : "องค์กรภาครัฐ"}
+    categorySlug={slug("public-th", "public-en")}
+  />
 
-      <PartnersGroup
-        lang={lang}
-        sectionLabel={lang === "en" ? "Foundations" : "มูลนิธิ"}
-        categorySlug={slug("foundations-th", "foundations-en")}
-      />
+  <PartnersGroup
+    lang={lang}
+    sectionLabel={lang === "en" ? "Foundations" : "มูลนิธิ"}
+    categorySlug={slug("foundations-th", "foundations-en")}
+  />
 
-      <PartnersGroup
-        lang={lang}
-        sectionLabel={lang === "en" ? "Companies" : "องค์กร"}
-        categorySlug={slug("companie-th", "companie-en")}
-      />
+  <PartnersGroup
+    lang={lang}
+    sectionLabel={lang === "en" ? "Companies" : "องค์กร"}
+    categorySlug={slug("companie-th", "companie-en")}
+  />
 
-      <PartnersGroup
-        lang={lang}
-        sectionLabel={lang === "en" ? "Educational Institutions" : "สถาบันการศึกษา"}
-        categorySlug={slug("education-th", "education-en")}
-      />
+  <PartnersGroup
+    lang={lang}
+    sectionLabel={lang === "en" ? "Educational Institutions" : "สถาบันการศึกษา"}
+    categorySlug={slug("education-th", "education-en")}
+  />
 
-      <PartnersGroup
-        lang={lang}
-        sectionLabel={lang === "en" ? "Hospital" : "โรงพยาบาล"}
-        categorySlug={slug("hospital-th", "hospital-en")}
-      />
-    </div>
-  </section>
+  <PartnersGroup
+    lang={lang}
+    sectionLabel={lang === "en" ? "Hospital" : "โรงพยาบาล"}
+    categorySlug={slug("hospital-th", "hospital-en")}
+  />
+</section>
+
+
 
   <!-- Medical IP -->
   <section id="medip" class="section-padding">
@@ -332,19 +333,57 @@ if (!foundData) {
   </section>
 </Layout>
 
-<style>
-  /* Enhanced text shadows for hero */
-  h1 {
-    text-shadow: 
-      0 2px 8px rgba(0, 0, 0, 0.4),
-      0 4px 16px rgba(0, 0, 0, 0.3),
-      0 8px 24px rgba(0, 0, 0, 0.2);
+
+<!-- ✅ ส่วนเพิ่มเฉพาะของ Desktop เพื่อจัดระยะ Hero / SmartBed / HeroCategory -->
+<style is:global>
+  /* -------------------------------
+     ตัวแปรระยะห่าง (ปรับได้ตามชอบ)
+  --------------------------------- */
+  :root {
+    --hero-gap-desktop: 28px;          /* ระยะระหว่าง Hero → SmartBed */
+    --gap-smartbed-gallery: 24px;      /* ระยะระหว่าง SmartBed → HeroCategory */
   }
-  
-  p {
-    text-shadow: 
-      0 1px 4px rgba(0, 0, 0, 0.3),
-      0 2px 8px rgba(0, 0, 0, 0.2);
+
+  /* -------------------------------
+     Desktop only (>=1024px)
+  --------------------------------- */
+  @media (min-width: 1024px) {
+
+    /* === HERO → SMARTBED === */
+    section.relative.mobile-safe + section#smartbed.section-padding {
+      padding-top: 0 !important;
+      margin-top: var(--hero-gap-desktop) !important;
+    }
+
+    /* ป้องกัน container ภายใน SmartBed ดันขึ้น */
+    section#smartbed.section-padding .container-primary {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+
+    /* === SMARTBED → HERO CATEGORY === */
+    /* ตัดระยะล่างของ SmartBed ออก */
+    section#smartbed.section-padding {
+      padding-bottom: 0 !important;
+      margin-bottom: 0 !important;
+    }
+
+    /* แล้วใส่ระยะคั่นให้ HeroCategory */
+    section#smartbed.section-padding + section#gallery.section-padding-sm {
+      padding-top: 0 !important;
+      margin-top: var(--gap-smartbed-gallery) !important;
+    }
+
+    /* ป้องกัน container ภายใน HeroCategory ดันขึ้นเอง */
+    section#gallery.section-padding-sm .container-primary {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+
+    /* กัน element แรกใน HeroCategory มี margin-top เอง */
+    section#gallery.section-padding-sm .container-primary > *:first-child {
+      margin-top: 0 !important;
+    }
   }
 
   /* ===== MOBILE ONLY FIXES ===== */

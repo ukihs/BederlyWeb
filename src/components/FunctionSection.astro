@@ -125,33 +125,107 @@ function getIconSvg(title = "") {
 </section>
 
 <style>
+  /* ===== Function Card ===== */
   .function-card {
     background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
     border-radius: 20px;
-    padding: 1.5rem;
+    padding: 1.75rem 1.5rem;
     box-shadow: 0 4px 6px rgba(0,0,0,.07);
     transition: all .3s ease;
-    min-height: 280px;
-    display: flex; flex-direction: column; align-items: left; text-align: left;
-    position: relative; overflow: hidden;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
   }
   .function-card::before {
-    content: ""; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%;
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
     background: radial-gradient(circle, rgba(255,255,255,.3) 0%, transparent 70%);
     pointer-events: none;
   }
-  .function-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,.12); }
+  .function-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,.12);
+  }
 
+  /* ===== Icon ===== */
   .function-icon-wrapper {
-    width: 60px; height: 60px; background: rgba(255,255,255,.9);
-    border-radius: 16px; display: flex; align-items: left; justify-content: left;
-    margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
+    width: 64px;
+    height: 64px;
+    background: rgba(255,255,255,0.92);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    overflow: hidden;
   }
-  .function-icon { color: #0891b2; display: flex; align-items: left; justify-content: left; }
+  .function-icon {
+    color: #0891b2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
+  /* ===== Text ===== */
   .function-title {
-    font-size: 1rem; font-weight: 600; color: #000000; margin-bottom: .75rem;
-    line-height: 1.4; min-height: 2.8rem; display: flex; align-items: left;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
   }
-  .function-description { font-size: .875rem; color: #075985; line-height: 1.6; opacity: .9; }
+  .function-description {
+    font-size: 0.9375rem; /* 15px */
+    color: #075985;
+    line-height: 1.7;
+    opacity: 0.9;
+    letter-spacing: 0.01em;
+    text-wrap: pretty;
+  }
+
+  /* ===== Alternate background shades ===== */
+  .function-card:nth-child(odd) {
+    background: linear-gradient(135deg, rgba(98,199,217,0.20) 0%, rgba(98,199,217,0.25) 100%);
+  }
+
+  .function-card:nth-child(even) {
+    background: linear-gradient(135deg, rgba(98,199,217,0.40) 0%, rgba(98,199,217,0.45) 100%);
+  }
+
+
+  /* ===== Layout Grid ===== */
+  .grid {
+    gap: 1.5rem;
+  }
+
+  /* ===== Responsive Fix ===== */
+  @media (max-width: 767px) {
+    .function-card {
+      min-height: 220px;
+      padding: 1.25rem;
+    }
+    .function-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      margin-bottom: 0.75rem;
+    }
+    .function-title {
+      font-size: 0.95rem;
+    }
+    .function-description {
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+  }
 </style>
