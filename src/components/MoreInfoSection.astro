@@ -1,4 +1,5 @@
 ---
+// src/components/MoreInfoSection.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -10,11 +11,13 @@ export interface Props {
 
 const { lang = "th", limit = 2, class: klass = "" } = Astro.props;
 
+/* ---------- หมวดหมู่ที่ใช้ค้นหา ---------- */
 const categoryCandidates =
   lang === "en"
     ? ["moreinfo-en", "moreinfo", "more-info", "Moreinfo"]
     : ["moreinfo-th", "moreinfo", "more-info", "Moreinfo"];
 
+/* ---------- GraphQL ---------- */
 const POSTS_BY_CATEGORY = /* GraphQL */ `
   query PostsByCategory($first: Int!, $category: String!) {
     posts(
@@ -41,16 +44,32 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
   }
 `;
 
+/* ---------- utils ---------- */
 function pickImageUrl(node?: any) {
   if (!node) return undefined;
   const sizes = node.mediaDetails?.sizes ?? [];
-  for (const n of ["2048x2048","1536x1536","large","medium_large","medium"]) {
-    const s = sizes.find((x:any)=>x?.name===n && x?.sourceUrl);
+  for (const n of ["2048x2048", "1536x1536", "large", "medium_large", "medium"]) {
+    const s = sizes.find((x: any) => x?.name === n && x?.sourceUrl);
     if (s) return rewriteWpUrl(s.sourceUrl);
   }
   return node.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
 }
 
+function stripTags(html: string = "") {
+  return html.replace(/<[^>]+>/g, " ");
+}
+
+function decodeEntities(s: string = "") {
+  return s
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+}
+
+/* ---------- ดึงข้อมูลจาก WP ---------- */
 let posts: any[] = [];
 
 for (const cat of categoryCandidates) {
@@ -64,19 +83,22 @@ for (const cat of categoryCandidates) {
   } catch {}
 }
 
+/* ---------- fallback ถ้าไม่มีข้อมูล ---------- */
 const fallbackCards = [
   {
     title: lang === "en" ? "For Businesses" : "สำหรับองค์กร",
     subtitle: "Mock text",
     href: "#",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop"
+    image:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop",
   },
   {
     title: lang === "en" ? "For Individuals" : "สำหรับบุคคลทั่วไป",
     subtitle: "Mock text",
     href: "#",
-    image: "https://images.unsplash.com/photo-1516617442634-75371039cb3c?q=80&w=1600&auto=format&fit=crop"
-  }
+    image:
+      "https://images.unsplash.com/photo-1516617442634-75371039cb3c?q=80&w=1600&auto=format&fit=crop",
+  },
 ];
 ---
 
@@ -89,43 +111,75 @@ const fallbackCards = [
     </div>
 
     <div class="grid md:grid-cols-2 gap-6">
-      {(posts.length ? posts : fallbackCards).slice().reverse().map((item) => {
-        const title = item.title;
-        const excerpt = item.excerpt
-          ? (item.excerpt as string).replace(/<[^>]+>/g, "").trim()
-          : (item.subtitle ?? "");
-        const href = item.uri ?? item.href ?? "#";
+      {(posts.length ? posts : fallbackCards)
+        .slice()
+        .reverse()
+        .map((item) => {
+          const title = item.title;
+          const excerpt = item.excerpt
+            ? decodeEntities(stripTags(item.excerpt)).trim()
+            : item.subtitle ?? "";
+          const href = item.uri ?? item.href ?? "#";
 
-        const imgNode = item.featuredImage?.node;
-        const img = imgNode ? pickImageUrl(imgNode) : item.image;
+          const imgNode = item.featuredImage?.node;
+          const img = imgNode ? pickImageUrl(imgNode) : item.image;
 
-        return (
-          <a href={href} class="group relative overflow-hidden shadow-xl block">
-            <div class="relative aspect-[16/9]">
-              <img
-                src={img}
-                alt={imgNode?.altText || title}
-                class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                decoding="async"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div class="absolute inset-0 flex flex-col justify-end p-6">
-                <div class="flex items-center gap-3 text-white font-bold">
-                  <h3 class="text-2xl md:text-3xl">{title}</h3>
-                  <svg class="w-6 h-6 translate-x-0 group-hover:translate-x-1 transition-transform"
-                       viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                  </svg>
+          return (
+            <a href={href} class="relative overflow-hidden shadow-xl block group">
+              <div class="relative aspect-[16/9]">
+                <img
+                  src={img}
+                  alt={imgNode?.altText || title}
+                  class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 "
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                <div class="absolute inset-0 flex flex-col justify-end p-6">
+                  {/* Title + Arrow */}
+                  <div class="flex items-center gap-3 text-white font-bold">
+                    <h3 class="text-2xl md:text-3xl">{title}</h3>
+                    <svg
+                      class="w-6 h-6 transition-transform duration-300 "
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Excerpt ใต้ Title */}
+                  {excerpt && (
+                    <p class="mt-2 text-sm md:text-base text-white/85 mi-excerpt">
+                      {excerpt}
+                    </p>
+                  )}
                 </div>
-                {excerpt && (
-                  <p class="mt-1 text-base md:text-lg text-white/85">{excerpt}</p>
-                )}
               </div>
-            </div>
-          </a>
-        );
-      })}
+            </a>
+          );
+        })}
     </div>
   </div>
 </section>
+
+<style>
+/* ตัดบรรทัด excerpt ไม่ให้ล้น */
+.mi-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .mi-excerpt {
+    -webkit-line-clamp: 3;
+  }
+}
+</style>

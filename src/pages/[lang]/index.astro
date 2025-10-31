@@ -11,6 +11,7 @@ import ServicesSection from "../../components/ServicesSection.astro";
 import TeamSection from "../../components/TeamSection.astro";
 import Testimonials from "../../components/Testimonials.astro";
 import Footer from "../../components/Footer.astro";
+import HeroTopSlider from "../../components/HeroTopSlider.astro";
 import ProgressSlider from "../../components/ProgressSlider.astro";
 import DownloadSection from "../../components/DownloadSection.astro";
 import MoreInfoSection from "../../components/MoreInfoSection.astro";
@@ -156,69 +157,13 @@ if (!foundData) {
     { lang: "en", url: "/en" },
   ]}
 >
-  <!-- Hero Section - ไม่มี padding เลย -->
-  <section class="relative mobile-safe">
-    <div class="container-primary mobile-container">
-      <div class="relative overflow-hidden overflow-x-clip shadow-2xl mobile-hero-wrapper">
-        {heroImgUrl ? (
-          <div class="relative mobile-hero-image">
-            <img
-              src={heroImgUrl}
-              alt=""
-              class="block w-full h-auto mobile-hero-img"
-              loading="eager"
-              decoding="async"
-            />
-            
-            <!-- Text Overlay -->
-            <div class="absolute inset-0 flex items-end">
-              <div class="w-full px-responsive pb-8 sm:pb-12 md:pb-16 lg:pb-20">
-                <div class="max-w-3xl mobile-hero-content">
-                  <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 
-                             font-bold text-white leading-tight mb-3 sm:mb-4 text-shadow-lg
-                             mobile-hero-title">
-                    {heroTitle.split('\n').map((line, i) => (
-                      <Fragment>
-                        {line}
-                        {i < heroTitle.split('\n').length - 1 && <br />}
-                      </Fragment>
-                    ))}
-                  </h1>
-                  {heroSubtitle && (
-                    <p class="text-base sm:text-lg md:text-xl lg:text-2xl 
-                              text-white/90 leading-relaxed max-w-2xl text-shadow-md
-                              mobile-hero-subtitle">
-                      {heroSubtitle}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div class="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] 
-                      bg-gradient-to-br from-cyan-500 to-blue-600 mobile-hero-fallback">
-            <div class="absolute inset-0 flex items-end">
-              <div class="w-full px-responsive pb-8 sm:pb-12 md:pb-16 lg:pb-20">
-                <div class="max-w-3xl mobile-hero-content">
-                  <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 
-                             font-bold text-white leading-tight mb-3 sm:mb-4 mobile-hero-title">
-                    {lang === "en" ? "Smart Bed Innovation" : "นวัตกรรมเตียงอัจฉริยะ"}
-                  </h1>
-                  <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 leading-relaxed mobile-hero-subtitle">
-                    {lang === "en" 
-                      ? "Advanced care solutions for better health" 
-                      : "โซลูชันการดูแลขั้นสูงเพื่อสุขภาพที่ดีขึ้น"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  </section>
-
+  <HeroTopSlider
+    lang={lang}
+    heroTitle={heroTitle}
+    heroSubtitle={heroSubtitle}
+    fallbackImg={heroImgUrl}
+  />
+  
   <!-- Smart Bed Section -->
   <section id="smartbed" class="section-padding pb-0 md:pb-16 mb-0 md:mb-16">
     <SmartBedSection lang={lang} />

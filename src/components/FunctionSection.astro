@@ -4,7 +4,6 @@ import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
-  // ไม่จำเป็นต้องส่ง categorySlug แล้ว แต่ยังรองรับไว้เผื่อใช้ภายหลัง
   categorySlug?: string;
   limit?: number;
   class?: string;
@@ -16,16 +15,11 @@ const {
   class: klass = "",
 } = Astro.props;
 
-// ใช้หมวดเฉพาะภาษาตามโครงสร้างที่คุณตั้งใน WP: function-th / function-en
 const resolvedCategory = lang === "en" ? "function-en" : "function-th";
 
 let posts: any[] = [];
-let debugInfo: any = {
-  lang,
-  resolvedCategory,
-};
+let debugInfo: any = { lang, resolvedCategory };
 
-/* ===== Strict query by category slug ===== */
 const POSTS_BY_CATEGORY = /* GraphQL */ `
   query PostsByCategory($first: Int!, $category: String!) {
     posts(
@@ -45,9 +39,7 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
           node {
             sourceUrl
             altText
-            mediaDetails {
-              sizes { name width height sourceUrl }
-            }
+            mediaDetails { sizes { name width height sourceUrl } }
           }
         }
       }
@@ -66,7 +58,7 @@ try {
   debugInfo.error = String(e);
 }
 
-/* ===== helpers ===== */
+/* helpers */
 function bestImage(node?: any): string | undefined {
   if (!node) return;
   const sizes = node.mediaDetails?.sizes ?? [];
@@ -78,7 +70,6 @@ function bestImage(node?: any): string | undefined {
   return node?.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
 }
 
-// ฟอลแบ็กไอคอนง่ายๆ (ถ้าโพสต์ไม่มีรูป)
 function getIconSvg(title = "") {
   const t = title.toLowerCase();
   if (t.includes("tilt") || t.includes("เอียง")) {
@@ -97,9 +88,7 @@ function getIconSvg(title = "") {
 <section class={`relative ${klass}`}>
   <div class="text-left mb-12">
     <h2 class="text-3xl md:text-5xl font-bold text-gray-900 leading-snug">
-      {lang === "en"
-        ? <>Functions for Your Convenience</>
-        : <>ฟังก์ชันเพื่อความสะดวก</>}
+      {lang === "en" ? <>Functions for Your Convenience</> : <>ฟังก์ชันเพื่อความสะดวก</>}
     </h2>
   </div>
 
@@ -110,7 +99,9 @@ function getIconSvg(title = "") {
         <article class="function-card">
           <div class="function-icon-wrapper">
             {imgUrl ? (
-              <img src={imgUrl} alt={post?.featuredImage?.node?.altText || post.title} class="w-full h-full object-contain rounded-lg" loading="lazy" />
+              <img src={imgUrl} alt={post?.featuredImage?.node?.altText || post.title}
+                   class="w-full h-full object-contain rounded-lg"
+                   loading="lazy" draggable="false" />
             ) : (
               <div class="function-icon" set:html={getIconSvg(post.title)} />
             )}
@@ -121,17 +112,17 @@ function getIconSvg(title = "") {
       );
     })}
   </div>
-
 </section>
 
 <style>
-  /* ===== Function Card ===== */
+  /* ===== Function Card (STATIC / no hover) ===== */
   .function-card {
     background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
     border-radius: 20px;
     padding: 1.75rem 1.5rem;
     box-shadow: 0 4px 6px rgba(0,0,0,.07);
-    transition: all .3s ease;
+    transform: none;                 /* คงที่ */
+    transition: none;                /* ปิดแอนิเมชันทั้งหมด */
     min-height: 260px;
     display: flex;
     flex-direction: column;
@@ -139,6 +130,7 @@ function getIconSvg(title = "") {
     text-align: left;
     position: relative;
     overflow: hidden;
+    cursor: default;                 /* ดูเป็นชิ้นนิ่ง */
   }
   .function-card::before {
     content: "";
@@ -150,9 +142,10 @@ function getIconSvg(title = "") {
     background: radial-gradient(circle, rgba(255,255,255,.3) 0%, transparent 70%);
     pointer-events: none;
   }
+  /* ยกเลิกเอฟเฟกต์ยกการ์ด/เงาเวลา hover */
   .function-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0,0,0,.12);
+    transform: none !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,.07) !important;
   }
 
   /* ===== Icon ===== */
@@ -168,12 +161,7 @@ function getIconSvg(title = "") {
     box-shadow: 0 2px 8px rgba(0,0,0,.08);
     overflow: hidden;
   }
-  .function-icon {
-    color: #0891b2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  .function-icon { color: #0891b2; display: flex; align-items: center; justify-content: center; }
 
   /* ===== Text ===== */
   .function-title {
@@ -186,7 +174,7 @@ function getIconSvg(title = "") {
     letter-spacing: 0.01em;
   }
   .function-description {
-    font-size: 0.9375rem; /* 15px */
+    font-size: 0.9375rem;
     color: #075985;
     line-height: 1.7;
     opacity: 0.9;
@@ -194,38 +182,18 @@ function getIconSvg(title = "") {
     text-wrap: pretty;
   }
 
-  /* ===== Alternate background shades ===== */
-  .function-card:nth-child(odd) {
-    background: linear-gradient(135deg, rgba(98,199,217,0.20) 0%, rgba(98,199,217,0.25) 100%);
-  }
-
-  .function-card:nth-child(even) {
-    background: linear-gradient(135deg, rgba(98,199,217,0.40) 0%, rgba(98,199,217,0.45) 100%);
-  }
-
+  /* ===== Alternate background shades (คงเดิม) ===== */
+  .function-card:nth-child(odd)  { background: linear-gradient(135deg, rgba(98,199,217,0.20) 0%, rgba(98,199,217,0.25) 100%); }
+  .function-card:nth-child(even) { background: linear-gradient(135deg, rgba(98,199,217,0.40) 0%, rgba(98,199,217,0.45) 100%); }
 
   /* ===== Layout Grid ===== */
-  .grid {
-    gap: 1.5rem;
-  }
+  .grid { gap: 1.5rem; }
 
   /* ===== Responsive Fix ===== */
   @media (max-width: 767px) {
-    .function-card {
-      min-height: 220px;
-      padding: 1.25rem;
-    }
-    .function-icon-wrapper {
-      width: 56px;
-      height: 56px;
-      margin-bottom: 0.75rem;
-    }
-    .function-title {
-      font-size: 0.95rem;
-    }
-    .function-description {
-      font-size: 0.875rem;
-      line-height: 1.6;
-    }
+    .function-card { min-height: 220px; padding: 1.25rem; }
+    .function-icon-wrapper { width: 56px; height: 56px; margin-bottom: 0.75rem; }
+    .function-title { font-size: 0.95rem; }
+    .function-description { font-size: 0.875rem; line-height: 1.6; }
   }
 </style>

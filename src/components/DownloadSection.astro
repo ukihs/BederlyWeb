@@ -1,5 +1,4 @@
 ---
-/* src/components/DownloadCTA_Band.astro */
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -59,22 +58,16 @@ try {
   post = res?.posts?.nodes?.[0];
 } catch {}
 
-/** Title:
- * - รับจาก WP (อนุญาตเขียน | หรือขึ้นบรรทัดใหม่ใน WP)
- * - ถ้าไม่มี ใช้ fallback 3 บรรทัด
- */
 const rawTitle =
   (post?.title as string) ||
   (lang === "en"
     ? "Download|the Bederly PHR App|to track your health"
     : "ดาวน์โหลด|Bederly PHR|เพื่อติดตามสุขภาพของคุณ");
 
-/** สำหรับแสดงผล: ใช้ <br/> */
 const titleHtml = rawTitle
   .replace(/\r\n|\r|\n/g, "<br/>")
   .replace(/\s*\|\s*/g, "<br/>");
 
-/** สำหรับ alt / ข้อความ plain: เอา <br/> ออกเป็นเว้นวรรค */
 const titlePlain = rawTitle
   .replace(/\r\n|\r|\n/g, " ")
   .replace(/\s*\|\s*/g, " ")
@@ -85,40 +78,36 @@ const imgUrl   = pickImageUrl(post?.featuredImage);
 const imgAlt   = normalize(post?.featuredImage)?.altText || titlePlain;
 
 const googlePlay = "https://play.google.com/store/apps/details?id=com.bederly.phr";
-const appStore   = "https://apps.apple.com/th/app/id0000000000";
+const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
 ---
 
 <section class={`relative isolate py-14 md:py-16 lg:py-20 mobile-section ${sectionClass}`.trim()}>
-  <!-- แถบพื้นหลังฟ้าไล่เฉด: สี่เหลี่ยมคม -->
   <div
     class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-0
            h-[300px] sm:h-[340px] lg:h-[380px]
-           bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-400
-           mobile-blue-bg">
+           bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-400 mobile-blue-bg">
   </div>
 
   <!-- Desktop -->
   <div class="container-primary relative z-10 hidden md:block">
     <div class="grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
-      <!-- รูป -->
       <div class="order-1 md:order-none">
         {imgUrl ? (
           <div class="inline-block p-3">
             <img
               src={imgUrl}
               alt={imgAlt}
-              class="w-full max-w-[800px] h-[320px] sm:h-[380px] md:h-[420px] lg:h-[460px] object-contain scale-150"
+              class="w-full max-w-[800px] h-[420px] object-contain scale-150"
               loading="lazy"
             />
           </div>
         ) : (
-          <div class="h-[320px] sm:h-[360px] md:h-[420px] grid place-content-center text-white/80">
+          <div class="h-[420px] grid place-content-center text-white/80">
             {lang === "en" ? "Add a featured image to the Download post" : "เพิ่มรูป Featured Image ในโพสต์ Download"}
           </div>
         )}
       </div>
 
-      <!-- ข้อความ + ปุ่ม -->
       <div class="text-white text-center">
         <h2
           class="font-extrabold leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
@@ -132,25 +121,24 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
           />
         )}
 
+        <!-- ปุ่มสโตร์ (Desktop) -->
         <div class="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-5">
-          <!-- Google Play -->
           <a
             href={googlePlay}
             target="_blank" rel="noopener"
-            class="store-badge inline-flex items-center rounded-xl bg-white text-gray-900 px-6 py-3.5 shadow hover:shadow-md transition"
+            class="store-badge badge-invert inline-flex items-center justify-center rounded-xl bg-white text-gray-900 shadow transition"
             aria-label="Get it on Google Play"
           >
-            <img src="/blackgoogleplay.png" alt="Google Play" class="h-8 sm:h-9 w-auto mr-3" />
+            <img src="/blackgoogleplay.png" alt="Google Play" class="h-10 w-auto" />
           </a>
 
-          <!-- App Store -->
           <a
             href={appStore}
             target="_blank" rel="noopener"
-            class="store-badge inline-flex items-center rounded-xl bg-white text-gray-900 px-6 py-3.5 shadow hover:shadow-md transition"
+            class="store-badge badge-invert inline-flex items-center justify-center rounded-xl bg-white text-gray-900 shadow transition"
             aria-label="Download on the App Store"
           >
-            <img src="/apple.png" alt="App Store" class="h-8 sm:h-9 w-auto mr-3" />
+            <img src="/apple.png" alt="App Store" class="h-10 w-auto" />
           </a>
         </div>
       </div>
@@ -168,13 +156,13 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
         </div>
       )}
 
-      <!-- ปุ่ม -->
+      <!-- ปุ่มบนมือถือ -->
       <div class="absolute top-4 right-4 z-30 flex flex-col gap-3 mobile-buttons-overlay">
-        <a href={googlePlay} target="_blank" rel="noopener" class="store-badge w-full max-w-[120px]" aria-label="Get it on Google Play">
-          <img src="/blackgoogleplay.png" alt="Google Play" class="w-full h-auto" />
+        <a href={googlePlay} target="_blank" rel="noopener" class="store-badge badge-invert w-full max-w-[140px] h-[50px] flex items-center justify-center" aria-label="Get it on Google Play">
+          <img src="/blackgoogleplay.png" alt="Google Play" class="w-auto h-8" />
         </a>
-        <a href={appStore} target="_blank" rel="noopener" class="store-badge w-full max-w-[120px]" aria-label="Download on the App Store">
-          <img src="/apple.png" alt="App Store" class="w-full h-auto" />
+        <a href={appStore} target="_blank" rel="noopener" class="store-badge badge-invert w-full max-w-[140px] h-[50px] flex items-center justify-center" aria-label="Download on the App Store">
+          <img src="/apple.png" alt="App Store" class="w-auto h-8" />
         </a>
       </div>
     </div>
@@ -183,10 +171,47 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
 
 <style>
   .prose :where(p){ margin: .45rem 0; }
-  .store-badge { will-change: transform, box-shadow; }
-  .store-badge:hover { transform: translateY(-1.5px); }
 
-  /* Mobile-specific */
+  /* ========== ปรับขนาดปุ่มให้เท่ากันทุกอัน ========== */
+  .store-badge {
+    width: 200px;
+    height: 60px;
+    padding: 0;
+    border-radius: 40px;
+    will-change: transform, box-shadow;
+    transition: background-color .25s ease, color .25s ease, transform .2s ease;
+  }
+
+  /* ========== เอฟเฟกต์สลับขาว–ดำตอน hover ========== */
+  .badge-invert {
+    background-color: #ffffff;
+    color: #111827;
+  }
+
+  .badge-invert img {
+    transition: filter .25s ease;
+  }
+
+  .badge-invert:hover {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  .badge-invert:hover img {
+    filter: invert(1) brightness(1.05) contrast(1.05);
+  }
+
+  @media (hover:none) and (pointer:coarse) {
+    .badge-invert:active {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+    }
+    .badge-invert:active img {
+      filter: invert(1) brightness(1.05) contrast(1.05);
+    }
+  }
+
+  /* ========== มือถือ ========== */
   @media (max-width: 767.98px) {
     .mobile-section {
       padding-top: 0 !important;
@@ -194,62 +219,36 @@ const appStore   = "https://apps.apple.com/th/app/id0000000000";
       overflow-x: hidden !important;
       max-width: 100vw !important;
     }
-    .mobile-blue-bg {
-      height: 420px !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      transform: none !important;
-      width: 100% !important;
-      margin-left: 0 !important;
-      overflow: hidden !important;
-    }
+
     .mobile-wrapper {
       width: 100% !important;
-      max-width: 100% !important;
       overflow: hidden !important;
       position: relative !important;
     }
+
     .mobile-image-container {
       min-height: 420px;
-      padding: 0 !important;
-      width: 100% !important;
-      max-width: 100% !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      overflow: hidden !important;
       position: relative !important;
-      z-index: 10 !important;
-      contain: layout paint !important;
     }
+
     .mobile-full-image {
       width: 100% !important;
-      max-width: 100% !important;
-      height: auto !important;
       object-fit: contain !important;
       transform: scale(1.4) !important;
-      transform-origin: center !important;
-      padding: 0 !important;
-      margin: 0 !important;
     }
 
     .mobile-buttons-overlay .store-badge {
-      display: block !important;
       background: white !important;
-      border-radius: 12px !important;
-      padding: 0.5rem !important;
+      border-radius: 14px !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
       transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }
     .mobile-buttons-overlay .store-badge:active {
       transform: scale(0.95) !important;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-    }
-    .mobile-buttons-overlay .store-badge img {
-      display: block !important;
-      width: 100% !important;
-      height: auto !important;
     }
   }
 </style>

@@ -101,7 +101,7 @@ try {
         const src = pickImageUrl(img);
 
         return (
-          <article class="innov-card group">
+          <article class="innov-card">
             <div class="innov-inner">
               {/* LEFT: Text */}
               <div class="innov-copy">
@@ -118,13 +118,11 @@ try {
                     class="innov-img"
                     loading="lazy"
                     decoding="async"
+                    draggable="false"
                   />
                 </div>
               )}
             </div>
-
-            {/* clickable whole card */}
-            <a href={p.uri || `/${lang}/${p.slug}`} class="innov-link" aria-label="Open innovation"></a>
           </article>
         );
       })}
@@ -139,7 +137,6 @@ try {
 </section>
 
 <style>
-  /* เนื้อหาในย่อหน้า */
   .prose :where(p){
     margin: .45rem 0;
     line-height: 1.6;
@@ -157,14 +154,12 @@ try {
     --gap-x: clamp(20px, 3vw, 40px);
     --img-max-w: clamp(260px, 36vw, 460px);
     --img-max-h: clamp(200px, 34vw, 360px);
-    --ring-color: rgba(6, 182, 212, .45);
   }
 
-  /* ===== Section spacing: ดันการ์ดให้ชิดข้อความด้านบนอย่างพอดี ===== */
   .innov-section{ margin-top: 0 !important; padding-top: 0 !important; }
-  .innov-grid{ margin-top: 1.25rem !important; } /* ช่องไฟเล็กๆ ระหว่างข้อความกับการ์ด */
+  .innov-grid{ margin-top: 1.25rem !important; }
 
-  /* ===== Card (พื้นขาว มุมโค้ง เงานุ่ม) ===== */
+  /* ===== Card: STATIC (no hover) ===== */
   .innov-card{
     position: relative;
     border-radius: var(--innov-radius);
@@ -172,10 +167,16 @@ try {
     border: var(--innov-border);
     box-shadow: var(--innov-shadow);
     overflow: hidden;
-    transition: box-shadow .35s ease, transform .35s ease;
+    /* ปิดทุกการแอนิเมชัน/เอฟเฟกต์ */
+    transform: none !important;
+    transition: none !important;
+  }
+  .innov-card::after{ content: none !important; }       /* ไม่ให้มี ring ตอน hover */
+  .innov-card:hover{                                     /* กัน hover ใดๆ */
+    transform: none !important;
+    box-shadow: var(--innov-shadow) !important;
   }
 
-  /* 2 คอลัมน์: ข้อความกว้างกว่ารูปเล็กน้อย */
   .innov-inner{
     display: grid;
     grid-template-columns: 1.15fr 1fr;
@@ -184,7 +185,6 @@ try {
     align-items: center;
   }
 
-  /* ===== Text ===== */
   .innov-copy{ text-align: left; }
 
   .innov-title{
@@ -195,16 +195,14 @@ try {
     margin: 0 0 10px 0;
   }
 
-  /* ทำให้คำอธิบายเว้นบรรทัดตามที่พิมพ์ใน WP */
   .innov-desc p{
-    white-space: pre-line;           /* เคารพ \n จาก WordPress */
+    white-space: pre-line;
     line-height: 1.7;
     color: #374151;
     font-size: clamp(15px, 1.6vw, 17px);
     margin-top: 6px;
   }
 
-  /* ===== Image zone (ไม่มี overlay — ใช้ blend ให้ดูโปร่ง) ===== */
   .innov-media{
     position: relative;
     display: flex; align-items: center; justify-content: center;
@@ -215,34 +213,18 @@ try {
     position: relative; z-index: 1;
     max-width: var(--img-max-w); max-height: var(--img-max-h);
     width: auto; height: auto; object-fit: contain;
-    transition: all .5s cubic-bezier(.4,0,.2,1);
+    /* ปิดการซูม/เฟดตอน hover */
+    transition: none !important;
+    transform: none !important;
     filter: drop-shadow(0 8px 20px rgba(0,0,0,.12));
     border-radius: 14px;
-    mix-blend-mode: multiply;  /* ให้กลืนพื้น */
+    mix-blend-mode: multiply;
     opacity: .97;
   }
 
-  /* Hover (ซูม + ring + shadow) */
-  .innov-card::after{
-    content:''; position:absolute; inset:0; border-radius:inherit;
-    pointer-events:none; opacity:0; box-shadow:0 0 0 0 var(--ring-color);
-    transition: opacity .35s ease, box-shadow .35s ease;
-  }
-  .innov-card:hover{
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 30px 60px -15px rgba(0,0,0,.15),
-                0 0 0 1px rgba(6,182,212,.10);
-  }
-  .innov-card:hover::after{
-    opacity:1; box-shadow: 0 0 0 3px var(--ring-color) inset;
-  }
-  .group:hover .innov-img{
-    transform: scale(1.05);
-    filter: brightness(1.02) saturate(1.1) drop-shadow(0 10px 24px rgba(0,0,0,.16));
-    opacity: 1;
-  }
+  /* ยกเลิก selector ที่เคยทำงานตอน hover ของกลุ่ม */
+  .group:hover .innov-img{ transform: none !important; filter: drop-shadow(0 8px 20px rgba(0,0,0,.12)) !important; opacity: .97 !important; }
 
-  /* ===== จัดข้อความให้อยู่ซ้ายบน ===== */
   @media (min-width: 1024px){
     .innov-inner{ align-items: start !important; }
     .innov-copy{
@@ -254,15 +236,13 @@ try {
     }
     .innov-media{
       align-self: start !important;
-      justify-content: flex-end;     /* รูปชิดขวา */
+      justify-content: flex-end;
       min-height: 0;
     }
   }
 
-  /* ลิงก์ทั้งใบ */
-  .innov-link{ position:absolute; inset:0; }
+  .innov-link{ position:absolute; inset:0; } /* ยังคลิกได้ทั้งใบ */
 
-  /* Responsive */
   @media (max-width: 1023.98px){
     .innov-inner{ grid-template-columns: 1fr; gap: 18px; }
     .innov-media{ justify-content: flex-start; }

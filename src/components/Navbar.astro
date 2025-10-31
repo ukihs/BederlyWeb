@@ -17,123 +17,76 @@ function altUrl(target: "th" | "en") {
   return `/${target}`;
 }
 
-const T = (en:string, th:string) => (lang === "en" ? en : th);
+const T = (en: string, th: string) => (lang === "en" ? en : th);
 ---
+<nav class="sticky top-4 z-50 bg-white mb-[50px] rounded-[40px] shadow-md max-w-[1473px] mx-auto overflow-hidden">
+  <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
+    <!-- ใช้ relative + absolute center -->
+    <div class="relative bg-white h-16 flex items-center shadow-none ring-0 border-none outline-none
+                pl-6 sm:pl-8 pr-[100px]">
 
-<!-- เพิ่ม margin-bottom มากขึ้น -->
-<nav class="sticky top-4 z-50 mb-8 md:mb-12 lg:mb-16">
-  <!-- ทำความกว้างให้ตรงกับ Hero: 1800px + padding เดียวกัน -->
-  <div class="mx-auto w-full max-w-full lg:max-w-[1800px] px-1 sm:px-2 lg:px-3">
-    <div class="rounded-full bg-white/95 shadow-[0_10px_35px_-10px_rgba(0,0,0,.25)]
-                ring-1 ring-black/5 backdrop-blur px-5 sm:px-8
-                h-16 flex items-center justify-between">
-
-      <!-- โลโก้ -->
+      <!-- ซ้าย: โลโก้ ชิดซ้าย -->
       <a href={`/${lang}`} class="flex items-center gap-2 shrink-0 hover:opacity-90">
         <img src="/favicon.png" alt="Bederly" class="h-12 md:h-14 w-auto object-contain" />
       </a>
 
-      <!-- เมนู Desktop -->
+      <!-- กลาง: เมนู (กึ่งกลางด้วย absolute + translate) -->
       {showLinks && (
-        <ul class="hidden lg:flex items-center gap-8 text-[#00D2E6] font-medium">
-          <li><a href={`/${lang}`} class="hover:opacity-80">{T("Home","หน้าหลัก")}</a></li>
-          <li><a href="#innovations" class="hover:opacity-80">{T("Our Innovations","นวัตกรรมของเรา")}</a></li>
-          <li><a href="#services" class="hover:opacity-80">{T("Our Services","บริการของเรา")}</a></li>
-          <li><a href="#moreinfo" class="hover:opacity-80">{T("More Info","ข้อมูลเพิ่มเติม")}</a></li>
-          <li><a href="#about" class="hover:opacity-80">{T("About Us","เกี่ยวกับเรา")}</a></li>
-          <li><a href="#footer" class="hover:opacity-80">{T("Contact","ติดต่อ")}</a></li>
+        <ul class="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 xl:gap-10 font-medium whitespace-nowrap">
+          <li><a href={`/${lang}`}   class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Home","หน้าหลัก")}</a></li>
+          <li><a href="#innovations" class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Our Innovations","นวัตกรรมของเรา")}</a></li>
+          <li><a href="#services"    class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Our Services","บริการของเรา")}</a></li>
+          <li><a href="#moreinfo"    class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("More Info","ข้อมูลเพิ่มเติม")}</a></li>
+          <li><a href="#about"       class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("About Us","เกี่ยวกับเรา")}</a></li>
+          <li><a href="#footer"      class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Contact","ติดต่อ")}</a></li>
         </ul>
       )}
 
-      <!-- ภาษาบน Desktop -->
-      <div class="hidden lg:block relative">
-        <button id="lang-trigger"
-                class="flex items-center gap-2 text-[#00D2E6] hover:opacity-80">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0c3 0 5 4 5 9s-2 9-5 9-5-4-5-9 2-9 5-9zm-9 9h18"/>
-          </svg>
-          <span class="hidden sm:inline">{T("Language","ภาษา")}</span>
-          <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/>
-          </svg>
-        </button>
-
-        <div id="lang-panel"
-             class="invisible opacity-0 pointer-events-none absolute right-0 mt-3
-                    w-[140px] space-y-2 transition">
-          <a href={altUrl("en")}
-             class="flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-lg
-                    ring-1 ring-black/5 hover:shadow-xl hover:bg-white/95">
-            <img src="/usflag.png" alt="EN" class="h-5 w-5 rounded-full object-cover" />
-            <span class="text-gray-700 font-medium">EN</span>
-          </a>
-          <a href={altUrl("th")}
-             class="flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-lg
-                    ring-1 ring-black/5 hover:shadow-xl hover:bg-white/95">
-            <img src="/thaiflag.png" alt="TH" class="h-5 w-5 rounded-full object-cover" />
-            <span class="text-gray-700 font-medium">TH</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- ปุ่มเมนูมือถือ -->
-      <button id="mobile-btn"
-              class="lg:hidden -mr-1 flex items-center justify-center w-10 h-10 rounded-full
-                     text-[#00D2E6] hover:bg-[#00D2E6]">
-        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M3 12h18M3 18h18"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- เมนูมือถือ -->
-    <div id="mobile-menu" class="lg:hidden hidden mt-3 rounded-2xl bg-white shadow-xl ring-1 ring-black/5">
-      <div class="p-3">
-        {showLinks && (
-          <ul class="space-y-1 text-[#00D2E6] font-medium">
-            <li><a href={`/${lang}`} class="block px-4 py-2 rounded-lg hover:bg-[#00D2E6]">{T("Home","หน้าหลัก")}</a></li>
-            <li><a href="#innovations" class="block px-4 py-2 rounded-lg hover:bg-[#00D2E6]">{T("Our Innovations","นวัตกรรมของเรา")}</a></li>
-            <li><a href="#services" class="block px-4 py-2 rounded-lg hover:bg-[#00D2E6]">{T("Our Services","บริการของเรา")}</a></li>
-            <li><a href="#moreinfo" class="block px-4 py-2 rounded-lg hover:bg-[#00D2E6]">{T("More Info","ข้อมูลเพิ่มเติม")}</a></li>
-            <li><a href="#about" class="block px-4 py-2 rounded-lg hover:bg-[#00D2E6]">{T("About Us","เกี่ยวกับเรา")}</a></li>
-            <li><a href="#footer" class="block px-4 py-2 rounded-lg hover:bg-[#00D2E6]">{T("Contact","ติดต่อ")}</a></li>
-          </ul>
-        )}
-        <div class="mt-3 grid grid-cols-2 gap-2">
-          <a href={altUrl("en")} class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white shadow ring-1 ring-black/5">
-            <img src="/usflag.png" alt="EN" class="h-5 w-5 rounded-full object-cover" />
-            <span class="font-medium text-gray-700">EN</span>
-          </a>
-          <a href={altUrl("th")} class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white shadow ring-1 ring-black/5">
-            <img src="/thaiflag.png" alt="TH" class="h-5 w-5 rounded-full object-cover" />
-            <span class="font-medium text-gray-700">TH</span>
-          </a>
-        </div>
-      </div>
+      <!-- ขวา: เว้นที่สำหรับปุ่มภาษาแบบ fixed -->
+      <div class="hidden lg:block ml-auto w-[100px] shrink-0"></div>
     </div>
   </div>
 </nav>
 
-<script>
-  // mobile menu
-  const mbtn = document.getElementById('mobile-btn');
-  const mmenu = document.getElementById('mobile-menu');
-  mbtn?.addEventListener('click', () => mmenu?.classList.toggle('hidden'));
 
-  // language dropdown
-  const trigger = document.getElementById('lang-trigger');
-  const panel   = document.getElementById('lang-panel');
-  function open()  { panel?.classList.remove('invisible','opacity-0','pointer-events-none'); panel?.classList.add('pointer-events-auto'); }
-  function close() { panel?.classList.add('invisible','opacity-0','pointer-events-none'); panel?.classList.remove('pointer-events-auto'); }
-  trigger?.addEventListener('click', (e)=>{ e.stopPropagation(); if(panel?.classList.contains('invisible')) open(); else close(); });
-  document.addEventListener('click', close);
+<script>
+  // ถ้ามีปุ่ม/เมนูมือถือค่อยใช้งาน; ตอนนี้ไม่มีจึงไม่จำเป็นต้องทำอะไร
 </script>
 
 <style>
-  /* กันโดนแถบบังหัวเวลาเจาะไปยัง #id */
   :where(section[id]) { scroll-margin-top: 120px; }
-  @media (min-width: 1024px) {
-    :where(section[id]) { scroll-margin-top: 140px; }
+  @media (min-width: 1024px) { :where(section[id]) { scroll-margin-top: 140px; } }
+
+  nav, nav * { box-shadow: none !important; filter: none !important; border: none !important; outline: none !important; }
+  nav { background-color: #ffffff !important; }
+
+  /* KILL underline ทุกกรณี */
+  nav .nav-link,
+  nav .nav-link:hover,
+  nav .nav-link:focus,
+  nav .nav-link:active,
+  nav .nav-link:visited {
+    text-decoration: none !important;
+    border-bottom: 0 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  nav .nav-link::after,
+  nav .nav-link::before,
+  nav a::after,
+  nav a::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  nav a:focus, nav a:active { outline: none !important; box-shadow: none !important; }
+
+  .nav-link { color: #00D2E6 !important; transition: color 0.25s ease; }
+  .nav-link:hover { color: #585858 !important; }
+
+  nav.sticky {
+  /* ลดความยาวขวาประมาณ 40px */
+    clip-path: inset(0 150px 0 0 round 40px);
   }
 </style>

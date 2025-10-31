@@ -2,6 +2,8 @@
 // src/layouts/Layout.astro
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
+import LanguageSwitcher from "../components/LanguageSwitcher.astro";
+
 
 interface Alt {
   lang: string;
@@ -75,6 +77,10 @@ const defaultDescription = lang === "en"
         alternates={alternates} 
       />
     )}
+
+  <div class="fixed top-4 right-6 z-[100]">
+    <LanguageSwitcher lang={lang} alternates={alternates} />
+  </div>
     
     <!-- Main Content -->
     <main class="relative overflow-x-clip max-w-[100svw]">

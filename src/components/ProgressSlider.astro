@@ -51,26 +51,48 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
+/** ถอด tag + ถอดรหัส HTML entities (ทั้ง dec, hex, named) */
 function htmlToPlainText(html: string): string {
   let s = html || "";
+
+  // ตัด script/style
   s = s.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, "");
   s = s.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, "");
+
+  // จัดบรรทัด
   s = s.replace(/<\s*li[^>]*>/gi, "• ");
   s = s.replace(/<\s*\/\s*li\s*>/gi, "\n");
   s = s.replace(/<\s*br\s*\/?>/gi, "\n");
   s = s.replace(/<\s*\/\s*p\s*>/gi, "\n");
+
+  // ลบ tag ทั้งหมด
   s = s.replace(/<[^>]+>/g, "");
+
+  // 1) numeric hex: &#x2019;
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, h) =>
+    String.fromCodePoint(parseInt(h, 16))
+  );
+  // 2) numeric dec: &#8217;
+  s = s.replace(/&#(\d+);/g, (_, d) =>
+    String.fromCodePoint(parseInt(d, 10))
+  );
+  // 3) named entities ที่พบบ่อย
   s = s
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&#8211;|&ndash;/g, "–")
-    .replace(/&#8212;|&mdash;/g, "—")
-    .replace(/&#8220;|&ldquo;/g, "“")
-    .replace(/&#8221;|&rdquo;/g, "”")
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&quot;/g, '"');
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&rsquo;/g, "’")
+    .replace(/&lsquo;/g, "‘")
+    .replace(/&rdquo;/g, "”")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&ndash;|&#8211;/g, "–")
+    .replace(/&mdash;|&#8212;/g, "—")
+    .replace(/&hellip;|&#8230;/g, "…");
+
+  // เก็บกวาดช่องว่าง/บรรทัด
   s = s.replace(/[ \t]+\n/g, "\n").replace(/\n{2,}/g, "\n").trim();
   return s;
 }
@@ -104,7 +126,12 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
       </div>
     ) : (
       <div class="relative">
-        <div id="progress-track" class="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 px-1 hide-scrollbar" aria-label={sectionTitle}>
+        <!-- แทร็คแนวนอนแบบลากอิสระ -->
+        <div
+          id="progress-track"
+          class="drag-scroll flex gap-6 overflow-x-auto pb-4 px-1 hide-scrollbar select-none"
+          aria-label={sectionTitle}
+        >
           {posts.map((p) => {
             const imgUrl = pickImageUrl(p?.featuredImage);
             const alt    = normalize(p?.featuredImage)?.altText || p?.title || "";
@@ -112,37 +139,35 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
             const logos  = collectLogos(p);
 
             return (
-              <article class="snap-start shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
-                <div class="group block">
-                  <div class="pcard rounded-[22px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white">
-                    <div class="pcard-grid grid md:grid-cols-[1.05fr,1fr] items-stretch h-full">
-                      <figure class="media relative h-full overflow-hidden m-0">
-                        {imgUrl ? (
-                          <img src={imgUrl} alt={alt} class="block w-full h-full object-cover" loading="lazy" />
-                        ) : (<div class="w-full h-full bg-gray-100" />)}
-                      </figure>
+              <article class="shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
+                <div class="pcard rounded-[22px] overflow-hidden shadow-lg transition-shadow duration-300 bg-white">
+                  <div class="pcard-grid grid md:grid-cols-[1.05fr,1fr] items-stretch h-full">
+                    <figure class="media relative h-full overflow-hidden m-0">
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={alt} class="block w-full h-full object-cover" loading="lazy" />
+                      ) : (<div class="w-full h-full bg-gray-100" />)}
+                    </figure>
 
-                      <div class="flex h-full flex-col bg-[#40B4ED] text-white p-5 md:p-6 lg:p-7">
-                        <h3 class="text-[16px] md:text-[18px] font-semibold mb-2 leading-tight">
-                          {p?.title || ""}
-                        </h3>
+                    <div class="flex h-full flex-col bg-[#40B4ED] text-white p-5 md:p-6 lg:p-7">
+                      <h3 class="text-[16px] md:text-[18px] font-semibold mb-2 leading-tight">
+                        {p?.title || ""}
+                      </h3>
 
-                        {text && (
-                          <div class="text-white/95 text-[13.5px] md:text-[14px] lg:text-[15px] leading-snug whitespace-pre-line">
-                            {text}
-                          </div>
-                        )}
+                      {text && (
+                        <div class="text-white/95 text-[13.5px] md:text-[14px] lg:text-[15px] leading-snug whitespace-pre-line">
+                          {text}
+                        </div>
+                      )}
 
-                        {logos.length > 0 && (
-                          <div class="logos-wrap mt-auto pt-4 md:pt-5 flex flex-wrap items-center gap-4 md:gap-5">
-                            {logos.map((lg, i) => (
-                              <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/95 shadow-sm grid place-items-center overflow-hidden" aria-label={`partner-logo-${i + 1}`}>
-                                <img src={lg.src} alt={lg.alt} class="max-w-[90%] max-h-[95%] object-contain" loading="lazy" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {logos.length > 0 && (
+                        <div class="logos-wrap mt-auto pt-4 md:pt-5 flex flex-wrap items-center gap-4 md:gap-5">
+                          {logos.map((lg, i) => (
+                            <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/95 shadow-sm grid place-items-center overflow-hidden" aria-label={`partner-logo-${i + 1}`}>
+                              <img src={lg.src} alt={lg.alt} class="max-w-[90%] max-h-[95%] object-contain" loading="lazy" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -150,15 +175,6 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
             );
           })}
         </div>
-
-        <button id="progress-prev" class="absolute -left-3 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:shadow-md border text-gray-600" aria-label="Previous" type="button">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-        </button>
-        <button id="progress-next" class="absolute -right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:shadow-md border text-gray-600" aria-label="Next" type="button">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-        </button>
-
-        <div id="progress-dots" class="mt-4 flex items-center justify-center gap-2"></div>
       </div>
     )}
   </div>
@@ -171,9 +187,18 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
   .pcard { height: auto; }
   .pcard-grid { height: 100%; }
 
+  /* ทำให้ลากได้ทุกจุดของแทร็ค (รวมรูป/ตัวหนังสือ) */
+  .drag-scroll { cursor: grab; user-select: none; }
+  .drag-scroll.dragging { cursor: grabbing; }
+
+  /* ปิด drag ของรูป เพื่อไม่ให้เบราว์เซอร์จับรูปไปลาก */
+  .drag-scroll img {
+    -webkit-user-drag: none;
+    user-drag: none;
+  }
+
   /* ===== MOBILE ONLY ===== */
   @media (max-width: 767.98px) {
-    /* รูปชิดขอบการ์ด */
     .pcard { overflow: hidden; border-radius: 22px; }
     .pcard .media { margin: 0 !important; }
     .pcard .media > img {
@@ -184,67 +209,72 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
     }
     .pcard .pcard-grid { gap: 0 !important; }
 
-    /* โลโก้ให้อยู่ 'บรรทัดเดียว' และเลื่อนซ้าย-ขวาได้หากล้น */
+    /* โลโก้ให้เลื่อนซ้าย-ขวาได้หากล้น */
     .logos-wrap {
-      flex-wrap: nowrap !important;          /* ไม่ตัดบรรทัด */
-      overflow-x: auto !important;           /* เลื่อนแนวนอน */
-      -webkit-overflow-scrolling: touch;     /* เลื่อนลื่นบน iOS */
-      scrollbar-width: none;                 /* ซ่อนสกอร์ลบาร์ (Firefox) */
-      gap: 0.75rem !important;               /* ระยะห่างสม่ำเสมอ */
-      justify-content: center !important;    /* ถ้าไม่ล้น ให้อยู่กลาง */
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 0.75rem !important;
+      justify-content: center !important;
       padding-bottom: 0.5rem !important;
     }
-    .logos-wrap::-webkit-scrollbar { display: none; } /* ซ่อนสกอร์ลบาร์ (WebKit) */
-
-    .logos-wrap > div {
-      flex: 0 0 auto !important;             /* คงขนาดโลโก้ไม่ย่อ */
-    }
+    .logos-wrap::-webkit-scrollbar { display: none; }
+    .logos-wrap > div { flex: 0 0 auto !important; }
   }
 </style>
 
 <script>
+  // ====== Drag-to-Scroll (เมาส์) + Wheel แนวนอน ======
   const track = document.getElementById("progress-track");
+  const cards = Array.from(document.querySelectorAll('.pcard'));
+
   if (track) {
-    const prev = document.getElementById("progress-prev");
-    const next = document.getElementById("progress-next");
-    const dotsWrap = document.getElementById("progress-dots");
-
-    const slides = Array.from(track.children);
-    const gap = 24; // gap-6
-    const slideWidth = () => slides[0]?.getBoundingClientRect().width || 300;
-
-    dotsWrap.innerHTML = "";
-    slides.forEach((_, i) => {
-      const dot = document.createElement("button");
-      dot.type = "button";
-      dot.className = "h-2 w-2 rounded-full bg-gray-300";
-      dot.addEventListener("click", () => {
-        track.scrollTo({ left: i * (slideWidth() + gap), behavior: "smooth" });
-      });
-      dotsWrap.appendChild(dot);
+    // ปิด dragstart ทุกรูป/ลิงก์ในแทร็ค
+    track.addEventListener("dragstart", (e) => e.preventDefault());
+    track.querySelectorAll("img, a, svg").forEach(el => {
+      el.setAttribute?.("draggable", "false");
+      el.addEventListener("dragstart", (e) => e.preventDefault());
     });
 
-    const setActiveDot = (idx) => {
-      dotsWrap.querySelectorAll("button").forEach((d, i) => {
-        d.className = "h-2 rounded-full transition-all " + (i === idx ? "bg-blue-600 w-5" : "bg-gray-300 w-2");
-      });
+    let isDown = false;
+    let startX = 0;
+    let startLeft = 0;
+
+    const down = (x) => {
+      isDown = true;
+      startX = x;
+      startLeft = track.scrollLeft;
+      track.classList.add("dragging");
+    };
+    const move = (x, e) => {
+      if (!isDown) return;
+      e?.preventDefault?.();
+      track.scrollLeft = startLeft - (x - startX);
+    };
+    const up = () => {
+      isDown = false;
+      track.classList.remove("dragging");
     };
 
-    const updateActive = () => {
-      const x = track.scrollLeft + slideWidth() / 2;
-      const idx = Math.max(0, Math.min(slides.length - 1, Math.round(x / (slideWidth() + gap))));
-      setActiveDot(idx);
-      syncHeights();
-    };
+    // Mouse drag จากทุกจุด
+    track.addEventListener("mousedown", (e) => down(e.pageX));
+    window.addEventListener("mousemove", (e) => move(e.pageX, e));
+    window.addEventListener("mouseup", up);
+    track.addEventListener("mouseleave", up);
 
-    setActiveDot(0);
-    track.addEventListener("scroll", () => requestAnimationFrame(updateActive));
-
-    prev?.addEventListener("click", () => track.scrollBy({ left: -(slideWidth() + gap), behavior: "smooth" }));
-    next?.addEventListener("click", () => track.scrollBy({ left: +(slideWidth() + gap), behavior: "smooth" }));
+    // ล้อเมาส์เลื่อนแนวนอน (เมื่อผู้ใช้หมุนแนวตั้ง)
+    track.addEventListener("wheel", (e) => {
+      const absY = Math.abs(e.deltaY);
+      const absX = Math.abs(e.deltaX);
+      if (absY > absX) {
+        track.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 
-  const cards = Array.from(document.querySelectorAll('.pcard'));
+  // ====== ให้การ์ดสูงเท่ากันเสมอ ======
   function syncHeights() {
     if (!cards.length) return;
     cards.forEach(c => c.style.height = 'auto');

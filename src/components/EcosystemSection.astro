@@ -1,223 +1,220 @@
----
-// src/components/EcosystemSection.astro - Sharp Corners Version
-import { wpQuery } from "../lib/wp";
-import { rewriteWpUrl } from "../lib/wpUrl";
+  ---
+  // src/components/EcosystemSection.astro - Sharp Corners Version
+  import { wpQuery } from "../lib/wp";
+  import { rewriteWpUrl } from "../lib/wpUrl";
 
-export interface Props {
-  lang: "th" | "en";
-  pageUriTH?: string;
-  pageUriEN?: string;
-  class?: string;
-  size?: "sm" | "md" | "lg";
-}
+  export interface Props {
+    lang: "th" | "en";
+    pageUriTH?: string;
+    pageUriEN?: string;
+    class?: string;
+    size?: "sm" | "md" | "lg";
+  }
 
-const {
-  lang,
-  pageUriTH = "/",
-  pageUriEN = "/en/welcome/",
-  class: klass = "",
-  size = "lg",
-} = Astro.props;
+  const {
+    lang,
+    pageUriTH = "/",
+    pageUriEN = "/en/welcome/",
+    class: klass = "",
+    size = "lg",
+  } = Astro.props;
 
-const uri = lang === "en" ? pageUriEN : pageUriTH;
+  const uri = lang === "en" ? pageUriEN : pageUriTH;
 
-const QUERY = /* GraphQL */ `
-  query EcosystemByUri($uri: String!) {
-    nodeByUri(uri: $uri) {
-      ... on Page {
-        ecosystem {
-          ecotitle
-          ecoimage {
-            node {
-              sourceUrl
-              mediaDetails { sizes { name sourceUrl } }
+  const QUERY = /* GraphQL */ `
+    query EcosystemByUri($uri: String!) {
+      nodeByUri(uri: $uri) {
+        ... on Page {
+          ecosystem {
+            ecotitle
+            ecoimage {
+              node {
+                sourceUrl
+                mediaDetails { sizes { name sourceUrl } }
+              }
             }
           }
         }
       }
     }
+  `;
+
+  function pickImageUrl(img: any): string | undefined {
+    const node = img?.node ?? img;
+    if (!node) return;
+    const sizes = node.mediaDetails?.sizes ?? [];
+    const prefer = ["full","2048x2048","large","1536x1536","medium_large","medium"];
+    for (const k of prefer) {
+      const hit = sizes.find((s:any)=>s?.name===k && s?.sourceUrl);
+      if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
+    }
+    return node.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
   }
-`;
 
-function pickImageUrl(img: any): string | undefined {
-  const node = img?.node ?? img;
-  if (!node) return;
-  const sizes = node.mediaDetails?.sizes ?? [];
-  const prefer = ["full","2048x2048","large","1536x1536","medium_large","medium"];
-  for (const k of prefer) {
-    const hit = sizes.find((s:any)=>s?.name===k && s?.sourceUrl);
-    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
-  }
-  return node.sourceUrl ? rewriteWpUrl(node.sourceUrl) : undefined;
-}
+  let title = "";
+  let bgUrl = "";
+  try {
+    const res = await wpQuery<any>(QUERY, { uri });
+    const eco = res?.nodeByUri?.ecosystem ?? null;
+    title = eco?.ecotitle ?? "";
+    bgUrl = pickImageUrl(eco?.ecoimage) || "";
+  } catch {}
 
-let title = "";
-let bgUrl = "";
-try {
-  const res = await wpQuery<any>(QUERY, { uri });
-  const eco = res?.nodeByUri?.ecosystem ?? null;
-  title = eco?.ecotitle ?? "";
-  bgUrl = pickImageUrl(eco?.ecoimage) || "";
-} catch {}
+  let displayTitle = (title || "")
+    .replace(/\r\n|\r|\n/g, "<br/>")
+    .replace(/\s*\|\s*/g, "<br/>");
 
-let displayTitle = (title || "")
-  .replace(/\r\n|\r|\n/g, "<br/>")
-  .replace(/\s*\|\s*/g, "<br/>");
+  const HEIGHT =
+    size === "sm"
+      ? "h-[440px] md:h-[520px] lg:h-[580px]"
+      : size === "md"
+      ? "h-[520px] md:h-[600px] lg:h-[680px]"
+      : "h-[600px] md:h-[680px] lg:h-[760px]";
 
-const HEIGHT =
-  size === "sm"
-    ? "h-[440px] md:h-[520px] lg:h-[580px]"
-    : size === "md"
-    ? "h-[520px] md:h-[600px] lg:h-[680px]"
-    : "h-[600px] md:h-[680px] lg:h-[760px]";
+  const TITLE = "text-2xl md:text-3xl lg:text-4xl";
+  ---
 
-const TITLE = "text-2xl md:text-3xl lg:text-4xl";
----
-
-<section class={`eco-section ${klass}`}>
-  <div class="container-primary">
-    <!-- Card with sharp corners -->
-    <div class={`card relative overflow-hidden ${HEIGHT} z-[2]`}>
-      {/* === รูป + Overlay ทั้งหมดอยู่ใน .clipper เพื่อกันล้นบนมือถือ === */}
-      <div class="clipper absolute inset-0">
-        {bgUrl ? (
-          <>
-            {/* มือถือ: BG cover (กันล้น) */}
-            <div
-              aria-hidden="true"
-              style={`background-image:url('${bgUrl}');`}
-              class="mobile-bg absolute inset-0 md:hidden"
-            />
-            {/* เดสก์ท็อป/แท็บเล็ต: คง <img> เดิม */}
-            <img
-              src={bgUrl}
-              alt=""
-              class="absolute inset-0 w-full h-full object-fill hidden md:block"
-              loading="eager"
-              decoding="async"
-            />
-            {/* Overlays */}
-            <div class="absolute inset-0 bg-black/40"></div>
-            <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35"></div>
-          </>
-        ) : (
-          <div class="absolute inset-0" />
-        )}
-      </div>
-
-      <div class="relative h-full flex items-center">
-        <div class="container-primary">
-          {displayTitle && (
-            <h3
-              class={`eco-title font-extrabold leading-tight text-white drop-shadow-lg text-center ${TITLE}
-                       mx-auto max-w-4xl md:max-w-5xl`}
-              set:html={title}
-            />
+  <section class={`eco-section ${klass}`}>
+    <div class="container-primary">
+      <!-- Card with sharp corners -->
+      <div class={`card relative overflow-hidden ${HEIGHT} z-[2]`}>
+        {/* === รูป + Overlay ทั้งหมดอยู่ใน .clipper เพื่อกันล้นบนมือถือ === */}
+        <div class="clipper absolute inset-0">
+          {bgUrl ? (
+            <>
+              {/* มือถือ: BG cover (กันล้น) */}
+              <div
+                aria-hidden="true"
+                style={`background-image:url('${bgUrl}');`}
+                class="mobile-bg absolute inset-0 md:hidden"
+              />
+              {/* เดสก์ท็อป/แท็บเล็ต: คง <img> เดิม */}
+              <img
+                src={bgUrl}
+                alt=""
+                class="absolute inset-0 w-full h-full object-fill hidden md:block"
+                loading="eager"
+                decoding="async"
+              />
+            </>
+          ) : (
+            <div class="absolute inset-0" />
           )}
+        </div>
+
+        <div class="relative h-full flex items-center">
+          <div class="container-primary">
+            {displayTitle && (
+              <h3
+                class={`eco-title font-extrabold leading-tight text-white drop-shadow-lg text-center ${TITLE}
+                        mx-auto max-w-4xl md:max-w-5xl`}
+                set:html={title}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<style>
-  /* ============================
-     Title handling
-     ============================ */
-  @supports (text-wrap: balance) { .eco-title { text-wrap: balance; } }
-  .eco-title { word-break: break-word; }
+  <style>
+    /* ============================
+      Title handling
+      ============================ */
+    @supports (text-wrap: balance) { .eco-title { text-wrap: balance; } }
+    .eco-title { word-break: break-word; }
 
-  /* ขอบเหลี่ยม - ลบบุ้มมุมทั้งหมดของการ์ด */
-  .card { border-radius: 0 !important; }
+    /* ขอบเหลี่ยม - ลบบุ้มมุมทั้งหมดของการ์ด */
+    .card { border-radius: 0 !important; }
 
-  /* ============================
-     Tight spacing like SmartBed
-     (ต้องใช้ร่วมกับ <section class="eco-section">)
-     ============================ */
-  /* Mobile: ตัด padding / margin ของ section และ container ให้ชิดสุด */
-  @media (max-width: 767.98px) {
-    /* กันเพจล้นด้านข้าง */
-    section, :global(body) { overflow-x: hidden !important; }
+    /* ============================
+      Tight spacing like SmartBed
+      (ต้องใช้ร่วมกับ <section class="eco-section">)
+      ============================ */
+    /* Mobile: ตัด padding / margin ของ section และ container ให้ชิดสุด */
+    @media (max-width: 767.98px) {
+      /* กันเพจล้นด้านข้าง */
+      section, :global(body) { overflow-x: hidden !important; }
 
-    /* ตัว section และ container */
-    .eco-section {
-      padding: 0 !important;
-      margin: 0 !important;
-      overflow-x: clip !important;
+      /* ตัว section และ container */
+      .eco-section {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow-x: clip !important;
+      }
+      .eco-section > .container-primary {
+        padding: 0 0.5rem !important;   /* เท่ากับ smartbed-container */
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+
+      /* การ์ด: คุมให้คมและไม่ใส่เงา/รัศมีเกิน */
+      .eco-section .card {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        contain: layout paint;
+        overflow: hidden;
+      }
+
+      /* คลิปชั้นรูป/โอเวอร์เลย์ให้ไม่รั่ว */
+      .clipper {
+        border-radius: 0 !important;
+        overflow: clip;
+        -webkit-mask-image: none;
+        clip-path: none;
+      }
+
+      /* ความสูงบนมือถือ (ลดจากคลาสยูทิลิตี้) */
+      section .h-\[440px\] { height: 300px !important; }
+      section .h-\[520px\] { height: 340px !important; }
+      section .h-\[600px\] { height: 380px !important; }
+
+      /* BG มือถือ: cover + ตำแหน่งกลาง */
+      .mobile-bg {
+        background-size: cover !important;
+        background-position: center 24% !important;
+        background-repeat: no-repeat !important;
+      }
+
+      /* ปิด object-fill เดิมให้เป็น cover */
+      .object-fill { object-fit: cover !important; }
+
+      /* ขนาดตัวหนังสือบนมือถือ */
+      .eco-title {
+        font-size: 1rem !important;
+        line-height: 1.35 !important;
+        padding: 0 1.25rem;
+        max-width: 85% !important;
+      }
     }
-    .eco-section > .container-primary {
-      padding: 0 0.5rem !important;   /* เท่ากับ smartbed-container */
-      margin: 0 !important;
-      max-width: 100% !important;
+
+    /* Tablet: ตัดหัว และดึงขึ้นเล็กน้อย */
+    @media (min-width: 768px) {
+      .eco-section {
+        padding-top: 0 !important;         /* ตัดหัว */
+        margin-top: -1.25rem !important;   /* ≈ -20px */
+      }
+      .eco-section > .container-primary {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+      }
     }
 
-    /* การ์ด: คุมให้คมและไม่ใส่เงา/รัศมีเกิน */
-    .eco-section .card {
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      contain: layout paint;
-      overflow: hidden;
+    /* Desktop: ชิดมากขึ้น */
+    @media (min-width: 1024px) {
+      .eco-section { margin-top: -2.5rem !important; } /* ≈ -40px */
     }
 
-    /* คลิปชั้นรูป/โอเวอร์เลย์ให้ไม่รั่ว */
-    .clipper {
-      border-radius: 0 !important;
-      overflow: clip;
-      -webkit-mask-image: none;
-      clip-path: none;
+    /* XL+: ถ้ายังอยากชิดอีกนิด (ปรับตัวเลขได้) */
+    @media (min-width: 1280px) {
+      .eco-section { margin-top: -3rem !important; }   /* ≈ -48px */
     }
 
-    /* ความสูงบนมือถือ (ลดจากคลาสยูทิลิตี้) */
-    section .h-\[440px\] { height: 300px !important; }
-    section .h-\[520px\] { height: 340px !important; }
-    section .h-\[600px\] { height: 380px !important; }
+    /* เผื่อกรณีดึงขึ้นแล้วเงาถูกครอบ */
+    .eco-section .card { z-index: 2; }
 
-    /* BG มือถือ: cover + ตำแหน่งกลาง */
-    .mobile-bg {
-      background-size: cover !important;
-      background-position: center 24% !important;
-      background-repeat: no-repeat !important;
+    /* ตัวเลือกเสริม: โหมดชิดจัด — ใส่คลาส eco-tight เพิ่มที่ section */
+    @media (min-width: 1024px) {
+      .eco-section.eco-tight { margin-top: -3.5rem !important; } /* ≈ -56px */
     }
-
-    /* ปิด object-fill เดิมให้เป็น cover */
-    .object-fill { object-fit: cover !important; }
-
-    /* ขนาดตัวหนังสือบนมือถือ */
-    .eco-title {
-      font-size: 1rem !important;
-      line-height: 1.35 !important;
-      padding: 0 1.25rem;
-      max-width: 85% !important;
-    }
-  }
-
-  /* Tablet: ตัดหัว และดึงขึ้นเล็กน้อย */
-  @media (min-width: 768px) {
-    .eco-section {
-      padding-top: 0 !important;         /* ตัดหัว */
-      margin-top: -1.25rem !important;   /* ≈ -20px */
-    }
-    .eco-section > .container-primary {
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-    }
-  }
-
-  /* Desktop: ชิดมากขึ้น */
-  @media (min-width: 1024px) {
-    .eco-section { margin-top: -2.5rem !important; } /* ≈ -40px */
-  }
-
-  /* XL+: ถ้ายังอยากชิดอีกนิด (ปรับตัวเลขได้) */
-  @media (min-width: 1280px) {
-    .eco-section { margin-top: -3rem !important; }   /* ≈ -48px */
-  }
-
-  /* เผื่อกรณีดึงขึ้นแล้วเงาถูกครอบ */
-  .eco-section .card { z-index: 2; }
-
-  /* ตัวเลือกเสริม: โหมดชิดจัด — ใส่คลาส eco-tight เพิ่มที่ section */
-  @media (min-width: 1024px) {
-    .eco-section.eco-tight { margin-top: -3.5rem !important; } /* ≈ -56px */
-  }
-</style>
+  </style>

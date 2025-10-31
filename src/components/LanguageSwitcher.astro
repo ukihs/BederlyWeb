@@ -1,18 +1,62 @@
 ---
-const { lang = "th", alternates = [] } = Astro.props;
+interface Alt { lang: string; url: string }
 
-// หา url ของอีกภาษาจาก alternates
-const thUrl = alternates.find((a: any) => a.lang === "th")?.url || "/th";
-const enUrl = alternates.find((a: any) => a.lang === "en")?.url || "/en";
+const {
+  lang = "th",
+  alternates = [] as Alt[],
+} = Astro.props as {
+  lang?: "th" | "en";
+  alternates?: Alt[];
+};
+
+function altUrl(target: "th" | "en") {
+  const found = alternates.find((a) => a.lang.toLowerCase() === target);
+  if (found?.url) return found.url;
+  return `/${target}`;
+}
+
+const nextLang = (lang === "th" ? "en" : "th") as "th" | "en";
+const nextUrl  = altUrl(nextLang);
+const label    = lang === "en" ? "Language" : "ภาษา";
 ---
 
-<div class="flex items-center gap-2 text-sm">
-  <a href={thUrl}   
-     class={`px-2 py-1 rounded ${lang === "th" ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"}`}>
-    TH
-  </a>  
-  <a href={enUrl}
-     class={`px-2 py-1 rounded ${lang === "en" ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"}`}>
-    EN
-  </a>
-</div>
+<a href={nextUrl} class="fixed top-4 right-4 z-[2147483647] inline-flex items-center gap-2
+                        px-4 py-2 rounded-full border border-[#00D2E6]
+                        bg-white/90 backdrop-blur text-[#00D2E6] font-medium shadow-lg
+                        hover:bg-[#00D2E6] hover:text-white transition-colors select-none">
+  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0c3 0 5 4 5 9s-2 9-5 9-5-4-5-9 2-9 5-9zm-9 9h18"/>
+  </svg>
+  <span class="hidden sm:inline">{label}</span>
+  <span class="font-semibold">{nextLang.toUpperCase()}</span>
+</a>
+
+<style>
+  /* ทางเลือก: ถ้าต้องการปุ่มแบบ absolute (เลื่อนหายตามหน้า) ใช้คลาสนี้แทน
+     แล้วเปลี่ยนจาก class="fixed ..." เป็น class="lang-abs-btn" */
+  .lang-abs-btn {
+    top: 8px;
+    right: 8px;
+    z-index: 50;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 9999px;
+    border: 1px solid #00D2E6;
+    background: rgba(255,255,255,0.9);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #00D2E6;
+    font-weight: 500;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .lang-abs-btn:hover {
+    background: #00D2E6;
+    color: #fff;
+    border-color: #00C0D2;
+  }
+</style>

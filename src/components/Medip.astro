@@ -5,11 +5,12 @@ import { rewriteWpUrl } from "../lib/wpUrl";
 
 export interface Props {
   lang: "th" | "en";
-  categorySlug: string;      // medip-th / medip-en
+  categorySlug: string;
   class?: string;
+  limit?: number;
 }
 
-const { lang, categorySlug, class: sectionClass = "" } = Astro.props;
+const { lang, categorySlug, class: sectionClass = "", limit = 12 } = Astro.props;
 
 const POSTS_BY_CATEGORY = /* GraphQL */ `
   query PostsByCategory($slug: String!, $limit: Int) {
@@ -36,13 +37,10 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
   }
 `;
 
-// เลือกรูป "ใหญ่สุด" ที่มี
 function pickBestImageUrl(img: any): string | undefined {
-  const n = img?.node;
+  const n = img?.node ?? img ?? undefined;
   if (!n) return undefined;
-
   const sizes = n.mediaDetails?.sizes ?? [];
-  // เรียงลำดับความต้องการจากใหญ่สุด -> เล็ก
   const prefer = ["2048x2048", "1536x1536", "full", "large", "medium_large", "medium"];
   for (const key of prefer) {
     const hit = sizes.find((s: any) => s?.name?.toLowerCase() === key && s?.sourceUrl);
@@ -51,47 +49,61 @@ function pickBestImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-let imageUrl = "";
-let imageAlt = "";
+type Slide = { id: string; src: string; alt: string };
+let slides: Slide[] = [];
+
+const slugCandidates = ["medip-th", categorySlug, "medip", "Medip"];
 
 try {
-  const res = await wpQuery<any>(POSTS_BY_CATEGORY, { slug: categorySlug, limit: 1 });
-  const node = res?.posts?.nodes?.[0];
-  imageUrl = pickBestImageUrl(node?.featuredImage) || "";
-  imageAlt = node?.featuredImage?.node?.altText || node?.title || "Med devices standards";
+  for (const slug of slugCandidates) {
+    const res = await wpQuery<any>(POSTS_BY_CATEGORY, { slug, limit });
+    const nodes = res?.posts?.nodes ?? [];
+    const tmp = nodes
+      .map((n: any) => {
+        const src = pickBestImageUrl(n?.featuredImage);
+        const alt = n?.featuredImage?.node?.altText || n?.title || "Med devices document";
+        return src ? ({ id: n?.id || alt, src, alt } as Slide) : null;
+      })
+      .filter(Boolean) as Slide[];
+    if (tmp.length) { slides = tmp; break; }
+  }
 } catch {}
+
+/* -------- Continuous loop: triplicate content and scroll by exactly 1 set -------- */
+const slidesTripled = slides.length ? slides.concat(slides, slides) : [];
 ---
 
-<section class={`section-padding-sm pt-0 pb-0 md:-mt-8 ${sectionClass}`.trim()}>
-  <div class="container-primary">
-    <!-- หัวข้อ -->
+<section class={`bg-white section-padding-sm pt-0 pb-0 md:-mt-8 overflow-hidden ${sectionClass}`.trim()}>
+  <div class="container-primary bg-white">
+    <!-- Title -->
     <div class="text-center mb-6 md:mb-8">
       <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 md:mb-4">
         {lang === "en"
           ? "Med Devices Standards & IP"
           : "มาตรฐานเครื่องมือแพทย์ & ทรัพย์สินทางปัญญา"}
       </h2>
-      <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-        {lang === "en"
-          ? "Certificates, registrations, and compliance documents"
-          : "เอกสารรับรอง การขึ้นทะเบียน และเอกสารการปฏิบัติตามมาตรฐาน"}
-      </p>
     </div>
 
-    {imageUrl ? (
-      <figure class="max-w-full mx-auto">
-        <img
-          src={imageUrl}
-          alt={imageAlt}
-          class="block w-full h-auto rounded-3xl md:rounded-[40px] shadow-2xl
-                 max-h-[600px] md:max-h-[700px] lg:max-h-[800px]
-                 object-contain bg-white"
-          loading="lazy"
-          decoding="async"
-        />
-      </figure>
+    {slides.length ? (
+      <div class="overflow-hidden bg-white">
+        <div class="marquee" aria-label="Med devices standards carousel">
+          <div class="marquee-track">
+            {slidesTripled.map((s, i) => (
+              <figure class="card bg-white" key={s.id + '-' + i}>
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  class="w-full h-full object-contain bg-white"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      </div>
     ) : (
-      <div class="max-w-full mx-auto text-center text-gray-500 rounded-3xl bg-gray-50 p-16 md:p-20 lg:p-24">
+      <div class="max-w-full mx-auto text-center text-gray-500 rounded-2xl bg-white p-16 md:p-20 lg:p-24">
         <div class="text-xl md:text-2xl">
           {lang === "en" ? "No image found for this section." : "ยังไม่มีรูปสำหรับส่วนนี้"}
         </div>
@@ -99,3 +111,57 @@ try {
     )}
   </div>
 </section>
+
+<style>
+  section, .bg-white { background: #fff !important; }
+
+  /* === Marquee container === */
+  .marquee {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    background: #fff;
+  }
+
+  /* === Track: width=max-content so it fits its children; animate by 1 set (1/3 of tripled width) === */
+  .marquee-track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    animation: scroll-marquee var(--speed, 28s) linear infinite;
+    will-change: transform;
+  }
+
+  /* Triplicate => shift by exactly -33.3333% to land seamlessly on the next set */
+  @keyframes scroll-marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-33.3333%); }
+  }
+
+  /* === Cards === */
+  .card {
+    flex: 0 0 auto;
+    width: clamp(200px, 22vw, 360px);
+    margin-right: 1.5rem;
+    border-radius: 0.75rem;
+    background: #fff;
+  }
+
+  .card img {
+    width: 100%;
+    height: clamp(220px, 30vw, 420px);
+    object-fit: contain;
+    border-radius: 0.75rem;
+  }
+
+  /* Mobile tweaks: slightly slower for smoother perception */
+  @media (max-width: 768px) {
+    .marquee-track { --speed: 32s; }
+    .card { width: 70vw; }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; transform: none; }
+  }
+</style>

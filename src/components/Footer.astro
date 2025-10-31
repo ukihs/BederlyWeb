@@ -1,4 +1,5 @@
 ---
+// src/components/Footer.astro
 import { wpQuery } from "../lib/wp";
 
 export interface Props {
@@ -31,26 +32,41 @@ try {
 } catch {}
 
 const googlePlay = "https://play.google.com/store/apps/details?id=com.bederly.phr";
-const appStore = "https://apps.apple.com/th/app/id0000000000";
+const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
 ---
 
 <footer class={`bg-white ${sectionClass}`.trim()}>
-  <div class="container mx-auto px-6 py-16">
-    <!-- Logo -->
-    <div class="-mx-6 md:-mx-8 lg:-mx-12 mb-6">
-      <div class="px-0">
+  <!-- ชิดซ้ายจริง: มือถือ px-0, เดสก์ท็อปค่อยมี padding -->
+  <div class="mx-auto w-full max-w-[1450px] px-0 md:px-6 py-16">
+    <!-- ✅ Logo (บน) + ปุ่ม (ล่าง) -->
+    <div class="mb-6">
+      <div class="flex flex-col items-start leading-none">
+        <!-- ถ้าในรูป favicon.png มีช่องโปร่งซ้าย ให้ชดเชยด้วย -ml-1/-ml-2 ได้ -->
         <img
-          src="/footer.png"
+          src="/favicon.png"
           alt="Bederly"
-          class="block h-20 md:h-24 w-auto object-contain"
+          class="block h-16 md:h-20 w-auto object-contain mb-2 ml-[-40px]"
         />
+
+        <!-- แถวปุ่มใต้โลโก้ -->
+        <div class="flex items-center gap-3">
+          <a href="https://www.facebook.com/Bederlyth/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="inline-flex hover:opacity-90 transition-opacity">
+            <img src="/facebook.png" alt="Facebook" class="h-8 w-8 object-contain block" />
+          </a>
+          <a href="https://www.youtube.com/@bederly6974" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="inline-flex hover:opacity-90 transition-opacity">
+            <img src="/youtube.png" alt="YouTube" class="h-8 w-8 object-contain block" />
+          </a>
+          <a href="mailto:bederlyinfo@gmail.com" aria-label="Send Email" class="inline-flex hover:opacity-90 transition-opacity">
+            <img src="/mail.png" alt="Email" class="h-8 w-8 object-contain block" />
+          </a>
+        </div>
       </div>
     </div>
 
-    <!-- 3 Columns: Address | Contact | Download Buttons -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
+    <!-- ✅ 3 Columns -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 items-stretch">
       <!-- Address -->
-      <div>
+      <div class="flex flex-col justify-start h-full">
         <h3 class="font-semibold text-gray-800 text-base mb-3">Address</h3>
         <p class="text-sm text-gray-600 leading-relaxed">
           Bederly Co., Ltd.<br/>
@@ -62,14 +78,13 @@ const appStore = "https://apps.apple.com/th/app/id0000000000";
       </div>
 
       <!-- Contact -->
-      <div>
+      <div class="flex flex-col justify-start h-full">
         <h3 class="font-semibold text-gray-800 text-base mb-3">Contact</h3>
         <p class="text-sm text-gray-600 leading-relaxed mb-6">
           Phone: 084-826-3345<br/>
           Email: bederlyinfo@gmail.com
         </p>
 
-        <!-- ทำให้เหมือนภาพตัวอย่าง: ตัวหนาทั้งบล็อก + บังคับตัดบรรทัด 3 บรรทัด -->
         <p class="text-sm text-gray-700 leading-relaxed font-bold">
           We create innovations and<br/>
           technologies to improve the quality of<br/>
@@ -78,17 +93,19 @@ const appStore = "https://apps.apple.com/th/app/id0000000000";
       </div>
 
       <!-- Download buttons -->
-      <div class="flex flex-col gap-3 items-start md:items-end">
-        <a href={googlePlay} target="_blank" rel="noopener noreferrer" class="footer-google-play">
-          <img src="/googleplay.png" alt="Get it on Google Play" class="h-12 w-auto" />
-        </a>
-        <a href={appStore} target="_blank" rel="noopener noreferrer" class="footer-app-store">
-          <img src="/Group.png" alt="Download on the App Store" class="h-12 w-auto" />
-        </a>
+      <div class="flex flex-col justify-end items-start md:items-end h-full footer-download">
+        <div class="flex flex-col gap-3 mt-auto pb-2">
+          <a href={googlePlay} target="_blank" rel="noopener noreferrer" class="footer-google-play">
+            <img src="/googleplay.png" alt="Get it on Google Play" class="h-12 w-auto" />
+          </a>
+          <a href={appStore} target="_blank" rel="noopener noreferrer" class="footer-app-store">
+            <img src="/Group.png" alt="Download on the App Store" class="h-12 w-auto" />
+          </a>
+        </div>
       </div>
     </div>
 
-    <!-- Copyright: ทำตัวหนา -->
+    <!-- Copyright -->
     <div class="mt-10">
       <p class="text-sm text-gray-600 font-bold">
         © Copyright {new Date().getFullYear()} | Bederly Co.,Ltd.
@@ -98,12 +115,38 @@ const appStore = "https://apps.apple.com/th/app/id0000000000";
 </footer>
 
 <style>
-  /* Mobile only - ให้ทั้งสองปุ่มมีขนาดเท่ากันพอดี */
+  /* ปุ่มสโตร์ */
+  .footer-google-play img,
+  .footer-app-store img {
+    display: block;
+    max-width: 200px;
+  }
+
+  /* Desktop */
+  @media (min-width: 768px) {
+    footer .grid { align-items: stretch !important; }
+
+    footer .footer-download {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end !important;
+      align-items: flex-end !important;
+      height: 100%;
+      margin-top: 4rem !important;
+      padding-bottom: 0.5rem;
+    }
+  }
+
+  /* Mobile */
   @media (max-width: 767.98px) {
     .footer-google-play img,
     .footer-app-store img {
-      height: 2.75rem !important; /* 44px - ขนาดเดียวกัน */
+      height: 2.75rem !important;
       width: auto !important;
+    }
+    footer .footer-download {
+      align-items: flex-start !important;
+      margin-top: 1rem !important;
     }
   }
 </style>
