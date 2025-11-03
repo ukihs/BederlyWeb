@@ -1,14 +1,8 @@
 ---
-// src/layouts/Layout.astro
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
-import LanguageSwitcher from "../components/LanguageSwitcher.astro";
 
-
-interface Alt {
-  lang: string;
-  url: string;
-}
+interface Alt { lang: string; url: string }
 
 const {
   lang = "th",
@@ -40,36 +34,20 @@ const defaultDescription = lang === "en"
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    
-    <!-- Title & Description -->
     <title>{title || defaultTitle}</title>
     <meta name="description" content={description || defaultDescription} />
-    
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    
-    <!-- Fonts - Noto Sans Thai -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link 
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700;800&display=swap" 
-      rel="stylesheet" 
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- Alternate Languages -->
-    {alternates.map((alt) => (
-      <link rel="alternate" hreflang={alt.lang} href={alt.url} />
-    ))}
-
-    <!-- PWA Meta Tags (Optional) -->
+    {alternates.map((alt) => (<link rel="alternate" hreflang={alt.lang} href={alt.url} />))}
     <meta name="theme-color" content="#0891b2" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
   
   <body class="font-noto bg-white text-gray-800 antialiased min-h-screen overflow-x-hidden">
-    <!-- Navigation -->
+    <!-- Navbar -->
     {showNav && (
       <Navbar 
         lang={lang} 
@@ -78,100 +56,18 @@ const defaultDescription = lang === "en"
       />
     )}
 
-  <div class="fixed top-4 right-6 z-[100]">
-    <LanguageSwitcher lang={lang} alternates={alternates} />
-  </div>
-    
-    <!-- Main Content -->
     <main class="relative overflow-x-clip max-w-[100svw]">
       <slot />
     </main>
-    
-    <!-- Scroll to Top Button (Optional) -->
-    <button
-      id="scroll-to-top"
-      class="fixed bottom-6 right-6 z-40 hidden
-             w-12 h-12 rounded-full bg-cyan-600 text-white
-             shadow-lg hover:shadow-xl hover:bg-cyan-700
-             transition-all duration-300 hover:scale-110
-             focus-ring"
-      aria-label="Scroll to top"
-    >
-      <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-      </svg>
-    </button>
-
-    <!-- Scroll to Top Script -->
-    <script>
-      const scrollBtn = document.getElementById('scroll-to-top');
-      
-      window.addEventListener('scroll', () => {
-        if (window.scrollY > 400) {
-          scrollBtn?.classList.remove('hidden');
-        } else {
-          scrollBtn?.classList.add('hidden');
-        }
-      });
-      
-      scrollBtn?.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    </script>
   </body>
 </html>
 
 <style>
-  /* กันโดนแถบบังหัวเวลาเจาะไปยัง #id */
   :where(section[id]) { scroll-margin-top: 88px; }
-  @media (min-width: 1024px) {
-    :where(section[id]) { scroll-margin-top: 96px; }
-  }
+  @media (min-width: 1024px) { :where(section[id]) { scroll-margin-top: 96px; } }
 
-  /* MOBILE SAFE-GUARD — ไม่มีผลกับ desktop layout */
   @media (max-width: 767.98px) {
-    html, body { 
-      overflow-x: hidden !important;
-      max-width: 100vw !important;
-      position: relative !important;
-    }
-
-    /* กัน element ภายในดันกว้างเกินจอ */
-    body > * { 
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-    }
-
-    /* ภาพ/สื่อทุกชนิดไม่ให้กว้างเกินพ่อแม่ */
-    img, video, svg, canvas { 
-      max-width: 100% !important;
-      height: auto !important;
-    }
-
-    /* utility ภายในโปรเจกต์ที่ใช้ใน hero */
-    .px-responsive { 
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
-    }
-
-    /* เผื่อ container ที่กำหนด max-w สูง ๆ อยู่แล้ว */
-    .container-primary { 
-      max-width: 100% !important;
-      overflow-x: clip !important;
-      padding-left: 0.5rem !important;
-      padding-right: 0.5rem !important;
-    }
-
-    /* กัน main content */
-    main {
-      overflow-x: hidden !important;
-      max-width: 100vw !important;
-    }
-
-    /* กันทุก section */
-    section {
-      overflow-x: hidden !important;
-      max-width: 100vw !important;
-    }
+    html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+    main, section { overflow-x: hidden !important; max-width: 100vw !important; }
   }
 </style>

@@ -1,62 +1,78 @@
 ---
+import "../styles/global.css";
+import Navbar from "../components/Navbar.astro";
+import TopLanguageButton from "../components/TopLanguageButton.astro";
+
 interface Alt { lang: string; url: string }
 
 const {
   lang = "th",
   alternates = [] as Alt[],
+  showNavLinks = true,
+  showNav = true,
+  title,
+  description,
 } = Astro.props as {
   lang?: "th" | "en";
   alternates?: Alt[];
+  showNavLinks?: boolean;
+  showNav?: boolean;
+  title?: string;
+  description?: string;
 };
 
-function altUrl(target: "th" | "en") {
-  const found = alternates.find((a) => a.lang.toLowerCase() === target);
-  if (found?.url) return found.url;
-  return `/${target}`;
-}
+const defaultTitle = lang === "en" 
+  ? "Smart Bed - Innovative Hospital Care Solutions"
+  : "Smart Bed - นวัตกรรมการดูแลผู้ป่วย";
 
-const nextLang = (lang === "th" ? "en" : "th") as "th" | "en";
-const nextUrl  = altUrl(nextLang);
-const label    = lang === "en" ? "Language" : "ภาษา";
+const defaultDescription = lang === "en"
+  ? "Smart Bed provides innovative hospital bed solutions with advanced adjustment features for better patient care."
+  : "Smart Bed นำเสนอนวัตกรรมเตียงผู้ป่วยอัจฉริยะ พร้อมฟีเจอร์ปรับท่าอัตโนมัติเพื่อการดูแลผู้ป่วยที่ดีขึ้น";
 ---
 
-<a href={nextUrl} class="fixed top-4 right-4 z-[2147483647] inline-flex items-center gap-2
-                        px-4 py-2 rounded-full border border-[#00D2E6]
-                        bg-white/90 backdrop-blur text-[#00D2E6] font-medium shadow-lg
-                        hover:bg-[#00D2E6] hover:text-white transition-colors select-none">
-  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0c3 0 5 4 5 9s-2 9-5 9-5-4-5-9 2-9 5-9zm-9 9h18"/>
-  </svg>
-  <span class="hidden sm:inline">{label}</span>
-  <span class="font-semibold">{nextLang.toUpperCase()}</span>
-</a>
+<!DOCTYPE html>
+<html lang={lang} class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>{title || defaultTitle}</title>
+    <meta name="description" content={description || defaultDescription} />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    {alternates.map((alt) => (<link rel="alternate" hreflang={alt.lang} href={alt.url} />))}
+    <meta name="theme-color" content="#0891b2" />
+  </head>
+  
+  <body class="font-noto bg-white text-gray-800 antialiased min-h-screen overflow-x-hidden">
+
+    <!-- ปุ่มภาษาแบบ fixed ทั่วทั้งไซต์ -->
+    <TopLanguageButton lang={lang} alternates={alternates} />
+
+    <!-- Navbar (เดิม) -->
+    {showNav && (
+      <Navbar 
+        lang={lang} 
+        showLinks={showNavLinks} 
+        alternates={alternates} 
+      />
+    )}
+
+    <main class="relative overflow-x-clip max-w-[100svw]">
+      <slot />
+    </main>
+  </body>
+</html>
 
 <style>
-  /* ทางเลือก: ถ้าต้องการปุ่มแบบ absolute (เลื่อนหายตามหน้า) ใช้คลาสนี้แทน
-     แล้วเปลี่ยนจาก class="fixed ..." เป็น class="lang-abs-btn" */
-  .lang-abs-btn {
-    top: 8px;
-    right: 8px;
-    z-index: 50;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.875rem;
-    border-radius: 9999px;
-    border: 1px solid #00D2E6;
-    background: rgba(255,255,255,0.9);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    color: #00D2E6;
-    font-weight: 500;
-    text-decoration: none;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-  }
-  .lang-abs-btn:hover {
-    background: #00D2E6;
-    color: #fff;
-    border-color: #00C0D2;
+  :where(section[id]) { scroll-margin-top: 88px; }
+  @media (min-width: 1024px) { :where(section[id]) { scroll-margin-top: 96px; } }
+
+  @media (max-width: 767.98px) {
+    html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+    main, section { overflow-x: hidden !important; max-width: 100vw !important; }
   }
 </style>
