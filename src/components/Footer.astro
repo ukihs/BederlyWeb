@@ -8,10 +8,11 @@ export interface Props {
 }
 
 const { lang, class: sectionClass = "" } = Astro.props;
+const isEN = lang === "en";
 
 const uriTh = "/";
 const uriEn = "/en/welcome/";
-const pageUri = lang === "en" ? uriEn : uriTh;
+const pageUri = isEN ? uriEn : uriTh;
 
 const FOOTER_QUERY = /* GraphQL */ `
   query FooterContact($uri: String!) {
@@ -35,81 +36,122 @@ const googlePlay = "https://play.google.com/store/apps/details?id=com.bederly.ph
 const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
 ---
 
-<footer class={`bg-white ${sectionClass}`.trim()}>
-  <!-- ชิดซ้ายจริง: มือถือ px-0, เดสก์ท็อปค่อยมี padding -->
-  <div class="mx-auto w-full max-w-[1450px] px-0 md:px-6 py-16">
-    <!-- ✅ Logo (บน) + ปุ่ม (ล่าง) -->
-    <div class="mb-6">
-      <div class="flex flex-col items-start leading-none">
-        <!-- ถ้าในรูป favicon.png มีช่องโปร่งซ้าย ให้ชดเชยด้วย -ml-1/-ml-2 ได้ -->
+<!-- 🌟 FULL WIDTH FOOTER -->
+<footer id="footer" class={`bg-white w-full ${sectionClass}`.trim()}>
+  <!-- ⭐ full-bleed trick -->
+  <div class="footer-bleed">
+    <!-- ⭐ inner container -->
+    <div class="footer-inner mx-auto w-full max-w-[1800px] px-4 md:px-10 py-16">
+
+      <!-- Logo + social -->
+      <div class="mb-10">
         <img
           src="/favicon.png"
           alt="Bederly"
           class="block h-16 md:h-20 w-auto object-contain mb-2 ml-[-40px]"
         />
 
-        <!-- แถวปุ่มใต้โลโก้ -->
         <div class="flex items-center gap-3">
-          <a href="https://www.facebook.com/Bederlyth/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="inline-flex hover:opacity-90 transition-opacity">
-            <img src="/facebook.png" alt="Facebook" class="h-8 w-8 object-contain block" />
+          <a href="https://www.facebook.com/Bederlyth/" target="_blank" rel="noopener noreferrer">
+            <img src="/facebook.png" class="h-8 w-8" alt="Facebook" />
           </a>
-          <a href="https://www.youtube.com/@bederly6974" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="inline-flex hover:opacity-90 transition-opacity">
-            <img src="/youtube.png" alt="YouTube" class="h-8 w-8 object-contain block" />
+          <a href="https://www.youtube.com/@bederly6974" target="_blank" rel="noopener noreferrer">
+            <img src="/youtube.png" class="h-8 w-8" alt="YouTube" />
           </a>
-          <a href="mailto:bederlyinfo@gmail.com" aria-label="Send Email" class="inline-flex hover:opacity-90 transition-opacity">
-            <img src="/mail.png" alt="Email" class="h-8 w-8 object-contain block" />
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- ✅ 3 Columns -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 items-stretch">
-      <!-- Address -->
-      <div class="flex flex-col justify-start h-full">
-        <h3 class="font-semibold text-gray-800 text-base mb-3">Address</h3>
-        <p class="text-sm text-gray-600 leading-relaxed">
-          Bederly Co., Ltd.<br/>
-          125/1 Moo 4, Ban Nong Pru<br/>
-          Nong Chabok Subdistrict, Mueang<br/>
-          Nakhon Ratchasima District<br/>
-          Nakhon Ratchasima 30000, Thailand
-        </p>
-      </div>
-
-      <!-- Contact -->
-      <div class="flex flex-col justify-start h-full">
-        <h3 class="font-semibold text-gray-800 text-base mb-3">Contact</h3>
-        <p class="text-sm text-gray-600 leading-relaxed mb-6">
-          Phone: 084-826-3345<br/>
-          Email: bederlyinfo@gmail.com
-        </p>
-
-        <p class="text-sm text-gray-700 leading-relaxed font-bold">
-          We create innovations and<br/>
-          technologies to improve the quality of<br/>
-          life, for you and your loved ones
-        </p>
-      </div>
-
-      <!-- Download buttons -->
-      <div class="flex flex-col justify-end items-start md:items-end h-full footer-download">
-        <div class="flex flex-col gap-3 mt-auto pb-2">
-          <a href={googlePlay} target="_blank" rel="noopener noreferrer" class="footer-google-play">
-            <img src="/googleplay.png" alt="Get it on Google Play" class="h-12 w-auto" />
-          </a>
-          <a href={appStore} target="_blank" rel="noopener noreferrer" class="footer-app-store">
-            <img src="/Group.png" alt="Download on the App Store" class="h-12 w-auto" />
+          <a href="mailto:bederlyinfo@gmail.com">
+            <img src="/mail.png" class="h-8 w-8" alt="Email" />
           </a>
         </div>
       </div>
-    </div>
 
-    <!-- Copyright -->
-    <div class="mt-10">
-      <p class="text-sm text-gray-600 font-bold">
-        © Copyright {new Date().getFullYear()} | Bederly Co.,Ltd.
-      </p>
+      <!-- Grid columns -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <!-- Address -->
+        <div>
+          <h3 class="font-semibold text-gray-800 text-base mb-3">
+            {isEN ? "Address" : "ที่อยู่"}
+          </h3>
+
+          {isEN ? (
+            <p class="text-sm text-black leading-relaxed">
+              Bederly Co., Ltd.<br/>
+              125/1 Moo 4, Ban Nong Pru<br/>
+              Nong Chabok Subdistrict, Mueang<br/>
+              Nakhon Ratchasima District<br/>
+              Nakhon Ratchasima 30000, Thailand
+            </p>
+          ) : (
+            <p class="text-sm text-black leading-relaxed">
+              บริษัท เบดเดอลี่ จำกัด<br/>
+              125/1 หมู่ 4 บ้านหนองปรู<br/>
+              ต.หนองจะบก อ.เมืองนครราชสีมา<br/>
+              จ.นครราชสีมา 30000 ประเทศไทย
+            </p>
+          )}
+        </div>
+
+        <!-- Contact -->
+        <div>
+          <h3 class="font-semibold text-gray-800 text-base mb-3">
+            {isEN ? "Contact" : "ติดต่อ"}
+          </h3>
+
+          {isEN ? (
+            <p class="text-sm text-black leading-relaxed mb-6">
+              Phone: 084-826-3345<br/>
+              Email: bederlyinfo@gmail.com
+            </p>
+          ) : (
+            <p class="text-sm text-black leading-relaxed mb-6">
+              โทรศัพท์: 084-826-3345<br/>
+              อีเมล: bederlyinfo@gmail.com
+            </p>
+          )}
+
+          {isEN ? (
+            <p class="font-bold text-sm text-black leading-relaxed">
+              We create innovations and<br/>
+              technologies to improve the quality of<br/>
+              life, for you and your loved ones
+            </p>
+          ) : (
+            <p class="font-bold text-sm text-black leading-relaxed">
+              เราสร้างสรรค์นวัตกรรมและเทคโนโลยี<br/>
+              เพื่อยกระดับคุณภาพชีวิตของคุณ<br/>
+              และคนที่คุณรัก
+            </p>
+          )}
+        </div>
+
+        <!-- Download buttons -->
+        <div class="footer-download flex flex-col md:items-end gap-3 mt-16 md:mt-24">
+          <a
+            href={googlePlay}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-google-play"
+            aria-label={isEN ? "Get it on Google Play" : "ดาวน์โหลดบน Google Play"}
+          >
+            <img src="/googleplay.png" class="h-12 w-auto" alt="Google Play" />
+          </a>
+          <a
+            href={appStore}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-app-store"
+            aria-label={isEN ? "Download on the App Store" : "ดาวน์โหลดบน App Store"}
+          >
+            <img src="/Group.png" class="h-12 w-auto" alt="App Store" />
+          </a>
+        </div>
+      </div>
+
+      <!-- Copyright -->
+      <div class="mt-12">
+        <p class="text-sm text-black font-medium">
+          © Copyright {new Date().getFullYear()} | Bederly Co.,Ltd.
+        </p>
+      </div>
     </div>
   </div>
 </footer>
@@ -148,5 +190,18 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
       align-items: flex-start !important;
       margin-top: 1rem !important;
     }
+  }
+
+  /* ⭐ full-width footer */
+  #footer .footer-bleed {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+  }
+
+  /* ⭐ avoid rounded corners from global CSS */
+  #footer,
+  #footer * {
+    border-radius: 0 !important;
   }
 </style>

@@ -30,9 +30,7 @@ const POSTS_BY_CATEGORY = /* GraphQL */ `
       nodes {
         id
         title
-        featuredImage {
-          node { altText sourceUrl }
-        }
+        featuredImage { node { altText sourceUrl } }
       }
     }
   }
@@ -52,7 +50,7 @@ try {
 }
 
 const bigTitle =
-  lang === "en" ? "Our Partners and Customers" : "ลูกค้าและพันธมิตรของเรา";
+  lang === "en" ? "Our Partners and <br />Customers" : "ลูกค้าและพันธมิตร<br />ของเรา";
 
 const bigSubtitle =
   lang === "en"
@@ -63,23 +61,31 @@ const bigSubtitle =
 <section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
     <div class="md:col-span-12">
-      <!-- ซ้าย: แสดงเฉพาะหัวข้อใหญ่ -->
+      <!-- ซ้าย: หัวข้อใหญ่ของบล็อค (ไม่ยุ่งกับดีไซน์เดิม) -->
       <div class="md:w-3/12">
         {showHeading && (
           <>
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-              {bigTitle}
-            </h2>
-            <p class="text-gray-600 mt-2 md:mt-2.5 leading-relaxed"set:html={bigSubtitle}></p>
+            <h2 
+              class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight"
+              set:html={bigTitle}
+            ></h2>
+            <p
+              class="mt-2 md:mt-2.5 leading-relaxed text-black font-medium"
+              set:html={bigSubtitle}
+            />
           </>
         )}
       </div>
 
-      <!-- ขวา: กริดโลโก้ (และหัวข้อรองถ้ามี) -->
+      <!-- ขวา: หัวข้อย่อย + กริดโลโก้ -->
       <div class="mt-6 md:mt-8 flex justify-end">
         <div class="w-full md:w-10/12">
           {sectionLabel && (
-            <h3 class="text-xl md:text-2xl font-semibold text-gray-900 leading-tight mb-3 md:mb-4">
+            <!-- หัวข้อย่อยชิดซ้าย น้ำหนักกลาง-หนา สีดำ ตามภาพตัวอย่าง -->
+            <h3
+              class="text-[20px] md:text-[22px] font-normal text-gray-900 leading-tight
+                     mb-3 md:mb-4 tracking-tight"
+            >
               {sectionLabel}
             </h3>
           )}
@@ -90,7 +96,8 @@ const bigSubtitle =
             </div>
           ) : (
             <div
-              class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6 lg:gap-7"
+              class="grid gap-5 sm:gap-6 lg:gap-7
+                     grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4"
               aria-label={sectionLabel || bigTitle}
             >
               {posts.map((p) => {
@@ -99,7 +106,6 @@ const bigSubtitle =
                   <div
                     class="bg-white rounded-2xl shadow-md ring-1 ring-black/5
                            flex items-center justify-center h-28 sm:h-32 md:h-36 px-6"
-                           
                   >
                     {imgUrl ? (
                       <img

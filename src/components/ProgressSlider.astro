@@ -1,4 +1,5 @@
 ---
+// src/components/ProgressCarousel.astro
 import { wpQuery } from "../lib/wp";
 import { rewriteWpUrl } from "../lib/wpUrl";
 
@@ -51,33 +52,12 @@ function pickImageUrl(img: any): string | undefined {
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
 }
 
-/** ถอด tag + ถอดรหัส HTML entities (ทั้ง dec, hex, named) */
-function htmlToPlainText(html: string): string {
-  let s = html || "";
-
-  // ตัด script/style
-  s = s.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, "");
-  s = s.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, "");
-
-  // จัดบรรทัด
-  s = s.replace(/<\s*li[^>]*>/gi, "• ");
-  s = s.replace(/<\s*\/\s*li\s*>/gi, "\n");
-  s = s.replace(/<\s*br\s*\/?>/gi, "\n");
-  s = s.replace(/<\s*\/\s*p\s*>/gi, "\n");
-
-  // ลบ tag ทั้งหมด
-  s = s.replace(/<[^>]+>/g, "");
-
-  // 1) numeric hex: &#x2019;
-  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, h) =>
-    String.fromCodePoint(parseInt(h, 16))
-  );
-  // 2) numeric dec: &#8217;
-  s = s.replace(/&#(\d+);/g, (_, d) =>
-    String.fromCodePoint(parseInt(d, 10))
-  );
-  // 3) named entities ที่พบบ่อย
-  s = s
+/** ถอดรหัส HTML entities (รวม &lt;br/&gt; → <br/>) */
+function decodeEntities(s: string): string {
+  if (!s) return "";
+  return s
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -87,14 +67,55 @@ function htmlToPlainText(html: string): string {
     .replace(/&rsquo;/g, "’")
     .replace(/&lsquo;/g, "‘")
     .replace(/&rdquo;/g, "”")
-    .replace(/&ldquo;/g, "“")
-    .replace(/&ndash;|&#8211;/g, "–")
-    .replace(/&mdash;|&#8212;/g, "—")
-    .replace(/&hellip;|&#8230;/g, "…");
+    .replace(/&ldquo;/g, "“");
+}
 
-  // เก็บกวาดช่องว่าง/บรรทัด
-  s = s.replace(/[ \t]+\n/g, "\n").replace(/\n{2,}/g, "\n").trim();
-  return s;
+/** สร้าง HTML ที่ปลอดภัย + รวมบรรทัดตามกติกา */
+function toSafeHtml(input: string): string {
+  let html = decodeEntities(input || "");
+
+  // ตัดแท็ก/คอนเทนต์อันตราย
+  html = html
+    .replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, "")
+    .replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, "")
+    .replace(/<\s*(iframe|form|input|button|svg|math)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(iframe|form|input|button|svg|math)[^>]*\/\s*>/gi, "");
+
+  // ลบ <p> ทั้งหมดและเชื่อมด้วยช่องว่าง
+  html = html
+    .replace(/<\/p>\s*<p[^>]*>/gi, " ")
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<\/p>/gi, "");
+
+  // ถ้าไม่มีแท็กบรรทัด → \n\n = <br/><br/>, \n = ' '
+  const hasLineTags = /<(br|ul|ol|li)\b/i.test(html);
+  if (!hasLineTags) {
+    html = html
+      .replace(/\r\n?/g, "\n")
+      .replace(/[\u2028\u2029]/g, "\n")
+      .replace(/\n{2,}/g, "<br/><br/>")
+      .replace(/\n/g, " ");
+  }
+
+  // อนุญาตเฉพาะแท็กที่ปลอดภัย
+  const ALLOWED = new Set(["br","ul","ol","li","strong","b","em","i","u","a","span"]);
+  html = html.replace(/<\/?([a-z0-9-]+)(\s[^>]*)?>/gi, (full, tag: string, attrs: string = "") => {
+    const t = tag.toLowerCase();
+    if (full.startsWith("</")) return ALLOWED.has(t) ? `</${t}>` : "";
+    if (!ALLOWED.has(t)) return "";
+    if (t === "a") {
+      const m = attrs.match(/\bhref\s*=\s*("([^"]+)"|'([^']+)'|([^\s>]+))/i);
+      let href = m?.[2] ?? m?.[3] ?? m?.[4] ?? "";
+      href = /^(https?:|mailto:|tel:)/i.test(href) ? href : "#";
+      return `<a href="${href}" target="_blank" rel="noopener nofollow">`;
+    }
+    return `<${t}>`;
+  });
+
+  return html
+    .replace(/\s+<br\/?>/g, "<br/>")
+    .replace(/(<br\/?>\s*){3,}/g, "<br/><br/>")
+    .trim();
 }
 
 function collectLogos(p: any) {
@@ -111,13 +132,13 @@ try {
   posts = res?.posts?.nodes ?? [];
 } catch {}
 
-const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคืบหน้าล่าสุดของเรา";
+const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคืบหน้าล่าสุด";
 ---
 
 <section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
     <div class="mb-6">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{sectionTitle}</h2>
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900">{sectionTitle}</h2>
     </div>
 
     {posts.length === 0 ? (
@@ -135,13 +156,19 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
           {posts.map((p) => {
             const imgUrl = pickImageUrl(p?.featuredImage);
             const alt    = normalize(p?.featuredImage)?.altText || p?.title || "";
-            const text   = htmlToPlainText(p?.excerpt || p?.content || "");
+            const raw    = (p?.excerpt || p?.content || "") as string;
+            const safe   = toSafeHtml(raw);
             const logos  = collectLogos(p);
 
             return (
-              <article class="shrink-0 w-[88%] sm:w-[70%] lg:w-[920px]">
+              <article class="shrink-0 w-[94%] sm:w-[78%] lg:w-[1040px] xl:w-[1120px]">
                 <div class="pcard rounded-[22px] overflow-hidden shadow-lg transition-shadow duration-300 bg-white">
-                  <div class="pcard-grid grid md:grid-cols-[1.05fr,1fr] items-stretch h-full">
+                  <!-- ปรับสัดส่วนรูป:ข้อความ ให้รูปแคบลง -->
+                  <div class="pcard-grid grid
+                              md:grid-cols-[0.8fr,1.2fr]
+                              lg:grid-cols-[0.75fr,1.25fr]
+                              xl:grid-cols-[0.92fr,1.08fr]
+                              items-stretch h-full">
                     <figure class="media relative h-full overflow-hidden m-0">
                       {imgUrl ? (
                         <img src={imgUrl} alt={alt} class="block w-full h-full object-cover" loading="lazy" />
@@ -153,10 +180,11 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
                         {p?.title || ""}
                       </h3>
 
-                      {text && (
-                        <div class="text-white/95 text-[13.5px] md:text-[14px] lg:text-[15px] leading-snug whitespace-pre-line">
-                          {text}
-                        </div>
+                      {safe && (
+                        <div
+                          class="html-content text-white/95 text-[13.5px] md:text-[14px] lg:text-[15px] leading-snug"
+                          set:html={safe}
+                        />
                       )}
 
                       {logos.length > 0 && (
@@ -187,29 +215,33 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
   .pcard { height: auto; }
   .pcard-grid { height: 100%; }
 
-  /* ทำให้ลากได้ทุกจุดของแทร็ค (รวมรูป/ตัวหนังสือ) */
+  /* ทำให้ลากได้ทุกจุดของแทร็ค */
   .drag-scroll { cursor: grab; user-select: none; }
   .drag-scroll.dragging { cursor: grabbing; }
 
-  /* ปิด drag ของรูป เพื่อไม่ให้เบราว์เซอร์จับรูปไปลาก */
   .drag-scroll img {
     -webkit-user-drag: none;
     user-drag: none;
   }
+
+  /* ระยะของคอนเทนต์ HTML ที่มาจาก set:html */
+  .html-content { white-space: normal; }
+  .html-content p { margin: 0 0 .5rem 0; }
+  .html-content ul, .html-content ol { margin: .25rem 0 .5rem 0; padding-left: 1.2rem; }
+  .html-content li { margin: .125rem 0; }
+  .html-content a { text-decoration: underline; text-underline-offset: 2px; }
 
   /* ===== MOBILE ONLY ===== */
   @media (max-width: 767.98px) {
     .pcard { overflow: hidden; border-radius: 22px; }
     .pcard .media { margin: 0 !important; }
     .pcard .media > img {
-      display: block;
       width: 100% !important;
       height: 100% !important;
       object-fit: cover !important;
     }
     .pcard .pcard-grid { gap: 0 !important; }
 
-    /* โลโก้ให้เลื่อนซ้าย-ขวาได้หากล้น */
     .logos-wrap {
       flex-wrap: nowrap !important;
       overflow-x: auto !important;
@@ -222,15 +254,31 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
     .logos-wrap::-webkit-scrollbar { display: none; }
     .logos-wrap > div { flex: 0 0 auto !important; }
   }
+
+  /* ===== ปรับสัดส่วนรูปเฉพาะการ์ดใบที่ 1 และ 3 ===== */
+@media (min-width: 768px) {
+  /* การ์ดใบที่ 1 และ 3 */
+  #progress-track article:nth-child(1) .pcard-grid,
+  #progress-track article:nth-child(3) .pcard-grid {
+    /* ยืดคอลัมน์รูปให้กว้างขึ้น เนื้อหาแคบลง */
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  #progress-track article:nth-child(1) .pcard-grid,
+  #progress-track article:nth-child(3) .pcard-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+  }
+}
 </style>
 
 <script>
-  // ====== Drag-to-Scroll (เมาส์) + Wheel แนวนอน ======
+  // Drag-to-scroll + wheel horizontal
   const track = document.getElementById("progress-track");
   const cards = Array.from(document.querySelectorAll('.pcard'));
 
   if (track) {
-    // ปิด dragstart ทุกรูป/ลิงก์ในแทร็ค
     track.addEventListener("dragstart", (e) => e.preventDefault());
     track.querySelectorAll("img, a, svg").forEach(el => {
       el.setAttribute?.("draggable", "false");
@@ -241,40 +289,22 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
     let startX = 0;
     let startLeft = 0;
 
-    const down = (x) => {
-      isDown = true;
-      startX = x;
-      startLeft = track.scrollLeft;
-      track.classList.add("dragging");
-    };
-    const move = (x, e) => {
-      if (!isDown) return;
-      e?.preventDefault?.();
-      track.scrollLeft = startLeft - (x - startX);
-    };
-    const up = () => {
-      isDown = false;
-      track.classList.remove("dragging");
-    };
+    const down = (x) => { isDown = true; startX = x; startLeft = track.scrollLeft; track.classList.add("dragging"); };
+    const move = (x, e) => { if (!isDown) return; e?.preventDefault?.(); track.scrollLeft = startLeft - (x - startX); };
+    const up   = ()   => { isDown = false; track.classList.remove("dragging"); };
 
-    // Mouse drag จากทุกจุด
     track.addEventListener("mousedown", (e) => down(e.pageX));
     window.addEventListener("mousemove", (e) => move(e.pageX, e));
     window.addEventListener("mouseup", up);
     track.addEventListener("mouseleave", up);
 
-    // ล้อเมาส์เลื่อนแนวนอน (เมื่อผู้ใช้หมุนแนวตั้ง)
     track.addEventListener("wheel", (e) => {
-      const absY = Math.abs(e.deltaY);
-      const absX = Math.abs(e.deltaX);
-      if (absY > absX) {
-        track.scrollLeft += e.deltaY;
-        e.preventDefault();
-      }
+      const absY = Math.abs(e.deltaY), absX = Math.abs(e.deltaX);
+      if (absY > absX) { track.scrollLeft += e.deltaY; e.preventDefault(); }
     }, { passive: false });
   }
 
-  // ====== ให้การ์ดสูงเท่ากันเสมอ ======
+  // ให้การ์ดสูงเท่ากัน
   function syncHeights() {
     if (!cards.length) return;
     cards.forEach(c => c.style.height = 'auto');

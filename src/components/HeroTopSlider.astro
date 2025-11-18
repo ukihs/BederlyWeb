@@ -21,24 +21,21 @@ const {
 
 /* ---------- utils ---------- */
 type Size = { name: string; sourceUrl?: string; width?: number; height?: number };
-type Img = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
-function normalize(img: any): Img | undefined { return img?.node ? img.node : (img ?? undefined); }
-function pickImageUrl(img: any): string | undefined {
-  const n = normalize(img);
-  if (!n) return undefined;
-  const sizes = n.mediaDetails?.sizes ?? [];
-  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
-  for (const key of prefer) {
-    const hit = sizes.find((s) => s?.name === key && s?.sourceUrl);
-    if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
-  }
-  return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
+type Img  = { altText?: string; sourceUrl?: string; mediaDetails?: { sizes?: Size[] } };
+
+function fix(src?: string) { return src ? rewriteWpUrl(src) : src; }
+function toSrcSet(sizes?: Size[]) {
+  if (!sizes?.length) return undefined;
+  return sizes
+    .filter(s => s?.sourceUrl && s?.width)
+    .map(s => `${fix(s.sourceUrl)} ${s.width}w`)
+    .join(", ");
 }
 
-/* ---------- data ---------- */
+/* ---------- data: ใช้หมวด top-en / top-th ---------- */
 const topHeroSlug = lang === "en" ? "top-en" : "top-th";
 
-const TOP_HERO_IMAGES_QUERY = /* GraphQL */ `
+const TOP_HERO_IMAGES = /* GraphQL */ `
   query TopHeroImages($slug: String!, $limit: Int) {
     posts(
       first: $limit
@@ -50,7 +47,7 @@ const TOP_HERO_IMAGES_QUERY = /* GraphQL */ `
           node {
             altText
             sourceUrl
-            mediaDetails { sizes { name width height sourceUrl } }
+            mediaDetails { sizes { name width sourceUrl } }
           }
         }
       }
@@ -58,121 +55,130 @@ const TOP_HERO_IMAGES_QUERY = /* GraphQL */ `
   }
 `;
 
-const topHeroRes = await wpQuery<any>(TOP_HERO_IMAGES_QUERY, { slug: topHeroSlug, limit });
-const heroImageUrls: string[] = (topHeroRes?.posts?.nodes ?? [])
-  .map((p: any) => pickImageUrl(p?.featuredImage))
-  .filter(Boolean);
-
-// debug (ลบได้)
-// console.log("Hero URLs", heroImageUrls);
+let slides: Img[] = [];
+try {
+  const data = await wpQuery<any>(TOP_HERO_IMAGES, { slug: topHeroSlug, limit });
+  slides = (data?.posts?.nodes ?? [])
+    .map((p: any) => p?.featuredImage?.node)
+    .filter(Boolean);
+} catch (e) {
+  console.warn("Top hero images query failed:", e);
+}
 ---
 
-<section id="hero" class="relative mobile-safe">
-  <div class="container-primary mobile-container">
-    <div class="relative overflow-hidden overflow-x-clip shadow-2xl mobile-hero-wrapper">
-      {heroImageUrls.length > 0 ? (
-        <!-- Carousel แบบ Fade -->
-        <div
-          id="hero-slider"
-          class="relative w-full overflow-hidden h-[500px] sm:h-[600px] md:h-[700px] lg:h-[900px]"
-        >
-          <div class="slides relative h-full">
-            {heroImageUrls.map((url, idx) => (
-              <div
-                class={`slide absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-              >
-                <img
-                  src={url}
-                  alt=""
-                  class="block w-full h-full object-cover object-[20%_50%] mobile-hero-img"
-                  loading="eager"
-                  decoding="async"
-                />
-                {(heroTitle || heroSubtitle) && (
-                  <div class="absolute inset-0 flex items-end">
-                    <div class="w-full px-responsive pb-8 sm:pb-12 md:pb-16 lg:pb-20">
-                      <div class="max-w-3xl mobile-hero-content">
-                        {heroTitle && (
-                          <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl
-                                     font-bold text-white leading-tight mb-3 sm:mb-4 text-shadow-lg mobile-hero-title">
-                            {heroTitle.split('\n').map((line, i, arr) => (
-                              <Fragment>
-                                {line}{i < arr.length - 1 && <br/>}
-                              </Fragment>
-                            ))}
-                          </h1>
-                        )}
-                        {heroSubtitle && (
-                          <p class="text-base sm:text-lg md:text-xl lg:text-2xl
-                                    text-white/90 leading-relaxed max-w-2xl text-shadow-md mobile-hero-subtitle">
-                            {heroSubtitle}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <!-- Fallback -->
-        <div class="relative mobile-hero-image">
-          {fallbackImg ? (
-            <img src={fallbackImg} alt="" class="block w-full h-auto mobile-hero-img" loading="eager" decoding="async" />
-          ) : (
-            <div class="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px]
-                        bg-gradient-to-br from-cyan-500 to-blue-600 mobile-hero-fallback"></div>
-          )}
+<section id="hero" class="mobile-safe bg-white overflow-hidden">
+  {/* ใช้ container-primary เหมือน section อื่น เพื่อให้ความกว้างตรงกัน */}
+  <div class="container-primary">
+    <div class="hero-frame mobile-hero-wrapper">
+      {slides.length ? (
+        <div id="hero-fade-slider" class="hero-slider">
+          {slides.map((img, i) => (
+            <img
+              src={fix(img.sourceUrl)}
+              srcset={toSrcSet(img.mediaDetails?.sizes)}
+              alt={img.altText || ""}
+              class={`hero-image fade-slide ${i === 0 ? "active" : ""}`}
+              loading={i === 0 ? "eager" : "lazy"}
+            />
+          ))}
+
           {(heroTitle || heroSubtitle) && (
-            <div class="absolute inset-0 flex items-end">
-              <div class="w-full px-responsive pb-8 sm:pb-12 md:pb-16 lg:pb-20">
-                <div class="max-w-3xl mobile-hero-content">
-                  {heroTitle && (
-                    <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl
-                               font-bold text-white leading-tight mb-3 sm:mb-4 text-shadow-lg mobile-hero-title">
-                      {heroTitle}
-                    </h1>
-                  )}
-                  {heroSubtitle && (
-                    <p class="text-base sm:text-lg md:text-xl lg:text-2xl
-                              text-white/90 leading-relaxed max-w-2xl text-shadow-md mobile-hero-subtitle">
-                      {heroSubtitle}
-                    </p>
-                  )}
-                </div>
+            <div class="overlay">
+              <div class="overlay-inner">
+                {heroTitle && (
+                  <h1 class="ov-title">
+                    {heroTitle.split("\n").map((line, i, arr) => (
+                      <Fragment>
+                        {line}
+                        {i < arr.length - 1 && <br />}
+                      </Fragment>
+                    ))}
+                  </h1>
+                )}
+                {heroSubtitle && <p class="ov-sub">{heroSubtitle}</p>}
               </div>
             </div>
           )}
         </div>
+      ) : (
+        <img src={fallbackImg} alt="" class="hero-image" />
       )}
     </div>
   </div>
 </section>
 
 <style>
-  /* ซ้อนสไลด์กัน และบังคับให้ภาพเติมเต็มกล่อง */
-  #hero-slider .slides { position: relative; }
-  #hero-slider .slide  { position: absolute; inset: 0; transition: opacity 1s ease-in-out; }
-  #hero-slider img     { width: 100%; height: 100%; object-fit: cover; }
+  :root {
+    --hero-radius: 40px;
+    --hero-shadow: 0 10px 35px -10px rgba(0,0,0,.25);
+  }
+
+  /* กรอบ Hero ด้านใน container-primary */
+  .hero-frame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-frame {
+      border-radius: var(--hero-radius);
+      box-shadow: var(--hero-shadow);
+    }
+  }
+
+  /* ===== Slider & overlay ===== */
+  .mobile-hero-wrapper { position: relative; }
+  .hero-slider { position: relative; width: 100%; overflow: hidden; }
+  .hero-image { width: 100%; height: auto; object-fit: cover; display: block; }
+
+  .fade-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease-in-out; }
+  .fade-slide.active { position: relative; opacity: 1; z-index: 1; }
+
+  .overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; pointer-events: none; }
+  .overlay-inner { width: 100%; padding: 2rem 1.25rem 2.5rem; max-width: 64rem; }
+  .ov-title {
+    color: #fff;
+    font-weight: 800;
+    line-height: 1.15;
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    text-shadow: 0 2px 16px rgba(0,0,0,.35);
+    margin: 0 0 .5rem 0;
+  }
+  .ov-sub {
+    color: rgba(255,255,255,.9);
+    font-size: clamp(.95rem, 2.6vw, 1.25rem);
+    max-width: 40rem;
+    text-shadow: 0 1px 10px rgba(0,0,0,.3);
+    margin: 0;
+  }
+
+  /* ===== Mobile: มีมุมโค้งเฉพาะด้านล่าง + ระยะห่างเล็กน้อย ===== */
+  @media (max-width:1023.98px){
+    #hero.mobile-safe {
+      margin-bottom: 1.25rem !important;
+      padding-bottom: 0 !important;
+    }
+    .hero-frame {
+      border-radius: 0; /* ใช้ radius แค่ส่วนล่างผ่าน wrapper */
+    }
+    .mobile-hero-wrapper {
+      border-bottom-left-radius: 28px;
+      border-bottom-right-radius: 28px;
+      overflow: hidden;
+    }
+  }
 </style>
 
 <script>
-  // หมุนภาพแบบ fade
-  const slides = Array.from(document.querySelectorAll('#hero-slider .slide'));
-  if (slides.length > 0) {
+  // Fade loop
+  const slides = Array.from(document.querySelectorAll("#hero-fade-slider .fade-slide"));
+  if (slides.length > 1) {
     let i = 0;
-    if (slides.length > 1) {
-      setInterval(() => {
-        const prev = slides[i];
-        i = (i + 1) % slides.length;
-        const next = slides[i];
-        prev.classList.remove('opacity-100', 'z-10');
-        prev.classList.add('opacity-0', 'z-0');
-        next.classList.remove('opacity-0', 'z-0');
-        next.classList.add('opacity-100', 'z-10');
-      }, 5000); // เปลี่ยนทุก 5 วิ
-    }
+    setInterval(() => {
+      slides[i].classList.remove("active");
+      i = (i + 1) % slides.length;
+      slides[i].classList.add("active");
+    }, 5000); // เปลี่ยนทุก 5 วิ
   }
 </script>

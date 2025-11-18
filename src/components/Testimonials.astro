@@ -16,37 +16,26 @@ const LOGOS_BY_CATEGORY = /* GraphQL */ `
   query LogosByCategory($slug: String!, $limit: Int) {
     posts(
       first: $limit
-      where: {
-        status: PUBLISH
-        categoryName: $slug
-        orderby: { field: DATE, order: ASC }
-      }
+      where: { status: PUBLISH, categoryName: $slug, orderby: { field: DATE, order: ASC } }
     ) {
       nodes {
         id
         title
         featuredImage {
-          node {
-            altText
-            sourceUrl
-            mediaDetails { sizes { name sourceUrl } }
-          }
+          node { altText sourceUrl mediaDetails { sizes { name sourceUrl } } }
         }
       }
     }
   }
 `;
 
-function normalize(img: any) {
-  return img?.node ? img.node : img ?? undefined;
-}
+function normalize(img: any) { return img?.node ? img.node : img ?? undefined; }
 function pickImageUrl(img: any): string | undefined {
-  const n = normalize(img);
-  if (!n) return undefined;
+  const n = normalize(img); if (!n) return undefined;
   const sizes = n.mediaDetails?.sizes ?? [];
-  const prefer = ["large", "medium_large", "2048x2048", "1536x1536", "medium"];
+  const prefer = ["large","medium_large","2048x2048","1536x1536","medium"];
   for (const key of prefer) {
-    const hit = sizes.find((s: any) => s?.name === key && s?.sourceUrl);
+    const hit = sizes.find((s:any)=>s?.name===key && s?.sourceUrl);
     if (hit?.sourceUrl) return rewriteWpUrl(hit.sourceUrl);
   }
   return n.sourceUrl ? rewriteWpUrl(n.sourceUrl) : undefined;
@@ -67,14 +56,17 @@ const sub =
 
 <section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
-    <!-- แถวหลัก: หัวข้ออยู่บน โลโก้อยู่ล่าง -->
     <div class="md:col-span-12">
+      <!-- หัวข้อหลัก: กลับมาเป็น font-bold -->
       <div class="md:w-3/12">
-        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">{heading}</h2>
-        <p class="text-gray-600 mt-2 md:mt-2.5 leading-relaxed" set:html={sub}></p>
+        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+          {heading}
+        </h2>
+        <!-- หัวข้อย่อย: สีดำ + ตัวหนา -->
+        <p class="mt-2 md:mt-2.5 leading-relaxed text-black font-medium" set:html={sub} />
       </div>
 
-      <!-- โลโก้อยู่ทางขวา -->
+      <!-- โลโก้: 4 คอลัมน์ตั้งแต่ md ขึ้นไป -->
       <div class="mt-8 md:mt-10 flex justify-end">
         <div class="w-full md:w-10/12">
           {logos.length === 0 ? (
@@ -84,7 +76,7 @@ const sub =
           ) : (
             <div
               class="grid gap-5 sm:gap-6 lg:gap-7
-                     grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                     grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4"
             >
               {logos.map((l) => {
                 const imgUrl = pickImageUrl(l?.featuredImage);

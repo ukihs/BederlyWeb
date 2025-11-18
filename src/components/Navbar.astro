@@ -13,32 +13,35 @@ const {
 
 function altUrl(target: "th" | "en") {
   const found = alternates.find((a) => a.lang.toLowerCase() === target);
-  if (found?.url) return found.url;
-  return `/${target}`;
+  return found?.url || `/${target}`;
 }
 
 const T = (en: string, th: string) => (lang === "en" ? en : th);
 ---
-<nav class="sticky top-4 z-50 bg-white mb-[30px] rounded-[40px] shadow-md max-w-[1473px] mx-auto overflow-hidden">
-  <div class="mx-auto w-full px-4 sm:px-6 lg:px-8">
-    <!-- ใช้ relative + absolute center -->
-    <div class="relative bg-white h-16 flex items-center shadow-none ring-0 border-none outline-none
-                pl-6 sm:pl-8 pr-[100px]">
 
-      <!-- ซ้าย: โลโก้ ชิดซ้าย -->
+<!-- ให้ nav แค่ทำหน้าที่ sticky + margin; ความกว้างให้ container-primary ดูแล -->
+<nav class="sticky top-4 z-50 mb-[30px]">
+  <div class="container-primary">
+    <!-- กรอบ pill ที่ต้องตรงกับ hero -->
+    <div
+      class="nav-pill bg-white h-16 rounded-[40px] shadow-md flex items-center
+             relative shadow-none ring-0 border-none outline-none
+             pl-6 sm:pl-8 pr-[100px]"
+    >
+      <!-- ซ้าย: โลโก้ -->
       <a href={`/${lang}`} class="flex items-center gap-2 shrink-0 hover:opacity-90">
         <img src="/favicon.png" alt="Bederly" class="h-12 md:h-14 w-auto object-contain" />
       </a>
 
-      <!-- กลาง: เมนู (กึ่งกลางด้วย absolute + translate) -->
+      <!-- กลาง: เมนู -->
       {showLinks && (
         <ul class="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 xl:gap-10 font-medium whitespace-nowrap">
-          <li><a href={`/${lang}`}   class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Home","หน้าหลัก")}</a></li>
-          <li><a href="#innovations" class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Our Innovations","นวัตกรรมของเรา")}</a></li>
-          <li><a href="#services"    class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Our Services","บริการของเรา")}</a></li>
-          <li><a href="#moreinfo"    class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("More Info","ข้อมูลเพิ่มเติม")}</a></li>
-          <li><a href="#about"       class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("About Us","เกี่ยวกับเรา")}</a></li>
-          <li><a href="#footer"      class="nav-link no-underline hover:no-underline focus:no-underline active:no-underline">{T("Contact","ติดต่อ")}</a></li>
+          <li><a href={`/${lang}`}   class="nav-link">{T("Home","หน้าหลัก")}</a></li>
+          <li><a href="#innovations" class="nav-link">{T("Our Innovations","นวัตกรรมของเรา")}</a></li>
+          <li><a href="#services"    class="nav-link">{T("Our Services","บริการของเรา")}</a></li>
+          <li><a href="#moreinfo"    class="nav-link">{T("More Info","ข้อมูลเพิ่มเติม")}</a></li>
+          <li><a href="#about"       class="nav-link">{T("About Us","เกี่ยวกับเรา")}</a></li>
+          <li><a href="#footer"      class="nav-link">{T("Contact","ติดต่อ")}</a></li>
         </ul>
       )}
 
@@ -48,24 +51,40 @@ const T = (en: string, th: string) => (lang === "en" ? en : th);
   </div>
 </nav>
 
-
 <script>
-  // ถ้ามีปุ่ม/เมนูมือถือค่อยใช้งาน; ตอนนี้ไม่มีจึงไม่จำเป็นต้องทำอะไร
+  // ยังไม่ใช้ JS อะไรเป็นพิเศษ
 </script>
 
 <style>
   :where(section[id]) { scroll-margin-top: 120px; }
-  @media (min-width: 1024px) { :where(section[id]) { scroll-margin-top: 140px; } }
+  @media (min-width: 1024px) {
+    :where(section[id]) { scroll-margin-top: 140px; }
+  }
 
-  nav, nav * { box-shadow: none !important; filter: none !important; border: none !important; outline: none !important; }
-  nav { background-color: #ffffff !important; }
+  /* เคลียร์ shadow/border พวก theme */
+  nav, nav * {
+    box-shadow: none !important;
+    filter: none !important;
+    border: none !important;
+    outline: none !important;
+  }
+  nav {
+    background-color: transparent !important; /* ให้เห็น hero ข้างหลัง */
+  }
 
-  /* KILL underline ทุกกรณี */
-  nav .nav-link,
-  nav .nav-link:hover,
-  nav .nav-link:focus,
-  nav .nav-link:active,
-  nav .nav-link:visited {
+  /* ให้กรอบ pill คุม overflow + ตัดขวา */
+  .nav-pill {
+    overflow: hidden;
+    /* ตัดขวาออก เช่น 150px หรือ % ตามที่ชอบ */
+    clip-path: inset(0 15% 0 0 round 40px);
+  }
+
+  /* ลบ underline ทุกกรณี */
+  .nav-link,
+  .nav-link:hover,
+  .nav-link:focus,
+  .nav-link:active,
+  .nav-link:visited {
     text-decoration: none !important;
     border-bottom: 0 !important;
     background-image: none !important;
@@ -80,13 +99,17 @@ const T = (en: string, th: string) => (lang === "en" ? en : th);
     display: none !important;
   }
 
-  nav a:focus, nav a:active { outline: none !important; box-shadow: none !important; }
+  nav a:focus,
+  nav a:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 
-  .nav-link { color: #00D2E6 !important; transition: color 0.25s ease; }
-  .nav-link:hover { color: #585858 !important; }
-
-  nav.sticky {
-  /* ลดความยาวขวาประมาณ 40px */
-    clip-path: inset(0 150px 0 0 round 40px);
+  .nav-link {
+    color: #00D2E6 !important;
+    transition: color 0.25s ease;
+  }
+  .nav-link:hover {
+    color: #585858 !important;
   }
 </style>

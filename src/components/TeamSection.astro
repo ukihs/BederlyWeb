@@ -81,8 +81,8 @@ function cleanHtml(html?: string) {
   <div class="container-primary">
     <!-- Hardcode heading -->
     <div class="max-w-3xl mb-4 md:mb-6">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{heading}</h2>
-      <p class="mt-2 md:mt-3 text-gray-600 leading-relaxed" set:html={subtext}></p>
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900">{heading}</h2>
+      <p class="mt-2 md:mt-3 text-gray-900 leading-relaxed" set:html={subtext}></p>
     </div>
 
     {people.length === 0 ? (
@@ -125,7 +125,7 @@ function cleanHtml(html?: string) {
               {/* บรรทัดย่อยจาก excerpt (ถ้ามี) */}
               {sub && (
                 <div
-                  class="mt-1 text-xs md:text-[13px] text-gray-600 leading-relaxed [&_p]:m-0"
+                  class="mt-1 text-xs md:text-[13px] text-gray-900 leading-relaxed [&_p]:m-0"
                   set:html={sub}
                 />
               )}

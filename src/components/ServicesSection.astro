@@ -7,63 +7,41 @@ export interface Props {
 const { lang = "th", class: klass = "" } = Astro.props;
 
 const t = {
-  th: {
-    title: "บริการของเรา",
-    desc: "Mock text",
-  },
-  en: {
-    title: "Our Services",
-    desc: "Mock text",
-  },
+  th: { title: "บริการของเรา", desc: "Mock text" },
+  en: { title: "Our Services", desc: "Mock text" },
 }[lang];
 ---
 
 <section id="services" class={`section-padding ${klass}`}>
   <div class="container-primary">
-    <!-- Header -->
-    <div class="mb-6">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
-        {t.title}
-      </h2>
+    <!-- ส่วนหัว -->
+    <div class="mb-6 md:mb-8">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">{t.title}</h2>
       <p class="text-gray-500 mt-1">{t.desc}</p>
     </div>
 
-    <!-- Placeholder Card -->
-    <div
-      class="rounded-3xl bg-white shadow-[0_10px_35px_-10px_rgba(0,0,0,0.12)]
-             ring-1 ring-black/5 min-h-[260px] md:min-h-[320px] p-4 md:p-6
-             relative overflow-hidden"
-    >
-      <!-- subtle gradient backdrop -->
-      <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-50 to-cyan-50"></div>
-
-      <!-- Empty state / skeleton -->
-      <div class="relative z-10 h-full flex items-center justify-center">
-        <div class="w-full max-w-xl">
-          <div class="h-3 w-40 rounded-full bg-gray-200 animate-pulse mb-4"></div>
-          <div class="h-3 w-64 rounded-full bg-gray-200 animate-pulse mb-3"></div>
-          <div class="h-3 w-56 rounded-full bg-gray-200 animate-pulse mb-3"></div>
-          <div class="h-3 w-48 rounded-full bg-gray-200 animate-pulse"></div>
-
-          <!-- Dashed area placeholder (drop zone feel) -->
-          <div
-            class="mt-8 w-full h-36 md:h-44 rounded-2xl border-2 border-dashed
-                   border-gray-200 bg-white/70 backdrop-blur-sm flex items-center justify-center"
-          >
-            <span class="text-sm text-gray-400">
-              {lang === "en" ? "Service content coming soon…" : "เนื้อหาบริการจะมาเร็ว ๆ นี้…"}
-            </span>
-          </div>
-        </div>
+    <!-- กล่องการ์ดพื้นหลังขาวสนิท -->
+    <div class="-mx-4 sm:-mx-6 lg:-mx-8">
+      <div
+        class="w-full rounded-[24px] bg-white border border-[rgba(0,0,0,.06)]
+               shadow-[0_10px_30px_rgba(0,0,0,.08)]
+               min-h-[260px] md:min-h-[320px]
+               p-4 md:p-6"
+      >
       </div>
     </div>
   </div>
 </section>
 
 <style>
-  .section-padding { padding-top: 4rem; padding-bottom: 4rem; }
-  @media (min-width: 768px) {
-    .section-padding { padding-top: 5rem; padding-bottom: 5rem; }
+  .section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
   }
-  .container-primary { @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8; }
+  @media (min-width: 768px) {
+    .section-padding {
+      padding-top: 5rem;
+      padding-bottom: 5rem;
+    }
+  }
 </style>

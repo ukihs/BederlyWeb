@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
+import TopLanguageButton from "../components/TopLanguageButton.astro";
 
 interface Alt { lang: string; url: string }
 
@@ -45,6 +46,8 @@ const defaultDescription = lang === "en"
     {alternates.map((alt) => (<link rel="alternate" hreflang={alt.lang} href={alt.url} />))}
     <meta name="theme-color" content="#0891b2" />
   </head>
+
+  <TopLanguageButton lang={lang} alternates={alternates} />
   
   <body class="font-noto bg-white text-gray-800 antialiased min-h-screen overflow-x-hidden">
     <!-- Navbar -->

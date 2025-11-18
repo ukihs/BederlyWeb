@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,7 +20,6 @@
   }
 
   body {
-    /* เปลี่ยนจาก Inter เป็น Noto Sans Thai */
     font-family: 'Noto Sans Thai', 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -27,26 +29,21 @@
 
 /* ============== Component Styles ============== */
 @layer components {
-  /* === EXPANDED CONTAINER SYSTEM === */
-  /* ขยายความกว้างและลด padding ทุก section */
   .container-primary {
     @apply mx-auto px-2 sm:px-4 lg:px-6;
-    max-width: 1800px; /* ขยายจาก 1236px เป็น 1400px */
+    max-width: 1800px;
   }
 
-  /* Container สำหรับเนื้อหาที่ต้องการแคบกว่า */
   .container-narrow {
     @apply mx-auto px-2 sm:px-4 lg:px-6;
     max-width: 1400px;
   }
 
-  /* Container สำหรับเนื้อหาที่ต้องการกว้างมาก */
   .container-wide {
     @apply mx-auto px-2 sm:px-4 lg:px-6;
     max-width: 2000px;
   }
 
-  /* Gradient text utilities */
   .text-gradient-primary {
     @apply bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent;
   }
@@ -55,7 +52,6 @@
     @apply bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent;
   }
 
-  /* Background gradients */
   .bg-gradient-primary {
     @apply bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-400;
   }
@@ -68,7 +64,6 @@
     @apply bg-gradient-to-br from-white to-blue-50/30;
   }
 
-  /* Button styles */
   .btn-primary {
     @apply inline-flex items-center gap-3 bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl;
   }
@@ -77,7 +72,6 @@
     @apply inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl;
   }
 
-  /* Card styles - แก้ไขโดยไม่ใช้ 'group' ใน @apply */
   .card-primary {
     @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden;
   }
@@ -90,7 +84,6 @@
     @apply bg-gradient-to-br from-cyan-400 to-blue-500 rounded-3xl p-8 lg:p-12 text-white shadow-2xl;
   }
 
-  /* Feature grid */
   .features-grid {
     @apply grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8;
   }
@@ -99,7 +92,6 @@
     @apply grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8;
   }
 
-  /* Navigation underline effect */
   .nav-link {
     @apply relative text-gray-700 hover:text-blue-600 transition-colors font-medium;
   }
@@ -113,7 +105,6 @@
     @apply scale-x-100;
   }
 
-  /* Section spacing */
   .section-padding {
     @apply py-16 lg:py-20;
   }
@@ -126,64 +117,53 @@
     @apply py-20 lg:py-32;
   }
 
-  /* === Card & Section System (global) === */
-  /* กรอบการ์ดมาตรฐานทั้งหน้า */
   .card-frame {
     @apply relative overflow-hidden rounded-3xl bg-white shadow-lg hover:shadow-xl transition-all;
   }
 
-  /* การ์ดพื้นหลังรูป (ใช้กับ hero / banner) */
   .card-bg {
     @apply card-frame;
   }
 
-  /* ระยะห่างแนวตั้งของแต่ละ section ให้เท่ากันทั้งหน้า */
   .section-stack {
     @apply space-y-8 md:space-y-10 lg:space-y-12;
   }
 
-  /* padding ด้านในการ์ดให้เท่ากัน */
   .card-pad {
     @apply p-6 md:p-8 lg:p-10;
   }
+}
 
+/* ============== Utility Fonts ============== */
+@layer utilities {
+  .font-noto {
+    font-family: 'Noto Sans Thai', 'Noto Sans', sans-serif;
+  }
+
+  .font-noto-thai {
+    font-family: 'Noto Sans Thai', sans-serif;
+  }
+
+  .font-noto-latin {
+    font-family: 'Noto Sans', sans-serif;
+  }
+
+  .font-inter {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
 }
 
 /* ============== Utility Classes ============== */
 @layer utilities {
-  /* Backdrop blur support */
-  @supports (backdrop-filter: blur()) {
-    .backdrop-blur-strong {
-      backdrop-filter: blur(20px);
-    }
-    .backdrop-blur-medium {
-      backdrop-filter: blur(12px);
-    }
-    .backdrop-blur-light {
-      backdrop-filter: blur(6px);
-    }
-  }
-
-  /* Hide scrollbars */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 
-  /* Glass effect */
-  .glass {
-    @apply bg-white/80 backdrop-blur-medium border border-white/20 shadow-lg;
-  }
-
-  .glass-dark {
-    @apply bg-gray-900/80 backdrop-blur-medium border border-white/10 shadow-lg;
-  }
-
-  /* Text shadow utilities */
   .text-shadow {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
   }
@@ -195,161 +175,38 @@
   .text-shadow-lg {
     text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.5);
   }
-
-  /* Aspect ratios */
-  .aspect-card {
-    aspect-ratio: 4 / 3;
-  }
-
-  .aspect-hero {
-    aspect-ratio: 16 / 9;
-  }
-
-  .aspect-square {
-    aspect-ratio: 1;
-  }
-
-  /* Image enhancement */
-  .img-crisp {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-
-  .img-enhanced {
-    filter: contrast(1.05) saturate(1.08) brightness(1.02);
-  }
-
-  /* Animation utilities */
-  .animate-fade-in {
-    animation: fadeIn 0.6s ease-out forwards;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.6s ease-out forwards;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  /* Hover effects */
-  .hover-lift {
-    @apply hover:scale-105 hover:-translate-y-1 transition-all duration-300;
-  }
-
-  .hover-glow {
-    @apply hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300;
-  }
-
-  .h-hero-sm { @apply h-[260px] md:h-[320px] lg:h-[380px]; }
-  .h-hero-md { @apply h-[340px] md:h-[420px] lg:h-[480px]; }
-  .h-hero-lg { @apply h-[420px] md:h-[520px] lg:h-[620px]; }
-
-  /* overlay มาตรฐานสำหรับการ์ดพื้นหลังภาพ */
-  .overlay-dark { @apply absolute inset-0 bg-black/40; }
-  .overlay-fade-b { @apply absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/35; }
-
-  /* Font utilities สำหรับ Noto Sans Thai */
-  .font-noto {
-    font-family: 'Noto Sans Thai', 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-
-  .font-noto-thai {
-    font-family: 'Noto Sans Thai', sans-serif;
-  }
-
-  .font-noto-latin {
-    font-family: 'Noto Sans', sans-serif;
-  }
 }
 
-/* ============== Custom Group Effects (แทน @apply group) ============== */
-/* ใช้ vanilla CSS selector แทน @apply group */
-.group:hover .group-hover-scale {
-  transform: scale(1.1);
-}
+/* ============== Mobile Fixes ============== */
+@media (max-width: 767.98px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
 
-.group:hover .group-hover-translate {
-  transform: translateX(4px);
-}
+  section {
+    overflow-x: hidden !important;
+  }
 
-/* ============== Animations ============== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+  .container-primary,
+  .container-narrow,
+  .container-wide {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
+  img {
+    max-width: 100% !important;
+    height: auto !important;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
+  section .container-primary {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
   }
-  50% {
-    transform: translateY(-10px);
-  }
-}
 
-/* ============== Responsive Design Enhancements ============== */
-@media (max-width: 640px) {
-  /* Mobile-first improvements */
-  .min-h-screen {
-    min-height: 100dvh; /* Dynamic viewport height for mobile */
-  }
-  
-  .text-responsive {
-    font-size: clamp(1rem, 4vw, 1.25rem);
-  }
-  
-  .heading-responsive {
-    font-size: clamp(1.75rem, 8vw, 3rem);
-  }
-  
-  .hero-responsive {
-    font-size: clamp(2rem, 10vw, 4rem);
-  }
-}
-
-/* ============== Focus Management ============== */
+  /* ================= SHARP CORNERS RESTORE ================= */
 @layer utilities {
-  .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white rounded-lg;
-  }
-
-  .focus-ring-dark {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 rounded-lg;
-  }
-}
-
-/* ============== Print Styles ============== */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-break-inside-avoid {
-    break-inside: avoid;
-  }
-}
-
-/* ============== Sharp Corners Override ============== */
-@layer utilities {
-  /* Apply sharp corners to specific elements only */
   div:not(button):not([role="button"]):not([aria-label*="logo"]),
   section,
   article,
@@ -362,283 +219,5 @@
   footer {
     border-radius: 0 !important;
   }
-  
-  /* Keep buttons and controls rounded */
-  button,
-  a[href*="#"],
-  [role="button"],
-  [aria-label="Previous"],
-  [aria-label="Next"],
-  [id*="btn"],
-  [id*="prev"],
-  [id*="next"] {
-    border-radius: 9999px !important;
-  }
-  
-  /* Keep slider dots rounded */
-  [id*="dots"] button,
-  button[data-slide] {
-    border-radius: 9999px !important;
-  }
-  
-  /* Keep badges/pills rounded */
-  span[class*="rounded-full"],
-  .badge,
-  [class*="inline-block"][class*="rounded-full"] {
-    border-radius: 9999px !important;
-  }
 }
-
-/* ============== Mobile-Only Fixes ============== */
-@media (max-width: 767.98px) {
-  /* กัน body และ html ไม่ให้เลื่อนซ้าย-ขวา */
-  html {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-
-  body {
-    overflow-x: hidden;
-    max-width: 100vw;
-    position: relative;
-  }
-
-  /* กันทุก section ไม่ให้ล้น */
-  section {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-  }
-
-  /* กัน container ทั้งหมด */
-  .container-primary,
-  .container-narrow,
-  .container-wide {
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-
-  /* กันรูปภาพทั้งหมดไม่ให้กว้างเกินจอ */
-  img {
-    max-width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-  }
-
-  /* Hero Section - กันรูปไม่ให้ล้น */
-  section.relative > .container-primary > .relative.overflow-hidden img {
-    width: 100% !important;
-    max-width: 100vw !important;
-    object-fit: cover !important;
-  }
-
-  /* SmartBed Section - ปรับรูป background */
-  #smartbed img {
-    max-width: 100% !important;
-    object-fit: cover !important;
-  }
-
-  /* Ecosystem Section - กันรูป background */
-  .eco-title {
-    font-size: 1.5rem !important;
-    line-height: 1.3 !important;
-  }
-
-  /* Download Section - ปรับรูป */
-  #download img {
-    max-width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-  }
-
-  /* กัน gradient backgrounds ไม่ให้ล้น */
-  div[class*="bg-gradient"] {
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-
-  /* ปรับ padding ของ mobile ให้พอดี */
-  .px-responsive {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  /* Card ต่างๆ ไม่ให้ล้น */
-  .card-frame,
-  .card-bg,
-  .card-primary,
-  .card-feature,
-  .card-hero {
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  /* Innovation cards */
-  #innovations article {
-    overflow: hidden !important;
-  }
-
-  #innovations img {
-    max-width: 100% !important;
-    width: 100% !important;
-    height: auto !important;
-  }
-
-  /* Progress Slider */
-  #progress-track {
-    max-width: 100vw !important;
-    overflow-x: auto !important;
-  }
-
-  /* Team Section */
-  #team img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-
-  /* Partners logos */
-  section[id*="partners"] img,
-  #testimonials img {
-    max-width: 100% !important;
-    object-fit: contain !important;
-  }
-}
-
-
-/* ============== Mobile-Only Fixes ============== */
-@media (max-width: 767.98px) {
-  /* ... โค้ดเดิมทั้งหมด ... */
-
-  /* ========================================
-     🎯 MOBILE CONSISTENCY: ทำให้ทุก section กว้างเท่า Hero
-     ======================================== */
-  
-  /* กำหนด padding มาตรฐานสำหรับทุก section container */
-  section .container-primary,
-  section .container-narrow,
-  section .container-wide {
-    padding-left: 0.5rem !important;  /* 8px - เท่ากับ hero */
-    padding-right: 0.5rem !important; /* 8px - เท่ากับ hero */
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-
-    /* ========================================
-     🎯 REMOVE GAPS: ลบช่องว่างระหว่าง Hero, SmartBed, Gallery
-     ======================================== */
-  
-  /* ลบ margin/padding ทั้งหมดของ 3 sections แรก */
-  section#smartbed,
-  section#gallery {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-  }
-
-  /* ลบช่องว่างใน smartbed section */
-  .smartbed-section {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin: 0 !important;
-  }
-
-  .smartbed-container {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
-
-  .smartbed-card {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-
-  /* ลบช่องว่างของ hero gallery */
-  .hero-gallery-section {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
-
-  /* กำหนด max-width สำหรับ section ที่ไม่มี container */
-  section > div:not([class*="absolute"]):not([class*="fixed"]) {
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-  }
-
-  /* ปรับ nested containers ให้ inherit padding */
-  section .container-primary > *,
-  section .container-narrow > *,
-  section .container-wide > * {
-    max-width: 100% !important;
-  }
-
-  /* กัน special sections ที่อาจมี padding เพิ่ม */
-  #smartbed .container-primary,
-  #innovations .container-primary,
-  #ecosystem .container-primary,
-  #about .container-primary,
-  #progress .container-primary,
-  #team .container-primary,
-  #testimonials .container-primary,
-  #download .container-primary,
-  #moreinfo .container-primary,
-  #medip .container-primary,
-  #footer .container-primary {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-
-  /* ปรับ grid gap ให้เหมาะกับ padding ใหม่ */
-  section .grid {
-    gap: 1rem !important; /* ลด gap เล็กน้อยเพื่อให้ดูสมดุล */
-  }
-
-  /* Card margins - ให้ชิดขอบเท่ากันทุกที่ */
-  section article,
-  section .card-primary,
-  section .card-feature,
-  section .card-hero,
-  section .card-frame {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-
-  /* ปรับ Download Section ให้ตรงกับ hero */
-  [data-slider] {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  /* ปรับ Progress Slider track */
-  #progress-track {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-
-  /* Footer alignment */
-  footer .container {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-
-  /* Special case: Full-width sections ที่ต้องการ bleed */
-  section.full-bleed .container-primary,
-  .mobile-full-width {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  /* Visual consistency: ให้ทุก section มี spacing เท่ากัน */
-  section {
-    margin-bottom: 0 !important;
-  }
-
-  section + section {
-    margin-top: 0 !important;
-  }
-
-  /* Ensure images respect container padding */
-  section img:not([class*="absolute"]):not([class*="fixed"]) {
-    max-width: calc(100vw - 1rem) !important; /* 100vw - (0.5rem × 2) */
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
 }

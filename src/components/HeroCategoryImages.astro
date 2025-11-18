@@ -102,7 +102,6 @@ const grouped: any[] = [];
 for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 ---
 
-
 {grouped.length > 0 && (
   <section data-slider class={`hero-gallery-section relative ${klass} bg-transparent`}>
     <div class="relative pb-10 bg-transparent">
@@ -136,7 +135,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
                             class="absolute inset-0 w-full h-full object-cover"
                           />
                         </div>
-                        <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
+                        <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[50%]">
                           <span class="pointer-events-auto inline-block rounded-full bg-[#40B4ED] text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md whitespace-nowrap">
                             <span set:html={(it as any).title} />
                           </span>
@@ -153,7 +152,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
                       <div class="aspect-box relative aspect-[4/3] bg-transparent overflow-hidden rounded-xl">
                         <img src={(it as any).image} alt={(it as any).title} class="absolute inset-0 w-full h-full object-cover" />
                       </div>
-                      <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-3">
+                      <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-[40%]">
                         <span class="pointer-events-auto inline-block rounded-full bg-[#40B4ED] text-white text-sm md:text-base font-medium px-6 md:px-8 py-2 shadow-md">
                           {(it as any).title}
                         </span>
@@ -169,16 +168,20 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 
       {grouped.length > 1 && (
         <>
-          <button id="prev-slide" aria-label="Previous"
-            class="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center z-20">
-            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          <button id="prev-slide" type="button" aria-label="Previous"
+            class="pointer-events-auto absolute left-0 md:left-0 top-1/2 -translate-y-1/2
+                   w-14 h-14 md:w-16 md:h-16 bg-white rounded-full shadow-none
+                   hover:shadow-2xl hover:scale-105 transition grid place-items-center z-50">
+            <svg class="w-7 h-7 md:w-8 md:h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <button id="next-slide" aria-label="Next"
-            class="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-11 md:h-11 bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all grid place-items-center z-20">
-            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          <button id="next-slide" type="button" aria-label="Next"
+            class="pointer-events-auto absolute right-0 md:right-0 top-1/2 -translate-y-1/2
+                   w-14 h-14 md:w-16 md:h-16 bg-white rounded-full shadow-
+                   hover:shadow-2xl hover:scale-105 transition grid place-items-center z-50">
+            <svg class="w-7 h-7 md:w-8 md:h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </>
@@ -192,6 +195,7 @@ for (let i = 0; i < padded.length; i += 3) grouped.push(padded.slice(i, i + 3));
 )}
 
 <script define:vars={{ originalCount }}>
+// ปิดออโต้สไลด์ (ไม่มี setInterval) และให้ปุ่มซ้าย/ขวาคุมการเลื่อนเท่านั้น
 document.addEventListener('DOMContentLoaded', () => {
   const slidesContainer = document.getElementById('slides-container');
   const prevButton = document.getElementById('prev-slide');
@@ -203,23 +207,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const slideGroups = Array.from(slidesContainer.querySelectorAll('.slide-group'));
   const allCards = Array.from(slidesContainer.querySelectorAll('.hero-card'));
-  
-  const originalCards = allCards.filter(card => 
-    card.getAttribute('data-original') === 'true'
-  );
+  const originalCards = allCards.filter(card => card.getAttribute('data-original') === 'true');
 
   const totalSlides = isMobile ? originalCards.length : slideGroups.length;
   let current = 0;
-  let timer;
-  const delay = 6000;
 
+  // dots (กดเพื่อเลือกหน้าได้)
   if (dotsContainer) {
     dotsContainer.innerHTML = '';
     for (let i = 0; i < totalSlides; i++) {
       const dot = document.createElement('button');
       dot.type = 'button';
       dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-300 transition-all';
-      dot.addEventListener('click', () => { go(i); stop(); start(); });
+      dot.addEventListener('click', () => { go(i); });
       dotsContainer.appendChild(dot);
     }
   }
@@ -242,18 +242,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const next = () => go(current + 1);
   const prev = () => go(current - 1);
-  const start = () => { if (totalSlides > 1) timer = setInterval(next, delay); };
-  const stop = () => clearInterval(timer);
 
-  prevButton?.addEventListener('click', () => { prev(); stop(); start(); });
-  nextButton?.addEventListener('click', () => { next(); stop(); start(); });
+  // คลิกปุ่มซ้าย/ขวาเพื่อเลื่อน
+  prevButton?.addEventListener('click', prev);
+  nextButton?.addEventListener('click', next);
 
+  // ปัดซ้าย/ขวา (เฉพาะมือถือ)
   let startX = 0;
   let dragging = false;
   slidesContainer.addEventListener('touchstart', (e) => { 
     startX = e.touches[0].clientX; 
     dragging = true; 
-    stop(); 
   }, { passive: true });
   
   slidesContainer.addEventListener('touchend', (e) => {
@@ -262,15 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const diff = startX - endX;
     if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
     dragging = false; 
-    start();
   });
 
+  // ปุ่มลูกศรคีย์บอร์ด
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') { prev(); stop(); start(); }
-    else if (e.key === 'ArrowRight') { next(); stop(); start(); }
+    if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key === 'ArrowRight') { next(); }
   });
 
-  start();
+  // เริ่มต้นที่สไลด์แรก + เซ็ตจุดบอกหน้า
   setDots();
 });
 </script>
@@ -394,13 +393,18 @@ button:focus-visible {
   .hero-card > div:last-child {
     position: static !important;
     transform: none !important;
-    margin-top: 0.75rem !important;
+    margin-top: 0.125 !important;
     text-align: center !important;
   }
 
   .hero-card > div:last-child span {
     font-size: 0.875rem !important;
     padding: 0.5rem 1.25rem !important;
+
+  }
+  
+  .hero-card > .pointer-events-none {
+    bottom: 0 !important;   /* ให้ชิดขอบล่างของรูป */
   }
 
   /* ปุ่ม */
@@ -444,26 +448,24 @@ button:focus-visible {
 
 /* ========== DESKTOP ONLY ========== */
 @media (min-width: 768px) {
-  /* อนุญาตให้ล้นออกด้านบนได้ */
+  /* ให้สไลด์เห็นเฉพาะ group ปัจจุบันเท่านั้น */
   .hero-gallery-section {
-    overflow: visible !important;
+    overflow: hidden !important;
     padding-top: 0 !important;
   }
 
-  /* ชั้น wrapper ภายใน ให้ล้นได้เช่นกัน */
   .hero-gallery-section > .relative {
-    overflow: visible !important;
+    overflow: hidden !important;
     padding-top: 0 !important;
   }
 
-  /* ตัวสไลเดอร์ไม่ต้องมีเงา/กรอบ และปล่อยให้ล้น */
   #hero-slider {
     box-shadow: none !important;
     border: 0 !important;
-    overflow: visible !important;
+    overflow: hidden !important;   /* <── เปลี่ยนจาก visible เป็น hidden */
   }
 
-  /* การ์ดและกล่องรูป: ตัดพื้นหลัง/มุมโค้ง/เงา ออก */
+  /* การ์ดยังล้นขึ้นลงได้ แต่ไม่ให้ทะลุขอบสไลเดอร์ */
   .hero-card {
     box-shadow: none !important;
     overflow: visible !important;
@@ -474,26 +476,41 @@ button:focus-visible {
     border-radius: 0 !important;
   }
 
-  /* ดันรูปให้ทับขอบบนเล็กน้อย */
+  /* ดันรูปให้สูงขึ้นนิดหน่อย (ถ้าสูงไป/ต่ำไปค่อยปรับเลขนี้ได้) */
   .hero-card .aspect-box > img {
     transform: translateY(-22px) !important;
   }
 
-  /* ปุ่มเลื่อน */
-  #prev-slide,
-  #next-slide {
-    top: 36% !important;
+  /* ปุ่มเลื่อน ซ้าย-ขวา */
+  #prev-slide {
+    left: 0;
+    margin-left: -1.5rem;
   }
+  #next-slide {
+    right: 0;
+    margin-right: -1.5rem;
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.22),
+      0 20px 55px rgba(0, 0, 0, 0.18),
+      0 0 0 1.5px rgba(0, 0, 0, 0.10) !important;
+  }
+  
 
-  /* เผื่อมีเงา/เส้นจากธีมอื่น ให้ล้นสะอาด ๆ */
+  /* ไม่ต้องบังคับ overflow ที่ container ชั้นนอกทั้งหมดแล้ว */
   .hero-gallery-section,
   .hero-gallery-section > .relative,
   #hero-slider,
   .hero-card {
-    overflow: visible !important;
     box-shadow: none !important;
     border: 0 !important;
   }
+}
+
+#dots-container {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 
@@ -506,4 +523,9 @@ button:focus-visible {
     border-left: 24px solid transparent; /* ปรับ 16–32px ได้ */
   }
 }
+
+  .hero-card > .pointer-events-none {
+    bottom: 50px !important;  /* ปรับเลขนี้ +/- ได้ตามที่ตาเห็น 24–32px */
+    transform: translateX(-50%) translateY(0) !important;
+  }
 </style>
