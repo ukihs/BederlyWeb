@@ -77,24 +77,26 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
 
 <section class="section-padding-sm pt-0 md:pt-6 bg-white">
   <div class="container-primary">
-    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-6">
+    <h2 class="text-4xl md:text-5xl font-semibold text-gray-900 mb-4 md:mb-6">
       {lang === "en" ? "About Bederly" : "เกี่ยวกับ Bederly"}
     </h2>
 
     <div class="about-container">
       <!-- กล่องข้อความ -->
       <div class="about-text-box">
-        {hasData ? (
-          <>
-            {title && <h3 class="about-title" set:html={title}></h3>}
-            {body && <p class="about-body">{body}</p>}
-          </>
-        ) : (
-          <div class="text-white/90">
-            {lang === "en" ? "About content not found." : "ยังไม่มีข้อมูลเกี่ยวกับบริษัท"}
-          </div>
-        )}
-        {gqlError && <p class="mt-3 text-white/80 text-xs">GQL: {gqlError}</p>}
+        <div class="about-inner">
+          {hasData ? (
+            <>
+              {title && <h3 class="about-title" set:html={title}></h3>}
+              {body && <p class="about-body">{body}</p>}
+            </>
+          ) : (
+            <div class="text-white/90">
+              {lang === "en" ? "About content not found." : "ยังไม่มีข้อมูลเกี่ยวกับบริษัท"}
+            </div>
+          )}
+          {gqlError && <p class="mt-3 text-white/80 text-xs">GQL: {gqlError}</p>}
+        </div>
       </div>
 
       <!-- กล่องวิดีโอ -->
@@ -131,10 +133,11 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
   gap: 2rem;
   align-items: center;
 }
+
 .about-text-box {
   background: #40B4E4;
   color: white;
-  padding: 2rem;
+  padding: 2.5rem 3rem;
   border-radius: 1rem;
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
   display: flex;
@@ -142,6 +145,13 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
   justify-content: center;
   min-height: 100%;
 }
+
+/* กล่องด้านใน เอาไว้คุมให้ content อยู่กลาง ๆ กล่องฟ้า */
+.about-inner {
+  max-width: 40rem;      /* ความกว้างสูงสุดของเนื้อหา */
+  margin: 0 auto;        /* ดันให้อยู่กลางในกล่องฟ้า */
+}
+
 .about-video-box {
   border-radius: 1rem;
   background: #f3f4f6;
@@ -151,17 +161,20 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
   align-items: center;
   justify-content: center;
 }
+
 .about-title {
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1.45;
   margin-bottom: 1rem;
 }
+
 .about-body {
   color: rgba(255,255,255,0.95);
   line-height: 1.75;
   white-space: pre-line;
 }
+
 .about-video-wrapper {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -169,6 +182,7 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
+
 @media (min-width: 768px) {
   .about-title {
     font-size: 2.3rem;
@@ -176,7 +190,7 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
 }
 
 /* ============================================
-   MOBILE (single cyan card + refined typography)
+   MOBILE
    ============================================ */
 @media (max-width: 767.98px) {
   .about-container {
@@ -188,6 +202,7 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
     padding: 1.25rem 1rem 1.25rem;
     box-shadow: 0 18px 30px -12px rgba(0,0,0,.25);
   }
+
   .about-text-box {
     background: transparent;
     color: #fff;
@@ -195,6 +210,13 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
     border-radius: 0;
     box-shadow: none;
   }
+  
+
+  .about-inner {
+    max-width: 100%;
+    margin: 0;
+  }
+
   .about-title {
     font-size: clamp(1.05rem, 2.4vw + .9rem, 1.55rem);
     line-height: 1.55;
@@ -203,6 +225,7 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
     margin: 0 0 .5rem 0;
     text-wrap: balance;
   }
+
   .about-body {
     color: rgba(255,255,255,.92);
     font-size: clamp(.95rem, 1.2vw + .8rem, 1.05rem);
@@ -212,12 +235,14 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
     text-wrap: pretty;
     margin: 0;
   }
+
   .about-video-box {
     background: transparent;
     padding: 0;
     border-radius: 12px;
     box-shadow: none;
   }
+
   .about-video-wrapper {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -225,8 +250,13 @@ const embedSrc = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` :
     overflow: hidden;
     box-shadow: 0 10px 20px -10px rgba(0,0,0,.35);
   }
-  /* optional: เครื่องหมายคำพูด */
-  .about-title::before {  margin-right: .15em; opacity: .9; }
-  .about-title::after  {  margin-left: .1em;  opacity: .9; }
+}
+
+/* ถ้าอยากให้กล่องฟ้าดูดัน content ออกกลางขึ้นอีกหน่อยบน desktop */
+@media (min-width: 1024px) {
+  .about-text-box {
+    padding-left: 3rem;
+    padding-right: 4rem;
+  }
 }
 </style>

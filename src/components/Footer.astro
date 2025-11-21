@@ -41,17 +41,18 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
   <!-- ⭐ full-bleed trick -->
   <div class="footer-bleed">
     <!-- ⭐ inner container -->
-    <div class="footer-inner mx-auto w-full max-w-[1800px] px-4 md:px-10 py-16">
+    <div class="footer-inner mx-auto w-full max-w-[1800px] px-4 md:px-10 pt-0 pb-12">
+
 
       <!-- Logo + social -->
       <div class="mb-10">
         <img
-          src="/favicon.png"
+          src="/logo.png"
           alt="Bederly"
-          class="block h-16 md:h-20 w-auto object-contain mb-2 ml-[-40px]"
+          class="favicon-logo block h-16 md:h-20 w-auto object-contain mb-2 ml-[-40px]"
         />
 
-        <div class="flex items-center gap-3">
+        <div id="footer-social-icons" class="flex items-center gap-3">
           <a href="https://www.facebook.com/Bederlyth/" target="_blank" rel="noopener noreferrer">
             <img src="/facebook.png" class="h-8 w-8" alt="Facebook" />
           </a>
@@ -73,7 +74,7 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
           </h3>
 
           {isEN ? (
-            <p class="text-sm text-black leading-relaxed">
+            <p class="text-medium text-gray-600 leading-relaxed">
               Bederly Co., Ltd.<br/>
               125/1 Moo 4, Ban Nong Pru<br/>
               Nong Chabok Subdistrict, Mueang<br/>
@@ -81,7 +82,7 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
               Nakhon Ratchasima 30000, Thailand
             </p>
           ) : (
-            <p class="text-sm text-black leading-relaxed">
+            <p class="text-medium text-gray-600 leading-relaxed">
               บริษัท เบดเดอลี่ จำกัด<br/>
               125/1 หมู่ 4 บ้านหนองปรู<br/>
               ต.หนองจะบก อ.เมืองนครราชสีมา<br/>
@@ -97,25 +98,25 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
           </h3>
 
           {isEN ? (
-            <p class="text-sm text-black leading-relaxed mb-6">
+            <p class="text-medium text-gray-600 leading-relaxed mb-6">
               Phone: 084-826-3345<br/>
               Email: bederlyinfo@gmail.com
             </p>
           ) : (
-            <p class="text-sm text-black leading-relaxed mb-6">
+            <p class="text-medium text-gray-600 leading-relaxed mb-6">
               โทรศัพท์: 084-826-3345<br/>
               อีเมล: bederlyinfo@gmail.com
             </p>
           )}
 
           {isEN ? (
-            <p class="font-bold text-sm text-black leading-relaxed">
+            <p class="font-semibold text-medium text-black leading-relaxed">
               We create innovations and<br/>
               technologies to improve the quality of<br/>
               life, for you and your loved ones
             </p>
           ) : (
-            <p class="font-bold text-sm text-black leading-relaxed">
+            <p class="font-semibold text-medium text-black leading-relaxed">
               เราสร้างสรรค์นวัตกรรมและเทคโนโลยี<br/>
               เพื่อยกระดับคุณภาพชีวิตของคุณ<br/>
               และคนที่คุณรัก
@@ -203,5 +204,22 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
   #footer,
   #footer * {
     border-radius: 0 !important;
+    
+  }
+
+    #footer .favicon-logo {
+    height: 48px !important;   /* เลือกความสูงที่ต้องการ */
+    width: auto !important;
+    margin-left: 0 !important; /* เอา offset -40px ออกถ้าต้องการ */
+  }
+    
+  /* ไอคอน Social */
+  #footer-social-icons img {
+    width: 20px !important;   /* ขนาดใหม่เล็กลง */
+    height: 20px !important;
+  }
+
+  #footer-social-icons {
+    gap: 12px !important;     /* ระยะห่างระหว่างไอคอน */
   }
 </style>

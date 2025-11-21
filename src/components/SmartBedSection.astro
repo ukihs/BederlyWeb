@@ -67,16 +67,16 @@ try {
 
       <div class="relative z-10 grid lg:grid-cols-2 items-center gap-8 p-10 md:p-16 lg:p-20 desktop-only">
         <div class="max-w-xl lg:max-w-2xl text-white">
-          <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+          <h2 class="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6">
             {lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
           </h2>
-          <h3 class="text-xl md:text-2xl lg:text-3xl font-medium mb-8">
+          <h3 class="text-xl md:text-2xl lg:text-3xl font-light mb-8">
             {smartbedTitle ||
               (lang === "en"
-                ? <>Innovative Care<br/>for your loved ones</>
-                : <>นวัตกรรมดูแลสุขภาพ<br/>ของคนที่คุณรัก</>)}
+                ? <>Innovative Care<br/><span class="thin">for the Ones Your loved ones</span></>
+                : <>นวัตกรรมดูแลสุขภาพ<br/><span class="thin">ของคนที่คุณรัก</span></>)}
           </h3>
-          <p class="text-base md:text-lg/8 lg:text-xl/9 mb-10 opacity-95">
+          <p class="text-base md:text-lg/8 lg:text-xl/9 font-light mb-10 opacity-95">
             {smartbedSub ||
               (lang === "en"
                 ? "The smart bed is an electric bed that distributes pressure and supports caregivers..."
@@ -100,43 +100,46 @@ try {
         <div class="hidden lg:block"></div>
       </div>
 
-      <!-- ===== Mobile (ภาพเต็มกรอบ) ===== -->
+      <!-- ===== Mobile ===== -->
       <div class="mobile-only">
+        <div class="m-block">
         <div class="mwrap">
           {smartbedImageUrl && (
             <img
               src={smartbedImageUrl}
               alt={lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}
-              class="m-bg" loading="lazy"
+              class="m-bg"
+              loading="lazy"
             />
           )}
-
-          <!-- mask ไล่เฉดด้านซ้ายให้ตัวอักษรชัด -->
-          <div class="m-dim" aria-hidden="true"></div>
 
           <div class="m-copy">
             <h2 class="m-title">{lang === "en" ? "Smart Bed" : "เตียงอัจฉริยะ"}</h2>
             <h3 class="m-sub">
               {smartbedTitle ||
                 (lang === "en"
-                  ? <>Innovative Care<br/>for your loved ones</>
+                  ? <>Innovative Care<br/><span class="thin">for your loved ones</span></>
                   : <>นวัตกรรมดูแลสุขภาพ<br/><span class="thin">ของคนที่คุณรัก</span></>)}
             </h3>
-            <p class="m-desc">
-              {smartbedSub ||
-                (lang === "en"
-                  ? "The smart bed distributes pressure and supports caregivers in repositioning patients with IoT integration."
-                  : "เตียงอัจฉริยะกระจายแรงกด สนับสนุนการจัดท่าผู้ป่วย พร้อม IOT ควบคุมผ่านสมาร์ทโฟน")}
-            </p>
-
-            <a href="#footer" class="m-cta">
-              {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
-              <svg class="m-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h16" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 6l6 6-6 6" />
-              </svg>
-            </a>
           </div>
+        </div>
+
+        <!-- เนื้อหากับปุ่ม ใต้รูป (กรอบเท่ากับรูป) -->
+        <div class="m-body">
+          <p class="m-desc">
+            {smartbedSub ||
+              (lang === "en"
+                ? "The smart bed distributes pressure and supports caregivers in repositioning patients with IoT integration."
+                : "เตียงอัจฉริยะกระจายแรงกด สนับสนุนการจัดท่าผู้ป่วย พร้อม IOT ควบคุมผ่านสมาร์ทโฟน")}
+          </p>
+
+          <a href="#footer" class="m-cta">
+            {lang === "en" ? "Contact Us" : "ติดต่อเรา"}
+            <svg class="m-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h16" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 6l6 6-6 6" />
+            </svg>
+          </a>
         </div>
       </div>
 
@@ -153,72 +156,108 @@ try {
       border-radius: 40px;
       overflow: hidden;
       position: relative;
-      clip-path: inset(0 0 200px 0);
+      clip-path: inset(0 0 170px 0);
       margin-bottom: -200px;
     }
     .desktop-bg { object-fit: cover; object-position: center; }
     .smartbed-section + * { margin-top: 0 !important; }
   }
 
-  /* ===== Mobile: ภาพเต็มกรอบ + ชิดขวา ===== */
+  /* ===== Mobile: ปรับเฉพาะมือถือ ===== */
   @media (max-width: 1023.98px) {
+
     .desktop-only { display: none !important; }
     .mobile-only  { display: block !important; }
 
-    .mwrap{
-      position: relative;
-      width: 100vw;
-      margin-left: calc(50% - 50vw);
-      margin-right: calc(50% - 50vw);
-      border-radius: 28px;
-      overflow: hidden;
-      margin-top: clamp(10px, 3vw, 18px);
-      margin-bottom: clamp(16px, 4vw, 24px);
-      min-height: clamp(520px, 140vw, 620px);
-      box-shadow: 0 12px 24px rgba(0,0,0,.12);
-      isolation: isolate;
+    .smartbed-section,
+    .smartbed-container,
+    .smartbed-card {
+      padding: 0 !important;
+      margin: 0 !important;
+      background: transparent;
+      box-shadow: none;
     }
 
-    /* ภาพเต็มการ์ด (ไม่มี scale), โฟกัสขวาให้เห็นคนไข้เต็ม ๆ */
-    .m-bg{
+    /* การ์ดรวมรูป + ข้อความ */
+    .m-block {
+      margin: 14px 18px 24px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 10px 26px rgba(0,0,0,.12);
+      background: #fff;
+    }
+
+    /* ============= ส่วนของรูปเตียง ============= */
+    .mwrap {
+      position: relative;
+      width: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      /* ลดความสูงรูปลง เพื่อดันข้อความขึ้น */
+      min-height: clamp(190px, 50vw, 230px);
+    }
+
+    .m-bg {
       position: absolute; inset: 0;
       width: 100%; height: 100%;
       object-fit: cover;
-      object-position: right center;   /* โฟกัสไปทางคนที่นอน */
-      transform: none;                 /* ยกเลิกการขยายเดิม */
+      object-position: right center;
       z-index: 0;
-      display:block;
     }
 
-    /* เลเยอร์มืดทางซ้ายเพื่อให้อ่านข้อความชัด */
-    .m-dim{
-      position: absolute; inset: 0 auto 0 0;
-      width: clamp(55%, 68vw, 74%);
-      z-index: 1; pointer-events: none;
-      background:
-        radial-gradient(120% 120% at 14% 16%, rgba(0,0,0,.46) 0%, rgba(0,0,0,.32) 45%, rgba(0,0,0,.12) 70%, rgba(0,0,0,0) 100%),
-        linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.38) 55%, rgba(0,0,0,.12) 80%, rgba(0,0,0,0) 100%);
+    .m-copy {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 2;
+      color: #fff;
+      text-shadow: 0 3px 6px rgba(0,0,0,.5);
     }
 
-    .m-copy{
-      position: relative; z-index: 2; color: #fff;
-      padding: 24px 20px 26px;
-      max-width: 75%;                  /* เว้นพื้นที่ให้ภาพด้านขวา */
-      text-shadow: 0 1px 2px rgba(0,0,0,.40);
+    .m-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
     }
-    .m-title{ font-weight: 800; font-size: 26px; line-height: 1.2; margin-bottom: 10px; }
-    .m-sub{ font-weight: 600; font-size: 16px; line-height: 1.38; margin-bottom: 14px; }
-    .m-sub .thin{ font-weight: 300; }
-    .m-desc{ font-size: 14px; line-height: 1.55; margin-bottom: 18px; }
 
-    .m-cta{
-      display: inline-flex; align-items: center; gap: 10px;
-      background: #fff; color: #00D2E6;
-      padding: 12px 18px; border-radius: 999px; font-weight: 700;
-      box-shadow: 0 10px 22px rgba(0,0,0,.14);
-      transition: transform .2s ease, box-shadow .2s ease;
+    .m-sub {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.35;
     }
-    .m-cta:hover{ transform: translateY(-1px); box-shadow: 0 16px 28px rgba(0,0,0,.18); }
-    .m-cta-icon{ width: 18px; height: 18px; }
+    .m-sub .thin { font-weight: 300; }
+
+    /* ============= ส่วนข้อความข้างล่าง ============= */
+    .m-body {
+      /* ดันขึ้นไปชิดรูปมากขึ้น */
+      margin-top: -55px;
+      padding: 12px 18px 24px;
+      background: #fff;
+      border-radius: 0;
+    }
+
+    .m-desc {
+      font-size: 14px;
+      line-height: 1.55;
+      margin-bottom: 16px;
+      color: #4b5563;
+    }
+
+    .m-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #00D2E6;
+      color: white;
+      padding: 11px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      box-shadow: 0 10px 22px rgba(0,0,0,.15);
+    }
+
+    .m-cta-icon {
+      width: 18px; height: 18px;
+    }
   }
 </style>

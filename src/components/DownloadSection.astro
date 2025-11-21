@@ -58,6 +58,7 @@ try {
   post = res?.posts?.nodes?.[0];
 } catch {}
 
+// title / desc
 const rawTitle =
   (post?.title as string) ||
   (lang === "en"
@@ -77,11 +78,21 @@ const descHtml = htmlOrBlank(post?.excerpt) || htmlOrBlank(post?.content) || "";
 const imgUrl   = pickImageUrl(post?.featuredImage);
 const imgAlt   = normalize(post?.featuredImage)?.altText || titlePlain;
 
+// ลิงก์ store (เหมือนเดิม)
 const googlePlay = "https://play.google.com/store/apps/details?id=com.bederly.phr";
 const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
+
+// รูป badge ของปุ่ม ตามภาษา
+const googlePlayBadge = lang === "en" ? "/blackgoogleplay.png" : "/playth.png";
+const appStoreBadge   = lang === "en" ? "/apple.png"           : "/appth.png";
 ---
 
-<section class={`relative isolate py-14 md:py-16 lg:py-20 mobile-section ${sectionClass}`.trim()}>
+<section
+  class={`relative isolate 
+          pt-14 md:pt-16 lg:pt-20   /* เน้น padding ด้านบน */
+          pb-4  md:pb-6  lg:pb-8    /* ลด padding ด้านล่างลงเยอะ ๆ */
+          mobile-section ${sectionClass}`.trim()}
+>
   <div
     class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-0
            h-[300px] sm:h-[340px] lg:h-[380px]
@@ -129,7 +140,7 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
             class="store-badge badge-invert inline-flex items-center justify-center rounded-xl bg-white text-gray-900 shadow transition"
             aria-label="Get it on Google Play"
           >
-            <img src="/blackgoogleplay.png" alt="Google Play" class="h-10 w-auto" />
+            <img src={googlePlayBadge} alt="Google Play" class="h-10 w-auto" />
           </a>
 
           <a
@@ -138,7 +149,7 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
             class="store-badge badge-invert inline-flex items-center justify-center rounded-xl bg-white text-gray-900 shadow transition"
             aria-label="Download on the App Store"
           >
-            <img src="/apple.png" alt="App Store" class="h-10 w-auto" />
+            <img src={appStoreBadge} alt="App Store" class="h-10 w-auto" />
           </a>
         </div>
       </div>
@@ -158,11 +169,24 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
 
       <!-- ปุ่มบนมือถือ -->
       <div class="absolute top-4 right-4 z-30 flex flex-col gap-3 mobile-buttons-overlay">
-        <a href={googlePlay} target="_blank" rel="noopener" class="store-badge badge-invert w-full max-w-[140px] h-[50px] flex items-center justify-center" aria-label="Get it on Google Play">
-          <img src="/blackgoogleplay.png" alt="Google Play" class="w-auto h-8" />
+        <a
+          href={googlePlay}
+          target="_blank"
+          rel="noopener"
+          class="store-badge badge-invert w-full max-w-[140px] h-[50px] flex items-center justify-center"
+          aria-label="Get it on Google Play"
+        >
+          <img src={googlePlayBadge} alt="Google Play" class="w-auto h-8" />
         </a>
-        <a href={appStore} target="_blank" rel="noopener" class="store-badge badge-invert w-full max-w-[140px] h-[50px] flex items-center justify-center" aria-label="Download on the App Store">
-          <img src="/apple.png" alt="App Store" class="w-auto h-8" />
+
+        <a
+          href={appStore}
+          target="_blank"
+          rel="noopener"
+          class="store-badge badge-invert w-full max-w-[140px] h-[50px] flex items-center justify-center"
+          aria-label="Download on the App Store"
+        >
+          <img src={appStoreBadge} alt="App Store" class="w-auto h-8" />
         </a>
       </div>
     </div>
@@ -180,6 +204,11 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
     border-radius: 40px;
     will-change: transform, box-shadow;
     transition: background-color .25s ease, color .25s ease, transform .2s ease;
+  }
+
+  .store-badge img[alt="App Store"] {
+    height: 2.9rem !important;   /* ค่าเดิมประมาณ 2.5rem */
+    transform: scale(1.15);      /* ขยายเพิ่ม 15% */
   }
 
   /* ========== เอฟเฟกต์สลับขาว–ดำตอน hover ========== */
@@ -251,4 +280,9 @@ const appStore   = "https://apps.apple.com/th/app/bederly-phr/id6747645978";
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
     }
   }
+    .mobile-buttons-overlay img[alt="App Store"] {
+      height: 2.6rem !important;
+      transform: scale(1.15);
+  }
+
 </style>

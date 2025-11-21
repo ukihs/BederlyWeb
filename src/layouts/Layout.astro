@@ -41,16 +41,26 @@ const defaultDescription = lang === "en"
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
-    {alternates.map((alt) => (<link rel="alternate" hreflang={alt.lang} href={alt.url} />))}
+
+    {alternates.map((alt) => (
+      <link rel="alternate" hreflang={alt.lang} href={alt.url} />
+    ))}
     <meta name="theme-color" content="#0891b2" />
   </head>
 
   <TopLanguageButton lang={lang} alternates={alternates} />
   
   <body class="font-noto bg-white text-gray-800 antialiased min-h-screen overflow-x-hidden">
-    <!-- Navbar -->
+    {/* Navbar */}
     {showNav && (
       <Navbar 
         lang={lang} 
@@ -62,6 +72,36 @@ const defaultDescription = lang === "en"
     <main class="relative overflow-x-clip max-w-[100svw]">
       <slot />
     </main>
+
+    {/* ปุ่มเลื่อนกลับไปด้านบน (ลอยมุมขวาบนโชว์ตลอด) */}
+    <button
+      id="scrollTopBtn"
+      class="scroll-top-btn"
+      aria-label={lang === "en" ? "Scroll to top" : "กลับขึ้นด้านบน"}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+      </svg>
+    </button>
+
+    <script>
+      if (typeof window !== "undefined") {
+        const setupScrollTop = () => {
+          const btn = document.getElementById("scrollTopBtn");
+          if (!btn) return;
+
+          btn.addEventListener("click", () => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", setupScrollTop);
+        } else {
+          setupScrollTop();
+        }
+      }
+    </script>
   </body>
 </html>
 
@@ -73,4 +113,61 @@ const defaultDescription = lang === "en"
     html, body { overflow-x: hidden !important; max-width: 100vw !important; }
     main, section { overflow-x: hidden !important; max-width: 100vw !important; }
   }
+
+  /* ปุ่ม Scroll to Top (ลอยมุมขวาบน โชว์ตลอด) */
+  .scroll-top-btn {
+    position: fixed;
+    top: 20px;          /* ถ้าไปทับปุ่มภาษา ปรับเป็น top: 80px; ได้ */
+    right: 24px;
+    width: 54px;
+    height: 54px;
+    border-radius: 9999px;
+    border: none;
+    background: #00B4FF;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow:
+      0 16px 32px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(0, 0, 0, 0.10);
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: transform 0.2s ease;
+    z-index: 80;
+  }
+
+  .scroll-top-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .scroll-top-btn svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  @media (max-width: 767.98px) {
+    .scroll-top-btn {
+      top: 16px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      box-shadow:
+        0 12px 26px rgba(0, 0, 0, 0.26),
+        0 0 0 1px rgba(0, 0, 0, 0.10);
+    }
+  }
+
+  /* ใช้ Inter เฉพาะหน้าภาษาอังกฤษ */
+html[lang="en"] body {
+  font-family: "Inter", "Noto Sans", system-ui, sans-serif !important;
+}
+
+/* หน้าภาษาไทยยังคงใช้ฟ้อนต์เดิม */
+html[lang="th"] body {
+  font-family: "Noto Sans Thai", "Noto Sans", system-ui, sans-serif !important;
+}
+
 </style>

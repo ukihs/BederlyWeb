@@ -85,9 +85,9 @@ function getIconSvg(title = "") {
 }
 ---
 
-<section class={`relative ${klass}`}>
-  <div class="text-left mb-12">
-    <h2 class="text-3xl md:text-5xl font-bold text-gray-900 leading-snug">
+<section class={`relative function-section ${klass}`}>
+  <div class="text-left mb-8 md:mb-10">
+    <h2 class="text-3xl md:text-5xl font-semibold text-gray-900 leading-snug">
       {lang === "en" ? <>Functions for Your Convenience</> : <>ฟังก์ชันเพิ่มความสะดวก</>}
     </h2>
   </div>
@@ -99,15 +99,21 @@ function getIconSvg(title = "") {
         <article class="function-card">
           <div class="function-icon-wrapper">
             {imgUrl ? (
-              <img src={imgUrl} alt={post?.featuredImage?.node?.altText || post.title}
-                   class="w-full h-full object-contain rounded-lg"
-                   loading="lazy" draggable="false" />
+              <img
+                src={imgUrl}
+                alt={post?.featuredImage?.node?.altText || post.title}
+                class="w-full h-full object-contain rounded-lg"
+                loading="lazy"
+                draggable="false"
+              />
             ) : (
               <div class="function-icon" set:html={getIconSvg(post.title)} />
             )}
           </div>
           <h3 class="function-title" set:html={post.title} />
-          {post.excerpt && <p class="function-description" set:html={post.excerpt} />}
+          {post.excerpt && (
+            <p class="function-description" set:html={post.excerpt} />
+          )}
         </article>
       );
     })}
@@ -115,14 +121,25 @@ function getIconSvg(title = "") {
 </section>
 
 <style>
+  /* ดันทั้ง section ขึ้นไปให้ชิดกับส่วนด้านบน */
+  .function-section {
+    margin-top: -100px;       /* ปรับ -20 ถึง -80 ได้ตามที่ตาเห็น */
+  }
+
+  @media (max-width: 767.98px) {
+    .function-section {
+      margin-top: -24px;     /* มือถือดึงขึ้นน้อยกว่าหน่อย */
+    }
+  }
+
   /* ===== Function Card (STATIC / no hover) ===== */
   .function-card {
     background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
     border-radius: 20px;
     padding: 1.75rem 1.5rem;
     box-shadow: 0 4px 6px rgba(0,0,0,.07);
-    transform: none;                 /* คงที่ */
-    transition: none;                /* ปิดแอนิเมชันทั้งหมด */
+    transform: none;
+    transition: none;
     min-height: 260px;
     display: flex;
     flex-direction: column;
@@ -130,8 +147,9 @@ function getIconSvg(title = "") {
     text-align: left;
     position: relative;
     overflow: hidden;
-    cursor: default;                 /* ดูเป็นชิ้นนิ่ง */
+    cursor: default;
   }
+
   .function-card::before {
     content: "";
     position: absolute;
@@ -142,13 +160,12 @@ function getIconSvg(title = "") {
     background: radial-gradient(circle, rgba(255,255,255,.3) 0%, transparent 70%);
     pointer-events: none;
   }
-  /* ยกเลิกเอฟเฟกต์ยกการ์ด/เงาเวลา hover */
+
   .function-card:hover {
     transform: none !important;
     box-shadow: 0 4px 6px rgba(0,0,0,.07) !important;
   }
 
-  /* ===== Icon ===== */
   .function-icon-wrapper {
     width: 64px;
     height: 64px;
@@ -161,9 +178,14 @@ function getIconSvg(title = "") {
     box-shadow: 0 2px 8px rgba(0,0,0,.08);
     overflow: hidden;
   }
-  .function-icon { color: #0891b2; display: flex; align-items: center; justify-content: center; }
 
-  /* ===== Text ===== */
+  .function-icon {
+    color: #0891b2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .function-title {
     font-size: 1rem;
     font-weight: 700;
@@ -173,6 +195,7 @@ function getIconSvg(title = "") {
     text-wrap: balance;
     letter-spacing: 0.01em;
   }
+
   .function-description {
     font-size: 0.9375rem;
     color: #075985;
@@ -182,14 +205,15 @@ function getIconSvg(title = "") {
     text-wrap: pretty;
   }
 
-  /* ===== Alternate background shades (คงเดิม) ===== */
-  .function-card:nth-child(odd)  { background: linear-gradient(135deg, rgba(98,199,217,0.20) 0%, rgba(98,199,217,0.25) 100%); }
-  .function-card:nth-child(even) { background: linear-gradient(135deg, rgba(98,199,217,0.40) 0%, rgba(98,199,217,0.45) 100%); }
+  .function-card:nth-child(odd)  {
+    background: linear-gradient(135deg, rgba(98,199,217,0.20) 0%, rgba(98,199,217,0.25) 100%);
+  }
+  .function-card:nth-child(even) {
+    background: linear-gradient(135deg, rgba(98,199,217,0.40) 0%, rgba(98,199,217,0.45) 100%);
+  }
 
-  /* ===== Layout Grid ===== */
   .grid { gap: 1.5rem; }
 
-  /* ===== Responsive Fix ===== */
   @media (max-width: 767px) {
     .function-card { min-height: 220px; padding: 1.25rem; }
     .function-icon-wrapper { width: 56px; height: 56px; margin-bottom: 0.75rem; }

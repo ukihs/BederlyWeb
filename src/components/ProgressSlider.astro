@@ -138,7 +138,7 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
 <section class={`section-padding-sm pt-0 md:pt-6 pb-0 ${sectionClass}`.trim()}>
   <div class="container-primary">
     <div class="mb-6">
-      <h2 class="text-4xl md:text-5xl font-bold text-gray-900">{sectionTitle}</h2>
+      <h2 class="text-4xl md:text-5xl font-semibold text-gray-900">{sectionTitle}</h2>
     </div>
 
     {posts.length === 0 ? (
@@ -162,7 +162,7 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
 
             return (
               <article class="shrink-0 w-[94%] sm:w-[78%] lg:w-[1040px] xl:w-[1120px]">
-                <div class="pcard rounded-[22px] overflow-hidden shadow-lg transition-shadow duration-300 bg-white">
+                <div class="pcard">
                   <!-- ปรับสัดส่วนรูป:ข้อความ ให้รูปแคบลง -->
                   <div class="pcard-grid grid
                               md:grid-cols-[0.8fr,1.2fr]
@@ -176,8 +176,13 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
                     </figure>
 
                     <div class="flex h-full flex-col bg-[#40B4ED] text-white p-5 md:p-6 lg:p-7">
-                      <h3 class="text-[16px] md:text-[18px] font-semibold mb-2 leading-tight">
-                        {p?.title || ""}
+                      <h3 class="text-[18px] md:text-[20px] lg:text-[22px] font-semibold mb-2 leading-tight">
+                        {(p?.title || "").split("|").map((chunk, idx) => (
+                          <>
+                            {idx > 0 && <br />}
+                            {chunk.trim()}
+                          </>
+                        ))} 
                       </h3>
 
                       {safe && (
@@ -212,8 +217,19 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
   .hide-scrollbar { scrollbar-width: none; }
   .hide-scrollbar::-webkit-scrollbar { height: 0; }
 
-  .pcard { height: auto; }
-  .pcard-grid { height: 100%; }
+.pcard {
+  height: auto;
+  background: transparent !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+/* ตรงนี้คือการ์ดที่มองเห็นจริง ๆ = สูง 70% ของ .pcard */
+.pcard-grid {
+  background: #ffffff;
+  border-radius: 22px;
+  overflow: hidden;
+}
 
   /* ทำให้ลากได้ทุกจุดของแทร็ค */
   .drag-scroll { cursor: grab; user-select: none; }
@@ -271,12 +287,14 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
   }
 }
+
+
 </style>
 
 <script>
   // Drag-to-scroll + wheel horizontal
   const track = document.getElementById("progress-track");
-  const cards = Array.from(document.querySelectorAll('.pcard'));
+  const cards = Array.from(document.querySelectorAll('.pcard-grid')); // ✅ เปลี่ยนมาจับ pcard-grid
 
   if (track) {
     track.addEventListener("dragstart", (e) => e.preventDefault());
@@ -304,18 +322,28 @@ const sectionTitle = lang === "en" ? "Our Latest Progress" : "ความคื
     }, { passive: false });
   }
 
-  // ให้การ์ดสูงเท่ากัน
+  // ให้การ์ดสูงเท่ากัน + เตี้ยลงเหลือ 70% ของเดิม
   function syncHeights() {
     if (!cards.length) return;
     cards.forEach(c => c.style.height = 'auto');
+
     let maxH = 0;
-    cards.forEach(c => { const h = c.getBoundingClientRect().height; if (h > maxH) maxH = h; });
-    const px = Math.ceil(maxH) + 'px';
+    cards.forEach(c => {
+      const h = c.getBoundingClientRect().height;
+      if (h > maxH) maxH = h;
+    });
+
+    // ✅ บีบให้เหลือ 70% ของความสูงสูงสุด
+    const target = Math.ceil(maxH * 0.75);
+    const px = target + 'px';
     cards.forEach(c => c.style.height = px);
   }
 
   window.addEventListener('load', syncHeights);
-  window.addEventListener('resize', () => { clearTimeout(window.__pc_sync); window.__pc_sync = setTimeout(syncHeights, 120); });
+  window.addEventListener('resize', () => {
+    clearTimeout(window.__pc_sync);
+    window.__pc_sync = setTimeout(syncHeights, 120);
+  });
   document.querySelectorAll('.pcard img').forEach(img => {
     if (!img.complete) img.addEventListener('load', () => setTimeout(syncHeights, 30));
   });
